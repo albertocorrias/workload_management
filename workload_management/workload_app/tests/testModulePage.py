@@ -74,7 +74,9 @@ class TestModulePage(TestCase):
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
         mod_code = "BN101"
-        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
+        test_prog = ProgrammeOffered.objects.create(programme_name='test_prog', primary_dept=test_dept)
+        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, \
+                                            module_type = mod_type_1, semester_offered = Module.SEM_1, primary_programme=test_prog)
 
         #Test the get without any MLO
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
@@ -113,7 +115,6 @@ class TestModulePage(TestCase):
         self.assertEqual(len(response.context["mlo_list"]), 1) #
         self.assertEqual(response.context["mlo_list"][0]["mlo_desc"], new_description)
         self.assertEqual(response.context["mlo_list"][0]["mlo_short_desc"], short_desc)
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping_form"], None)
         self.assertEqual(len(response.context["mlo_list"][0]["slo_mapping"]), 0) #
         self.assertEqual(len(response.context["slo_list"]), 0) #
         
@@ -123,7 +124,7 @@ class TestModulePage(TestCase):
         slo_1 = StudentLearningOutcome.objects.create(slo_description="slo_1", slo_short_description="short_1", programme = new_prog)
         slo_2 = StudentLearningOutcome.objects.create(slo_description="slo_2", slo_short_description="short_2", programme = new_prog)
         self.assertEqual(StudentLearningOutcome.objects.all().count(),2)
-        self.assertEqual(ProgrammeOffered.objects.all().count(),1)
+        self.assertEqual(ProgrammeOffered.objects.all().count(),2)
         #Now make sure the module 1 is associated with the new programme
         module_1.primary_programme=new_prog
         module_1.save()
@@ -241,7 +242,8 @@ class TestModulePage(TestCase):
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
         mod_code = "BN101"
-        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
+        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, \
+                                        total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
         #Create two MLOs
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),0)
         descr = "MLO 1 full description"

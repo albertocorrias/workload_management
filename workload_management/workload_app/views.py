@@ -1069,6 +1069,7 @@ def module(request, module_code):
     #This is useful in multiple parts below
     prog = None
     programme_name = ""
+    programme_id = None
     for mod in Module.objects.filter(module_code=module_code):
         if (mod.primary_programme is not None):
             prog = mod.primary_programme
