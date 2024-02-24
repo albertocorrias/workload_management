@@ -1601,7 +1601,8 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'start_year' : start_year,
         'end_year' : end_year,
         'slo_measures' : slo_measures, 
-        'big_mlo_slo_table' : big_mlo_slo_table
+        'big_mlo_slo_table' : big_mlo_slo_table,
+        'number_of_slo' : len(slo_measures)+1
     }
     return HttpResponse(template.render(context, request))
 def survey_results(request,survey_id):

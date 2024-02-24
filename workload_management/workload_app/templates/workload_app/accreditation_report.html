@@ -18,6 +18,31 @@
       </div><!-- end of buttons container-->
       <h1>Accreditation report for {{ programme_name }} between {{ start_year }} and {{ end_year }}</h1>
       <hr>
+      <div>
+        <table id="OverallMLOSLOMAPPINGS" class="workload_tables table table-striped">
+          <thead class="table-dark">
+          <tr>
+            <th colspan= "{{ number_of_slo }}" style="background-color: darkgrey;">Overall mappings for period</th>
+          </tr>
+          <tr>
+            <th> </th>
+            {% for item in big_mlo_slo_table.0.slo_identifiers %}
+            <th> {{ item }}</th>
+            {% endfor %}
+          </tr>
+          </thead>
+          <tbody>
+            {% for row in big_mlo_slo_table %}
+            <tr>
+            <td> {{ row.module_code }} </td>
+              {% for icon in row.icons %}
+              <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ icon }}" alt="edit"/> </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       {% for slo_info in slo_measures %}
           <h2>SLO: {{ slo_info.slo_desc }} </h2>
 
@@ -53,13 +78,6 @@
                       <p> No SLO survey were reported for this SLO </p>
                   </div>
               {% endif %}
-          
-
-
-
-
-
-
 
               {% if slo_info.mlo_mappings|length > 0 %}
               <div>
@@ -92,18 +110,6 @@
                       <p> No mapped MLO were reported for this SLO </p>
               </div>
               {% endif %}
-
-
-
-
-
-
-
-
-
-
-
-
           {% if slo_info.mlo_direct_measures|length > 0 %}
               <div>
                     <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">

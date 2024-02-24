@@ -191,6 +191,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
     for mod_code in all_module_codes:
         table_row_item = {
             'module_code' : mod_code,
+            'slo_identifiers' : [],
             'numerical_mappings' : [],#A list as long as the SLOs of the programme
             'icons' : [],#Same as above, but icons instead
             'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO opf this mod were mapped?
@@ -203,7 +204,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
                     if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
                         overall_strength = mapping.strength
                         n_mlo_mapped = n_mlo_mapped + 1
-
+            table_row_item['slo_identifiers'].append(slo.letter_associated)
             table_row_item['numerical_mappings'].append(overall_strength)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))
             table_row_item['n_mlo_mapped'].append(n_mlo_mapped)
