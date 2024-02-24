@@ -1,5 +1,5 @@
 import datetime
-from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, MLOPerformanceMeasure
+from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, MLOPerformanceMeasure, Module,ModuleLearningOutcome
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
 def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
@@ -168,3 +168,84 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year):
     total_row_scores_direct.insert(0, 'Weighted average')#Insert the label at the start
     mlo_direct_measures_table_rows.append(total_row_scores_direct)#Append to the overall table
     return mlo_direct_measures_table_rows
+
+#A helper method to figure out the full-moon/half-mmon/empty moon icons to show
+def DetermineIconBasedOnStrength(strength):
+    icon = 'circle.svg'
+    if (strength == 1 or strength ==2) : icon = 'circle-half.svg'
+    if (strength ==3) : icon = 'circle-fill.svg'
+
+    return icon
+
+
+def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
+    all_module_codes = []
+    for mod in (Module.objects.filter(primary_programme__id = programme_id) |\
+                Module.objects.filter(secondary_programme__id = programme_id)):
+                if (mod.scenario_ref.academic_year.start_year >= start_year and\
+                    mod.scenario_ref.academic_year.start_year <= end_year):
+                    all_module_codes.append(mod.module_code)
+    all_module_codes = list(dict.fromkeys(all_module_codes))#eliminate duplicates
+    #Prepare the HTMl table
+    table_rows = []
+    for mod_code in all_module_codes:
+        table_row_item = {
+            'module_code' : mod_code,
+            'numerical_mappings' : [],#A list as long as the SLOs of the programme
+            'icons' : [],#Same as above, but icons instead
+            'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO opf this mod were mapped?
+        }
+        for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
+            overall_strength = 0
+            n_mlo_mapped = 0
+            for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
+                for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
+                    if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
+                        overall_strength = mapping.strength
+                        n_mlo_mapped = n_mlo_mapped + 1
+
+            table_row_item['numerical_mappings'].append(overall_strength)
+            table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))
+            table_row_item['n_mlo_mapped'].append(n_mlo_mapped)
+        table_rows.append(table_row_item)
+    return table_rows
+
+def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
+    slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
+    mlo_mappings_table_rows = []# A list of table rows with mappings
+
+
+    all_mods_involved = []
+    #We look at all the mapped measures
+    for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo):
+        all_mods_involved.append(mlo_mapping.mlo.module_code)
+    all_mods_involved = list(dict.fromkeys(all_mods_involved))#eliminate duplicates
+
+    for mod_code in all_mods_involved:
+        table_row_item = {
+                'module_code' : mod_code,
+                'numerical_mappings' : [],#A list as long as the number of years under consideration
+                'icons' : [],#Same as above, but icons instead
+                'n_mlo_mapped' : [],#Same as above. For each SLO, how many MLO opf this mod were mapped for that year?
+        }
+        for year in range(start_year, end_year+1):
+            numerical_mapping_for_year = 0
+            total_mapping_for_year = 0
+            n_mlo_mapped_for_year = 0
+            #check if the module with this code was offered this year
+            if (Module.objects.filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year = year)):
+                for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
+                    for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
+                        total_mapping_for_year += mapping.strength
+                        if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
+                            numerical_mapping_for_year = mapping.strength
+                            n_mlo_mapped_for_year += 1
+            table_row_item['numerical_mappings'].append(numerical_mapping_for_year)
+            table_row_item['icons'].append(DetermineIconBasedOnStrength(numerical_mapping_for_year))
+            table_row_item['n_mlo_mapped'].append(n_mlo_mapped_for_year)
+        
+        mlo_mappings_table_rows.append(table_row_item)
+    return mlo_mappings_table_rows
+                
+
+            

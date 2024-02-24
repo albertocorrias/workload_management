@@ -53,8 +53,59 @@
                       <p> No SLO survey were reported for this SLO </p>
                   </div>
               {% endif %}
-              {% if slo_info.mlo_direct_measures|length > 0 %}
-                  <div>
+          
+
+
+
+
+
+
+
+              {% if slo_info.mlo_mappings|length > 0 %}
+              <div>
+                    <table id="SLO_MLOMappings-{{slo_info.slo_id}}" class="workload_tables table table-striped">
+                      <thead class="table-dark">
+                      <tr>
+                        <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO mappings</th>
+                      </tr>
+                        <tr>
+                          <th>  </th> 
+                          {% for year in slo_info.years_for_tables %}
+                            <th> {{ year }} </th>
+                          {% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for row in slo_info.mlo_mappings %}
+                          <tr>
+                            <td> {{ row.module_code }} </td>
+                            {% for item in row.icons %}
+                                  <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ item }}" alt="edit"/> </td>
+                            {% endfor %}
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+              </div>
+              {% else %} <!-- no MLO direct mappings were found -->
+              <div>
+                      <p> No mapped MLO were reported for this SLO </p>
+              </div>
+              {% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+          {% if slo_info.mlo_direct_measures|length > 0 %}
+              <div>
                     <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                       <thead class="table-dark">
                       <tr>
@@ -85,11 +136,11 @@
                         {% endfor %}
                       </tbody>
                     </table>
-                  </div>
+              </div>
               {% else %} <!-- no MLO direct measures were found -->
-                  <div>
+              <div>
                       <p> No direct measures of mapped MLO were reported for this SLO </p>
-                  </div>
+              </div>
               {% endif %}
 
 
@@ -132,7 +183,7 @@
               </div>
               {% endif %}
         </div><!-- FLex container of all SLO tables-->
-          <hr>
+        <hr>
       {% endfor %}
     </div><!--overall container-->
 {% include './footer.html' %}

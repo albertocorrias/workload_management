@@ -34,7 +34,8 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable
 from .helper_methods_survey import CalculateSurveyDetails, CalculateTotalResponsesForQuestion, CalulatePositiveResponsesFractionForQuestion
-from .helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures
+from .helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
+                                            DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,CalculateMLOSLOMappingTable
 
 from .report_methods import GetLastFiveYears,CalculateProfessorIndividualWorkload, CalculateFacultyReportTable
 
@@ -1202,9 +1203,7 @@ def module(request, module_code):
                     else:#otherwise create it the object
                         MLOSLOMapping.objects.create(slo=slo, mlo=mlo,strength=strength)
                     
-                    icon = 'circle.svg'
-                    if (strength == 1 or strength ==2) : icon = 'circle-half.svg'
-                    if (strength ==3) : icon = 'circle-fill.svg'
+                    icon = DetermineIconBasedOnStrength(strength)
                     slo_mapping_item = {
                         'slo_description' : slo.slo_description,
                         'slo_short_description' : slo.slo_short_description,
@@ -1569,13 +1568,16 @@ def accreditation(request,programme_id):
         return HttpResponse(template.render(context, request))
 
 def accreditation_report(request,programme_id, start_year,end_year):
-    
+    #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
+    big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
+
     slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
     for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
         slo_survey_measures = CalculateTableForSLOSurveys(slo.id,start_year,end_year) #A list of all the slo survey measures. This one is ready for HTML
         mlo_slo_survey_table_rows = CalculateTableForMLOSurveys(slo.id,start_year,end_year)#A list of measurements for this SLO obtained via MLO survey
         mlo_direct_measures_table_rows = CalculateTableForMLODirectMeasures(slo.id,start_year,end_year)
-        #Now the direct measures
+        mlo_slo_mapping_table_rows = CalculateMLOSLOMappingTable(slo.id,start_year,end_year)
+        
 
 
         years_for_tables = []
@@ -1584,6 +1586,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
         slo_info = {
             'slo_id' : slo.id,
             'slo_desc' : slo.slo_short_description,
+            'mlo_mappings' : mlo_slo_mapping_table_rows,
             'slo_surveys' : slo_survey_measures,
             'mlo_direct_measures' : mlo_direct_measures_table_rows,
             'colspan_param' : end_year - start_year + 2,
@@ -1597,7 +1600,8 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
         'start_year' : start_year,
         'end_year' : end_year,
-        'slo_measures' : slo_measures
+        'slo_measures' : slo_measures, 
+        'big_mlo_slo_table' : big_mlo_slo_table
     }
     return HttpResponse(template.render(context, request))
 def survey_results(request,survey_id):
