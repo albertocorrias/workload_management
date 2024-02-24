@@ -1,0 +1,22 @@
+p.individual_mlo_item{
+    display:inline;
+
+}
+div.individual_mlo_item{
+    display: inline;
+}
+div.individual_mlo_item > input[type=number]{
+    width: 10vmin;
+}
+
+div.survey_results_container{
+    width: 100%;
+    display: flex;
+}
+div.survey_table_results_container{
+    width: 45%;
+    margin-right: 2vmin;
+}
+div.chart_results_container{
+    width: 45%;
+}

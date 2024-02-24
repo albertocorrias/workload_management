@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_report.css' %}">
+  </head>
+  <body>
+  
+    {% include './top_bar.html' %}
+  <div class="report_nav_button_container">
+      <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
+          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>
+  </div>
+    <div class = "report-title-container">
+      Individual lecturer report
+    </div>
+    <div class = "report-select-form-container">
+      <form action="{% url 'workload_app:individual_report' %}" method="post">
+        {% csrf_token %}
+        {{ select_lecturer_form.as_p }}
+        <button type="submit" class="btn btn-primary">Generate report</button>
+        
+      </form>  
+
+    </div>
+  <hr>
+  <div class="overall-report-container">
+    <div class="report-table-container">
+      <table class="workload_tables table table-striped">
+        <thead class="table-dark" id="workload_module_table_id">
+        <tr> 
+            <th> </th>
+            <th> </th>
+            {% for entry in labels_temp_individual %}
+            <th> {{ entry }} </th>
+            {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+          {% for entry in summary_wl_table_individual %}
+          <tr>
+            <td>{{ entry.0 }}</td>
+            <td>{{ entry.1 }}</td>
+            <td>{{ entry.2|floatformat }}</td>
+            <td>{{ entry.3|floatformat }}</td>
+            <td>{{ entry.4|floatformat }}</td>
+            <td>{{ entry.5|floatformat }}</td>
+            <td>{{ entry.6|floatformat }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+</table>   
+    </div>
+    <div class="report-chart-container">
+        <canvas id="temporal-individual-staff-chart"></canvas>
+        {{ labels_temp_individual|json_script:"labels_temp_individual" }}
+        {{ hrs_temp_individual_delivered|json_script:"hrs_temp_individual_delivered" }}
+        {{ hrs_temp_individual_expected|json_script:"hrs_temp_individual_expected" }}
+        <script src="{% static   'workload_app/temporal_individual_chart.js' %}"></script>
+
+    </div>
+  </div>
+  {% include './footer.html' %}
+  </body>
+</html>

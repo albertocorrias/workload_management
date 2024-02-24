@@ -1,0 +1,25 @@
+
+
+div.overall_container{
+    width: 60%;
+    margin: auto;
+    text-align: center;
+    display:block;
+}
+
+div.form_container{
+    text-align: center;
+    width: 20%;
+    margin: auto;
+}
+
+div.top_login_bar {
+    height: 25vmin;
+    margin:auto;
+
+}
+
+table.login_table{
+    margin-top: 3vmin;
+    margin-bottom: 3vmin;
+}

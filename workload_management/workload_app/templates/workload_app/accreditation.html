@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}     
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_report.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_accreditation.css' %}">     
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+
+    <div class="overall_container" id="overall_container_dept_page">
+        <div class="buttons_container">
+            <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
+              <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>  
+            <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
+                <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to department page</a>  
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewSLOModal">
+                Add/Remove SLOs..
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewPEOModal">
+              Add/Remove PEOs..
+          </button>
+        </div><!-- end of buttons container-->
+        <hr>
+        <h1>Accreditation page for {{ programme_name }}</h1>
+        <hr>
+        
+        <div>
+          <h2>Select the academic years for the report</h2>
+
+          <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+            {% csrf_token %}
+                  {{ select_report_years_form.as_p }}
+                  <button type="submit" class="btn btn-success">Genearte report</button>
+          </form> 
+        </div>
+        <hr>
+        {% if slo_list|length > 0 %}
+          <div class="table_flex_container">
+              <div>
+                <table id="OVERALL_SLO_TABLE" class="workload_tables table table-striped">
+                  <thead class="table-dark">
+                  <tr>
+                      <th> ID </th> 
+                      <th> SLO description</th>
+                      <th> </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in slo_list %}
+                        <tr>
+                            <td>{{ entry.slo_letter }}</td>
+                            <td style="text-align:left;">{{ entry.slo_desc }}</td>
+                            <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditSLO{{ entry.slo_id }}">
+                                <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
+                        </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+        {% else %} <!-- no SLO defined -->
+          <p> No SLO were defined for the {{ programme_name }} programme </p>
+        {% endif %}
+
+        {% if peo_list|length > 0 %}
+              <div>
+                <table id="OVERALL_PEO_TABLE" class="workload_tables table table-striped">
+                  <thead class="table-dark">
+                  <tr>
+                      <th> ID </th> 
+                      <th> PEO description</th>
+                      <th> </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in peo_list %}
+                        <tr>
+                            <td>{{ entry.peo_letter }}</td>
+                            <td style="text-align:left;">{{ entry.peo_desc }}</td>
+                            <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditPEO{{ entry.peo_id }}">
+                                <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
+                        </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+        {% else %} <!-- NO PEO defined -->
+            <p> No PEO have been defined for the {{ programme_name }} programme</p>
+        {% endif %}
+       </div><!--Flex container-->
+       {% if slo_list|length > 0 and peo_list|length > 0 %}
+        <div>
+          <h2>Mapping between PEO and SLO</h2>
+          <table id="PEO_SLO_MAPPING_TABLE" class="workload_tables table table-striped">
+            <thead class="table-dark">
+              <tr>
+                <td style="background-color:#f4f3f1;"> </td>
+                <td style="background-color:#f4f3f1;">  </td>
+                <th colspan="{{ peo_list|length }}"> PEO </th>
+              </tr>
+            <tr>
+              <th> </th>
+              <th> SLO (short description) </th>
+              {% for entry in peo_list %}
+                  <th title="{{ entry.peo_desc }}">{{entry.peo_letter}}) {{ entry.peo_short_desc }}</th>
+              {% endfor %}
+              <th>Edit mapping </th>
+            </tr>
+            </thead>
+            <tbody>
+              {% for entry in slo_list %}
+                  <tr>
+                      <td>{{ entry.slo_letter }}</td>
+                      <td title="{{ entry.slo_desc }}">{{ entry.slo_short_desc }}</td>
+                      {% for mapping in entry.peo_mapping %}
+                        <td> 
+                          <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ mapping.mapping_icon }}" alt="edit"/>
+                        </td>
+                      {% endfor %}
+                      <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditPEOMappings{{ entry.slo_id }}">
+                        <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+            </table>
+        </div>
+        <div>
+          <hr>
+          <h2>Surveys</h2>
+        </div>
+        <div class="buttons_container">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewSLOSurveyModal">
+              Add/Remove SLO survey..
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewPEOSurveyModal">
+              Add/Remove PEO survey..
+            </button>
+      </div><!-- end of buttons container-->
+        <div>
+          <table id="SLO_SURVEYS_TABLE" class="workload_tables table table-striped">
+            <thead class="table-dark">
+                <tr>
+                  <th> Survey </th>
+                  <th> Type </th>
+                  <th> Dates </th>
+                  <th> Total recipients </th>
+                  <th> Notes </th>
+                  <th> Original file </th>
+                  <th> Results </th>
+                </tr>
+            </thead>
+            <tbody style="border: solid thin lightslategray;">
+              {% for survey in slo_survey_table %}
+              <tr style="border-bottom: black solid thin;">
+                <td> {{ survey.title }} </td>
+                <td> {{ survey.type_of_survey }} </td>
+                <td> {{ survey.start_date }} - {{survey.end_date }}</td>
+                <td> {{ survey.recipients }}</td>
+                <td> {{ survey.comments }} </td>
+                <td>
+                  {% if survey.original_file_url|length > 0 %}
+                    Download  <a href="{{ survey.file }}" download> original file</a>
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td> 
+                  <a href="/workload_app/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">
+                    View results</a> </td>
+              </tr>
+              {% endfor %}
+              </tbody>
+          </table>
+        </div>
+
+        {% endif %}
+        <!--Modal for new SLOs-->
+        <div class="modal fade" id="NewSLOModal" tabindex="-1" role="dialog" aria-labelledby="NewSLOModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="NewSLOModalLabel">Add new SLO</h5>
+                      <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                        <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                      </button>
+                    </div>
+                    <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                    {% csrf_token %}
+                        <div class="modal-body">
+                              {{ new_slo_form.as_p }}
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                          <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                  </form>  
+    
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="NewSLOModalLabel">Remove existing SLO</h5>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                    {% csrf_token %}
+                        <div class="modal-body">
+                                    {{ remove_slo_form }}
+                                    <br>
+                                <p>Note: any mapping associated with this SLO will be removed</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                            <button type="submit" class="btn btn-danger">Remove Selected</button>
+                        </div>
+                    </form>
+              </div><!-- Modal content -->
+            </div><!-- Mdal dialogue-->
+          </div><!--whole modal--> 
+
+        <!--Modal for new PEOs-->
+        <div class="modal fade" id="NewPEOModal" tabindex="-1" role="dialog" aria-labelledby="NewPEOModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="NewPEOModalLabel">Add new PEO</h5>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                            {{ new_peo_form.as_p }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>  
+  
+                <div class="modal-header">
+                  <h5 class="modal-title" id="NewPEOModalLabel">Remove existing PEO</h5>
+                </div>
+                <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                                  {{ remove_peo_form }}
+                                  <br>
+                              <p>Note: any mapping associated with this PEO will be removed </p>
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                          <button type="submit" class="btn btn-danger">Remove Selected</button>
+                      </div>
+                  </form>
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+        </div><!--whole modal--> 
+
+        <!--Modal for new PEO survey-->
+        <div class="modal fade" id="NewPEOSurveyModal" tabindex="-1" role="dialog" aria-labelledby="NewPEOSurveyModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document" style="max-width: 90%;">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h3 class="modal-title" id="NewPEOSurveyModalLabel">Add new PEO survey</h3>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                        <h4>Overall survey data</h4>
+                            {% for field in new_peo_survey_form.visible_fields|slice:":6" %}
+                              <div>
+                                <p>{{ field.label }}  {{ field }}</p>
+                              </div>
+                            {% endfor %}
+                  
+                            <h4>Responses for each PEO</h4>
+                            Fill in, for each PEO the number of respondents choosing each choice.
+                            <hr>
+                            {% for field in new_peo_survey_form %}
+                              {% if forloop.counter > 6 %}
+                                <div class="individual_mlo_item">
+                                  
+                                    {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
+                                  
+                                    {% if field.is_hidden %}
+                                  <br>
+                                  {% endif %} 
+
+                                  {% if field.label == "Strongly disagree" %}
+                                    <hr>
+                                  {% endif %}
+                                </div>
+                              {% endif %}
+              
+                        {% endfor %}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>  
+  
+                <div class="modal-header">
+                  <h4 class="modal-title" id="RemovePEOSurveyModal">Remove existing PEO survey</h4>
+                </div>
+                <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                        {{ remove_peo_survey_form }}
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                          <button type="submit" class="btn btn-danger">Remove Selected</button>
+                      </div>
+                  </form>
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+        </div><!--whole modal--> 
+
+        <!--Modal for new SLO survey-->
+        <div class="modal fade" id="NewSLOSurveyModal" tabindex="-1" role="dialog" aria-labelledby="NewSLOSurveyModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document" style="max-width: 90%;">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h3 class="modal-title" id="NewSLOSurveyModalLabel">Add new SLO survey</h3>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                        <h4>Overall survey data</h4>
+                            {% for field in new_slo_survey_form.visible_fields|slice:":6" %}
+                              <div>
+                                <p>{{ field.label }}  {{ field }}</p>
+                              </div>
+                            {% endfor %}
+                  
+                            <h4>Responses for each SLO</h4>
+                            Fill in, for each SLO the number of respondents choosing each choice.
+                            <hr>
+                            {% for field in new_slo_survey_form %}
+                              {% if forloop.counter > 6 %}
+                                <div class="individual_mlo_item">
+                                  
+                                    {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
+                                  
+                                    {% if field.is_hidden %}
+                                  <br>
+                                  {% endif %} 
+
+                                  {% if field.label == "Strongly disagree" %}
+                                    <hr>
+                                  {% endif %}
+                                </div>
+                              {% endif %}
+              
+                        {% endfor %}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>  
+  
+                <div class="modal-header">
+                  <h4 class="modal-title" id="RemoveSLOSurveyModal">Remove existing SLO survey</h4>
+                </div>
+                <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                        {{ remove_slo_survey_form }}
+                      </div>
+                      <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                          <button type="submit" class="btn btn-danger">Remove Selected</button>
+                      </div>
+                  </form>
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+        </div><!--whole modal--> 
+
+
+          <!-- Modals to edit SLOs-->
+          {% for entry in slo_list %}
+              <div class="modal fade" id="EditSLO{{ entry.slo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditSLO{{ entry.slo_id }}Label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="EditSLO{{ entry.slo_id }}Label">Edit existing SLO</h5>
+                          <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                            <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                          </button>
+                        </div>
+                        <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                        {% csrf_token %}
+                            <div class="modal-body">
+                                  {{ entry.slo_edit_form.as_p }}
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                              <button type="submit" class="btn btn-primary">Save changes</button>
+                            </div>
+                      </form>  
+                  </div><!-- Modal content -->
+                </div><!-- Mdal dialogue-->
+              </div><!--whole modal--> 
+          {% endfor %}
+
+          <!-- Modals to edit PEOs-->
+          {% for entry in peo_list %}
+                <div class="modal fade" id="EditPEO{{ entry.peo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditPEO{{ entry.peo_id }}Label" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="EditPEO{{ entry.peo_id }}Label">Edit existing PEO</h5>
+                            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                            </button>
+                          </div>
+                          <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                          {% csrf_token %}
+                              <div class="modal-body">
+                                    {{ entry.peo_edit_form.as_p }}
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                <button type="submit" class="btn btn-primary">Save changes</button>
+                              </div>
+                        </form>  
+                    </div><!-- Modal content -->
+                  </div><!-- Mdal dialogue-->
+                </div><!--whole modal--> 
+          {% endfor %}
+          
+          <!-- Modals to edit mapping -->
+          {% for entry in slo_list %}
+              <div class="modal fade" id="EditPEOMappings{{ entry.slo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditPEOMappings{{ entry.slo_id }}Label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="EditPEOMappings{{ entry.slo_id }}Label">Edit mapping for SLO {{ entry.slo_desc }}</h5>
+                          <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                            <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                          </button>
+                        </div>
+                        <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                        {% csrf_token %}
+                            <div class="modal-body">
+                              {{ entry.slo_mapping_form }}
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                              <button type="submit" class="btn btn-primary">Save changes</button>
+                            </div>
+                      </form>  
+                  </div><!-- Modal content -->
+                </div><!-- Mdal dialogue-->
+              </div><!--whole modal--> 
+          {% endfor %}
+    </div><!--overall container-->
+{% include './footer.html' %}
+</body>
+</html>

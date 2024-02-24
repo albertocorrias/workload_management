@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+{% load list_index %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}     
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_report.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_accreditation.css' %}">     
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+
+    <div class="overall_container" id="overall_container_dept_page">
+        <div class="buttons_container">
+            <a href="{{ back_address }}" class="btn btn-outline-success" role="button">
+              <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> {{ back_text }}</a>  
+        </div><!-- end of buttons container-->
+        <hr>
+        <h1>Survey results - {{ survey_details.title }} </h1>
+        <div class="overall_container">
+            <table id="SummarySurveyTable" class="workload_tables table table-striped">
+                <thead class="table-dark">
+                    <th> Dates </th>
+                    <th> Type </th>
+                    <th> Total recipients </th>
+                    <th> Average response rate </th>
+                    <th> Notes </th>
+                    <th> Original file </th>
+                </thead>
+                <tbody>
+                    <td> {{ survey_details.start_date }} - {{survey_details.end_date }}</td>
+                    <td>{{ survey_details.type_of_survey }}</survey_details></td>
+                    <td> {{ survey_details.recipients }}</td>
+                    <td> {{ average_response_rate|floatformat }}%</td>
+                    <td> {{ survey_details.comments }} </td>
+                    <td>
+                      {% if survey_details.original_file_url|length > 0 %}
+                        Download  <a href="{{ survey_details.file }}" download> original file</a>
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                </tbody>
+                </table>
+            <hr>
+            {% for entry in bar_chart_data %}
+            <div class="survey_results_container">
+                <div class="survey_table_results_container">
+                    <table id="SurveyTable{{ forloop.counter0 }}" class="workload_tables table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th colspan="4" style="background-color: cornflowerblue;"> {{ question_texts|list_index:forloop.counter0 }} </th>
+                            </tr>
+                            <tr>
+                              <th> Response </th>
+                              <th> # of respondents</th>
+                              <th> % of total</th>
+                              <th> Cumulative %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in entry %}
+                                <tr>
+                                    <td> {{ labels|list_index:forloop.counter0 }}  </td>
+                                    <td> {{ dataset }}  </td>
+                                   <td> {{ percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
+                                   <td>{{ cumulative_percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
+                                </tr>
+                            {% endfor %}
+                            <tr style="background-color: darkgrey;">
+                                <td>Total</td>
+                                <td>{{ total_responses_per_question|list_index:forloop.counter0 }}</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="chart_results_container">
+                    <canvas id="survey_results_chart{{ forloop.counter0 }}"></canvas>
+                </div>
+            </div>
+            <hr>
+            {% endfor %}
+            {{ bar_chart_data|json_script:"bar_chart_data" }}
+            {{ labels|json_script:"chart_labels" }}
+            {{ question_texts|json_script:"question_texts" }}
+            <script src="{% static   'workload_app/survey_results_chart.js' %}"></script>
+        </div>
+        <hr>
+ 
+    </div><!--overall container-->
+{% include './footer.html' %}
+</body>
+</html>

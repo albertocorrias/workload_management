@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_report.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_accreditation.css' %}">
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+
+    <div class="overall_container" id="overall_container_dept_page">
+      <div class="buttons_container">
+        <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
+          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to {{ department_name }} page</a>  
+        <a href="/workload_app/accreditation/{{ programme_id }}" class="btn btn-outline-success" role="button">
+          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to {{ programme_name }} accreditation page</a>  
+        <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
+          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>  
+      </div><!-- end of buttons container-->
+        {% if error_message|length > 0 %}
+            <div>{{ error_message }}</div>
+        {% else %}
+            <h1>Analysis of {{ module_code }} - {{ module_title }}</h1>
+            <div>
+              <table id="MODULE_YEARLY_TABLE" class="workload_tables table table-striped">
+                <thead class="table-dark">
+                <tr>
+                    <th> Year </th> 
+                    <th> Hours</th>
+                    <th> Lecturers</th>
+                </tr>
+                </thead>
+                <tbody>
+                  {% for entry in module_table %}
+                      <tr>
+                          <td>{{ entry.academic_year }}</td>
+                          <td>{{ entry.total_hours_delivered }}</td>
+                          <td>{{ entry.lecturers_involved }} </td>
+                      </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <hr>
+            <h2>Accreditation information</h2>
+            <div class="buttons_container">
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOModal">
+                Add/Remove MLOs..
+              </button>
+            </div><!-- end of buttons container-->
+
+            <div class="table_flex_container">
+            {% if mlo_list|length > 0 %}
+                <div>
+                  <table id="OVERALL_MLO_TABLE" class="workload_tables table table-striped">
+                    <thead class="table-dark">
+                    <tr>
+                      <th style="background-color:#f4f3f1;"> </th>
+                      <th style="background-color:#f4f3f1;"> </th>
+                      <th colspan="{{ slo_list|length }}"> Student Learning Outcome </th>
+                    </tr>
+                    <tr>
+                        <th> </th>
+                        <th> MLO Description</th>
+                        {% for slo_item in slo_list %}
+                          <th> {{ slo_item.slo_letter }} </th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                      {% for entry in mlo_list %}
+                          <tr>
+                              <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditMLO{{ entry.mlo_id }}">
+                                  <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
+                              <td style="text-align:left;">{{ entry.mlo_desc }}</td>
+                              {% for slo_item in entry.slo_mapping %}
+                                <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ slo_item.mapping_icon }}" alt="edit"/> </td>
+                              {% endfor %}
+                          </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                  <p style="text-align: left">
+                    List of SLO for <a href="/workload_app/accreditation/{{ programme_id }}">{{programme_name}}</a>
+                    <br>
+                    {% for slo_item in slo_list %}
+                    {{ slo_item.slo_letter }}) {{ slo_item.slo_description }}
+                    <br>
+                    {% endfor %}
+                  </p>
+                </div>
+            {% else %} <!-- no MLO defined -->
+              <p> No MLO were defined for this module </p>
+            {% endif %}
+            </div> <!-- Flex container-->
+            <div>
+              <hr>
+              <h2>MLO measures</h2>
+              <h3>Surveys</h3>
+              <div class="buttons_container">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOSurveyModal">
+                  Add a new MLO survey
+                </button>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOSurveyModal">
+                  Remove existing MLO survey
+                </button>
+              </div>
+              {% if mlo_survey_table|length > 0 %}
+                <div>
+                  <table id="MLO_SURVEYS_TABLE" class="workload_tables table table-striped">
+                      <thead class="table-dark">
+                          <tr>
+                            <th> Survey </th>
+                            <th> Start date </th>
+                            <th> End date </th>
+                            <th> Distributed to </th>
+                            <th> Average response rate </th>
+                            <th> View results </th>
+                            <th> Original file </th>
+                          </tr>
+                      </thead>
+                      <tbody style="border: solid thin lightslategray;">
+                        {% for survey in mlo_survey_table %}
+                        <tr style="border-bottom: black solid thin;">
+                          <td title=" {{ survey.survey_comments }}"> {{ survey.survey_name }}</td> 
+                          <td>{{ survey.survey_start_date }}</td>
+                          <td>{{ survey.survey_end_date }}</td>
+                          <td>{{ survey.n_respondents }}</td>
+                          <td>{{ survey.average_response_rate|floatformat }}%</td>
+                          <td><a href="/workload_app/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">View results</a></td>
+                          <td>
+                            {% if survey.original_file_url|length > 0 %}
+                              Download  <a href="{{ survey.original_file_url }}" download> original file</a>
+                            {% else %}
+                              N/A
+                            {% endif %}
+                          </td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                  </table>
+                </div>
+                {% else %}
+                  No surveys were collected for the MLO if this module
+                {% endif %}
+                <h3>Direct MLO performance measures</h3>
+                <div class="buttons_container">
+                  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOPerformanceMeasure">
+                    Add new performance masure for MLOs
+                  </button>
+                  <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOPerformanceMeasure">
+                   Remove existing MLO performance measure
+                  </button>
+                </div>
+                <div>
+                    <table id="MLO_PERFOMANCES_TABLE" class="workload_tables table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                              <th>Acad year</th>
+                              <th> Measure descritpion </th>
+                              <th> Mapped to</th>
+                              <th> Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          {% for table_row in mlo_measure_table %}
+                          <tr>
+                            <td>{{ table_row.year }}</td>
+                            <td>{{ table_row.description }} 
+                              {% if table_row.download_url|length > 0 %}
+                                , download  <a href="{{ table_row.download_url }}" download> original file</a>
+                              {% endif %}
+                            </td>
+                            <td>{{ table_row.mlos_mapped }} </td>
+                            <td>{{ table_row.score }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+        {% endif %} <!-- of the check for error messages-->
+
+                <!--Modal for new mLOs-->
+                <div class="modal fade" id="NewMLOModal" tabindex="-1" role="dialog" aria-labelledby="NewMLOModalLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="NewMLOModalLabel">Add new MLO</h5>
+                            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                            </button>
+                          </div>
+                          <form action="{% url 'workload_app:module' module_code %}" method="post">
+                          {% csrf_token %}
+                              <div class="modal-body">
+                                    {{ new_mlo_form.as_p }}
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                <button type="submit" class="btn btn-primary">Save changes</button>
+                              </div>
+                        </form>  
+          
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="NewSLOModalLabel">Remove existing MLO</h5>
+                        </div>
+                        <form action="{% url 'workload_app:module' module_code %}" method="post">
+                          {% csrf_token %}
+                              <div class="modal-body">
+                                        {{ remove_mlo_form.as_p }}
+                                          <br>
+                                      <p>Note: any mapping associated with this MLO will be removed</p>
+                              </div>
+                              <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                  <button type="submit" class="btn btn-danger">Remove Selected</button>
+                              </div>
+                          </form>
+                    </div><!-- Modal content -->
+                  </div><!-- Mdal dialogue-->
+                </div><!--whole modal--> 
+                <!-- Modals to edit MLOs-->
+                {% for entry in mlo_list %}
+                    <div class="modal fade" id="EditMLO{{ entry.mlo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditMLO{{ entry.mlo_id }}Label" aria-hidden="true">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="EditMLO{{ entry.mlo_id }}Label">Edit existing MLO</h5>
+                                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                                </button>
+                              </div>
+                              <form action="{% url 'workload_app:module' module_code %}" method="post">
+                              {% csrf_token %}
+                                  <div class="modal-body">
+                                        {{ entry.mlo_edit_form.as_p }}
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                                  </div>
+                              </form>
+                              <hr>
+                              <form action="{% url 'workload_app:module' module_code %}" method="post">
+                                {% csrf_token %}
+                                    <div class="modal-body">
+                                          {{ entry.slo_mapping_form.as_p }}
+                                    </div>
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                      <button type="submit" class="btn btn-primary">Save changes</button>
+                                    </div>
+                                </form>
+                              
+                        </div><!-- Modal content -->
+                      </div><!-- Mdal dialogue-->
+                    </div><!--whole modal--> 
+                {% endfor %}
+
+
+                  <!--Modal for new MLO Survey-->
+                  <div class="modal fade" id="NewMLOSurveyModal" tabindex="-1" role="dialog" aria-labelledby="NewMLOSurveyModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                      <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="NewMLOSurveyModalLabel">Add new Survey</h5>
+                              <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                              </button>
+                            </div>
+                          <form action="{% url 'workload_app:module'  module_code %}" method="post" enctype="multipart/form-data">
+                              {% csrf_token %}
+                              <div class="modal-body">
+                                    <h2>Overall survey data</h2>
+                                    {% for field in mlo_survey_form.visible_fields|slice:":5" %}
+                                      <div>
+                                        <p>{{ field.label }}  {{ field }}</p>
+                                      </div>
+                                    {% endfor %}
+                          
+                                    <h2>Responses for each MLO</h2>
+                                    Fill in, for each MLO the number of respondents choosing each choice.
+                                    <hr>
+                                    {% for field in mlo_survey_form %}
+                                      {% if forloop.counter > 5 %}
+                                        <div>
+                                          <p class="individual_mlo_item">
+                                            {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
+                                          </p>
+                                          {% if field.label == "Never" %}
+                                            <hr>
+                                          {% endif %}
+                                        </div>
+                                      {% endif %}
+                          
+                                    {% endfor %}
+                              </div><!--modal body-->
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                              <button type="submit" class="btn btn-primary">Save changes</button>
+                            </div>
+                        </form>  
+                      </div><!-- Modal content -->
+                    </div><!-- Mdal dialogue-->
+                  </div><!--whole modal--> 
+
+                  <!--Modal to REMOVE MLO Survey-->
+                  <div class="modal fade" id="RemoveMLOSurveyModal" tabindex="-1" role="dialog" aria-labelledby="RemoveMLOSurveyModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl" role="document">
+                      <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title" id="RemoveMLOSurveyModalLabel">Remove existing Survey</h5>
+                              <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                              </button>
+                            </div>
+                          <form action="{% url 'workload_app:module'  module_code %}" method="post">
+                              {% csrf_token %}
+                              <div class="modal-body">
+                                {{ remove_mlo_survey_form.as_p }}
+                              </div><!--modal body-->
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                              <button type="submit" class="btn btn-danger">Remove selected</button>
+                            </div>
+                        </form>  
+                      </div><!-- Modal content -->
+                    </div><!-- Mdal dialogue-->
+                  </div><!--whole modal--> 
+                  
+                  <!--Modal for new MLO performance measure-->
+                  <div class="modal fade" id="NewMLOPerformanceMeasure" tabindex="-1" role="dialog" aria-labelledby="NewMLOPerformanceMeasureLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl" role="document">
+                          <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="NewMLOPerformanceMeasureLabel">Add new preformance measures for MLOs of {{ module_code }}</h5>
+                                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                                  </button>
+                                </div>
+                                <form action="{% url 'workload_app:module' module_code %}" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                    <div class="modal-body">
+                                      {% for field in mlo_performance_measure_form %}
+                                          
+                                          {% if forloop.counter0 == 1 %}
+                                            <hr>
+                                            <p>{{ field.label }}</p> 
+                                            <p>{{ field }} </p>
+                                          {% else %}
+                                            <p>{{ field.label }} {{ field }} </p>
+                                          {% endif %}
+                                      {% endfor %}
+                                    </div>
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                      <button type="submit" class="btn btn-primary">Save changes</button>
+                                    </div>
+                              </form>  
+                          </div><!-- Modal content -->
+                        </div><!-- Mdal dialogue-->
+                      </div><!--whole modal--> 
+
+                      <!--Modal to REMOVE MLO performance masure-->
+                      <div class="modal fade" id="RemoveMLOPerformanceMeasure" tabindex="-1" role="dialog" aria-labelledby="RemoveMLOPerformanceMeasureLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl" role="document">
+                          <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="RemoveMLOPerformanceMeasureLabel">Remove existing measure</h5>
+                                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                                  </button>
+                                </div>
+                              <form action="{% url 'workload_app:module'  module_code %}" method="post">
+                                  {% csrf_token %}
+                                  <div class="modal-body">
+                                    {{ remove_mlo_perfroamnce_measure_form.as_p }}
+                                  </div><!--modal body-->
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                  <button type="submit" class="btn btn-danger">Remove selected</button>
+                                </div>
+                            </form>  
+                          </div><!-- Modal content -->
+                        </div><!-- Mdal dialogue-->
+                      </div><!--whole modal--> 
+    </div><!--overall container-->
+{% include './footer.html' %}
+</body>
+</html>

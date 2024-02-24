@@ -1,0 +1,146 @@
+   {% load static %}
+      
+    <p>
+
+    <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
+            <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>
+            
+    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageProfessorModal">
+      Add/Remove lecturers...
+    </button>
+
+    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageModuleModal">
+      Add/Remove modules...
+    </button>
+
+    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageAssignmentModal">
+      Add/Remove teaching assignments...
+    </button>
+
+    <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
+      <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit"> Go to Department programme analysis</a>
+    </p><!--End of workload management-->
+    
+    <!-- Manage professor modal -->
+    <div class="modal fade" id="ManageProfessorModal" tabindex="-1" role="dialog" aria-labelledby="ManageProfessorModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="ManageProfessorModalLabel">Add a new lecturer</h5>
+		            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+		              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+		            </button>
+              </div>
+             <form action="{% url 'workload_app:add_professor' workloadscenario_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ prof_form }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>
+            <div class="modal-header">
+                <h5 class="modal-title" id="ManageProfessorModalLabel">Remove assignments for lecturer</h5>
+            </div>
+             <form action="{% url 'workload_app:remove_professor' workloadscenario_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_prof_form }}
+    
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>       
+
+        </div><!-- Modal content -->
+      </div><!-- Mdal dialogue-->
+    </div><!--whole modal-->
+    
+    
+    <!-- Manage module modal -->
+    <div class="modal fade" id="ManageModuleModal" tabindex="-1" role="dialog" aria-labelledby="ManageModuleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="ManageModuleModalLabel">Add a new module</h5>
+		            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+		              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+		            </button>
+              </div>
+             <form action="{% url 'workload_app:add_module' workloadscenario_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ mod_form.as_p }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>
+            
+            <div class="modal-header">
+                <h5 class="modal-title" id="ManageModuleModalLabel">Remove/retire existing module</h5>
+            </div>
+             <form action="{% url 'workload_app:remove_module' workloadscenario_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_mod_form }}
+                            <br>
+                            <p>Please note that all teaching assignments involving the selected module will be removed</p>
+    
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>        
+        </div><!-- Modal content -->
+      </div><!-- Modal dialogue-->
+    </div><!--whole modal-->
+
+    <!-- Manage assignment modal activated by button above here-->
+    <div class="modal fade" id="ManageAssignmentModal" tabindex="-1" role="dialog" aria-labelledby="ManageAssignmentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="ManageAssignmentModalLabel">Add assignment</h5>
+            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+            </button>
+          </div>
+          <form action="{% url 'workload_app:add_assignment' workloadscenario_id %}" method="post">
+          {% csrf_token %}
+              <div class="modal-body">
+                    {{ add_teaching_assignment_form.as_p }}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+              </div>
+        </form>
+        
+        <div class="modal-header">
+                <h5 class="modal-title" id="ManageAssignmentModalLabel">Remove existing assignment</h5>
+        </div>
+        <form action="{% url 'workload_app:remove_assignment' workloadscenario_id %}" method="post">
+          {% csrf_token %}
+              <div class="modal-body">
+                    {{ remove_teaching_assignment_form }}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                <button type="submit" class="btn btn-danger">Remove selected</button>
+              </div>
+        </form>
+        </div><!--modal content-->
+      </div><!--modal dialogue-->
+    </div><!--Whole modal-->
+
+    
+    
+    
+    

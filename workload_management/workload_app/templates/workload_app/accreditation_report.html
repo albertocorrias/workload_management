@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}     
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_report.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_accreditation.css' %}">     
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+    <div class="overall_container" id="overall_container_dept_page">
+      <div class="buttons_container">
+        <a href="/workload_app/accreditation/{{ programme_id }}" class="btn btn-outline-success" role="button">
+          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to accreditation page </a>  
+      </div><!-- end of buttons container-->
+      <h1>Accreditation report for {{ programme_name }} between {{ start_year }} and {{ end_year }}</h1>
+      <hr>
+      {% for slo_info in slo_measures %}
+          <h2>SLO: {{ slo_info.slo_desc }} </h2>
+
+          <div class="table_flex_container">
+            {% if slo_info.slo_surveys|length > 0 %}
+                  <div>
+                    <table id="SLO_Survey-{{slo_info.slo_id}}" class="workload_tables table table-striped">
+                      <thead class="table-dark">
+                      <tr>
+                        <th colspan="4" style="background-color: darkgrey;">SLO survey measures</th>
+                      </tr>
+                      <tr>
+                          <th> Date </th> 
+                          <th> Survey</th>
+                          <th> Question </th>
+                          <th> Achievement score (%) </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                        {% for survey in slo_info.slo_surveys %}
+                            <tr>
+                                <td>{{ survey.date }}</td>
+                                <td>{{ survey.survey }}</td>
+                                <td>{{ survey.question }}</td>
+                                <td>{{ survey.percent_positive|floatformat }}%</td>
+                            </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+              {% else %} <!-- no SLO survey was found -->
+                  <div>
+                      <p> No SLO survey were reported for this SLO </p>
+                  </div>
+              {% endif %}
+              {% if slo_info.mlo_direct_measures|length > 0 %}
+                  <div>
+                    <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
+                      <thead class="table-dark">
+                      <tr>
+                        <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO direct measures</th>
+                      </tr>
+                        <tr>
+                          <th>  </th> 
+                          {% for year in slo_info.years_for_tables %}
+                            <th> {{ year }} </th>
+                          {% endfor %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for row in slo_info.mlo_direct_measures %}
+                          <tr>
+                            {% for item in row %}
+                              {% if forloop.counter0 == 0 %}
+                                <td> {{ item }} </td>
+                              {% else %}
+                                {% if item > 0 %}
+                                  <td> {{ item|floatformat }}% </td>
+                                  {% else %}
+                                  <td>  </td>
+                                {% endif %}
+                              {% endif %}
+                            {% endfor %}
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+              {% else %} <!-- no MLO direct measures were found -->
+                  <div>
+                      <p> No direct measures of mapped MLO were reported for this SLO </p>
+                  </div>
+              {% endif %}
+
+
+              {% if slo_info.mlo_slo_survey_table_rows|length > 0 %}
+              <div>
+                    <table id="SLO_MLOSurveyMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
+                        <thead class="table-dark">
+                        <tr>
+                          <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO survey measures</th>
+                        </tr>
+                        <tr>
+                            <th>  </th> 
+                            {% for year in slo_info.years_for_tables %}
+                              <th> {{ year }} </th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                          {% for row in slo_info.mlo_slo_survey_table_rows %}
+                            <tr>
+                              {% for item in row %}
+                                {% if forloop.counter0 == 0 %}
+                                  <td> {{ item }} </td>
+                                {% else %}
+                                  {% if item > 0 %}
+                                    <td> {{ item|floatformat }}% </td>
+                                    {% else %}
+                                    <td>  </td>
+                                  {% endif %}
+                                {% endif %}
+                              {% endfor %}
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+              </div>
+              {% else %}
+              <div>
+                <p> No MLO survey measures for a mapped MLO were reported for this SLO </p>
+              </div>
+              {% endif %}
+        </div><!-- FLex container of all SLO tables-->
+          <hr>
+      {% endfor %}
+    </div><!--overall container-->
+{% include './footer.html' %}
+</body>
+</html>

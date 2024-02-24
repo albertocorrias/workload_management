@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/login_style.css' %}">
+    <title>Workload Management App</title>          
+  </head>
+  <body>
+  <div class="top_bar top_login_bar">   
+      Workload application
+  </div>
+  <div class="overall_container">
+      <h2>Log In</h2>
+      <div class="form_container">
+        <form method="post">
+          {% csrf_token %}
+          <table class="login_table">
+            <tr>
+              <td>{{ form.username.label_tag }}</td>
+              <td>{{ form.username }}</td>
+            </tr>
+            <tr>
+              <td>{{ form.password.label_tag }}</td>
+              <td>{{ form.password }}</td>
+            </tr>
+          </table>
+          <button class="btn btn-primary" type="submit">Log In</button>
+        </form>
+      </div>
+      <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
+  </div>
+  </body>
+</html>

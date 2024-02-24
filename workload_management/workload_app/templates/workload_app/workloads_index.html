@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}          
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+
+
+
+    <br>
+    <br>
+
+    <!-- Respective modals are at the bottom-->
+    
+
+    <div class ="workload_index_table">
+        <table id="TABLE_WORKLOAD_INDEX" class="workload_tables table table-striped ">
+            <thead class="table-dark">
+            <tr> 
+                <th>Workload name</th>
+                <th>Dept</th>
+                <th> AY </th>
+                <th> Status </th>
+                <th>Total hours delivered</th>
+                <th>Total Department tFTE</th>
+                <th>Expected workload per tFTE</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for entry in overall_table %}
+                <tr>
+                    <td><a href = "/workload_app/scenario_view/{{ entry.wl_id }}">{{ entry.wl_name }}</a></td>
+                    <td>{{ entry.dept_acronym }}</td>
+                    <td>{{ entry.acad_year }}</td>
+                    <td>{{ entry.status }}</td>
+                    <td>{{ entry.total_hours_delivered }}</td>
+                    <td>{{ entry.total_fte|floatformat }}</td>
+                    <td>{{ entry.expected_hrs|floatformat }}</td>
+                </tr> 
+                {% endfor %}
+            </tbody>
+        </table>   
+    </div>
+    
+    <div class="add_workload_button_container">
+      <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageScenariosModal">
+        Add/Remove Workloads...
+      </button>
+      <a href="/workload_app/individual_report" class="btn btn-success" role="button" style="border:none;">Report for individual lecturer...</a>
+      <a href="/workload_app/faculty_report" class="btn btn-secondary" role="button" style="border:none;">Report for whole faculty...</a>
+    </div>
+
+    <hr/>
+    <div class = "settings_table_container">
+      <div class = "settings_table_item">
+        <!--Tracks list table-->
+        <table class="settings_tables table table-striped table-sm">
+              <thead class="table-dark table-sm">
+              <tr> 
+                  <th colspan=3>Employment tracks 
+                  </th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th>Adjustment</th>
+                <th>Edit</th>
+              </tr>
+              </thead>
+              <tbody>
+
+              {% for entry in tracks_table %}
+              <tr>
+                  <td>{{ entry.track_name }}</td>       
+                  <td>{{ entry.track_adjustment }}</td>
+                  <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_track_name }}DetailsModal">
+                    <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
+              </tr>
+              {% endfor %}
+              <tr> 
+                <td colspan=3> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#AddRemoveTracksModal">
+                Add/Remove employment tracks...</button>
+                </td>
+              </tr>
+              </tbody>
+        </table>
+      </div>
+      <div class = "settings_table_item">
+      	  <!--Roles list table-->
+        <table class="settings_tables table table-striped table-sm">
+              <thead class="table-dark table-sm">
+              <tr> 
+                  <th colspan=3>Service roles</th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th>Adjustment</th>
+                <th>Edit</th>
+              </tr>
+              </thead>
+              <tbody>
+  
+              {% for entry in roles_table %}
+              <tr>
+                  <td>{{ entry.role_name }}</td>       
+                  <td>{{ entry.role_adjustment }}</td>
+                  <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_role_name }}DetailsModal">
+                    <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
+              </tr>
+              {% endfor %}
+              <tr> 
+                <td colspan=3> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#AddRemoveServiceRoleModal">
+                Add/Remove service roles...</button>
+                </td>
+              </tr>
+              </tbody>
+        </table>
+      </div>
+    </div>
+    <div class = "settings_table_container">
+      <div class = "settings_table_item">
+            <!--Module types table-->
+            <table class="settings_tables table table-striped table-sm">
+              <thead class="table-dark table-sm">
+              <tr> 
+                  <th>Module types</th>
+              </tr>
+              <tr>
+                <th>Name</th>
+
+              </tr>
+              </thead>
+              <tbody>
+  
+              {% for entry in module_type_table %}
+              <tr>
+                  <td>{{ entry.type_name }}</td>       
+              </tr>
+              {% endfor %}
+              <tr> 
+                <td> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageModuleTypeModal">
+                  Add/Remove types of modules...
+                  </button>
+                </td>
+              </tr>
+              </tbody>
+        </table>
+      </div>
+      <div class = "settings_table_item">
+            <!--Departments table-->
+            <table class="settings_tables table table-striped table-sm">
+              <thead class="table-dark table-sm">
+              <tr> 
+                  <th colspan=4>Departments</th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th>Acronym</th>
+                <th>Faculty</th>
+                <th>Edit</th>
+              </tr>
+              </thead>
+              <tbody>
+  
+              {% for entry in department_table %}
+              <tr>
+                  <td><a href="/workload_app/department/{{ entry.dept_id }}">{{ entry.department_name }}</a></td>       
+                  <td>{{ entry.department_acronym }}</td>
+                  <td>{{ entry.faculty }}</td>
+                  <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_dept_name }}DetailsModal">
+                    <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
+              </tr>
+              {% endfor %}
+              <tr> 
+                <td colspan=4>  <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageDepartmentModal">
+                  Add/Remove Departments...
+                </button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          
+      </div>
+      <div class = "settings_table_container">
+      <!--Table with the list of faculties-->
+        <div class = "settings_table_item">
+            <table class="settings_tables table table-striped table-sm">
+              <thead class="table-dark table-sm">
+              <tr> 
+                  <th colspan=3>Faculties</th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th>Acronym</th>
+                <th>Edit</th>
+              </tr>
+              </thead>
+              <tbody>
+
+              {% for entry in faculty_table %}
+              <tr>
+                  <td>{{ entry.faculty_name }}</td>       
+                  <td>{{ entry.faculty_acronym }}</td>
+                  <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_fac_name }}DetailsModal">
+                    <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
+              </tr>
+              {% endfor %}
+              <tr> 
+                <td colspan=3>  <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageFacultiesModal">
+                  Add/Remove Faculties...
+                </button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+    <!-- Manage module type modal -->
+    <div class="modal fade" id="ManageModuleTypeModal" tabindex="-1" role="dialog" aria-labelledby="ManageModuleTypeModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="ManageModuleTypeModalLabel">Add a new module type</h5>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                 <form action="{% url 'workload_app:manage_module_type' %}" method="post">
+                 {% csrf_token %}
+                      <div class="modal-body">
+                            {{ mod_type_form.as_p }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ManageModuleTypeModalLabel">Remove existing module type</h5>
+                </div>
+                 <form action="{% url 'workload_app:remove_module_type' %}" method="post">
+                 {% csrf_token %}
+                      <div class="modal-body">
+                                {{ remove_mod_type_form }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-danger">Remove Selected</button>
+                      </div>
+                </form>        
+            </div><!-- Modal content -->
+          </div><!-- Modal dialogue-->
+    </div><!--whole modal--> 
+    
+    
+           <!-- Manage scenario modal -->
+        <div class="modal fade" id="ManageScenariosModal" tabindex="-1" role="dialog" aria-labelledby="ManageScenariosModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="ManageScenariosModalLabel">Add a new workload</h5>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                 <form action="{% url 'workload_app:manage_scenario' %}" method="post">
+                 {% csrf_token %}
+                      <div class="modal-body">
+                            {{ scenario_form }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ManageScenariosModalLabel">Remove existing workload</h5>
+                </div>
+                 <form action="{% url 'workload_app:remove_scenario' %}" method="post">
+                 {% csrf_token %}
+                      <div class="modal-body">
+                                {{ remove_scenario_form }}
+                                <br>
+                                <p>Please note that all teaching assignments involved in the selected workload will be removed</p>
+        
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Remove Selected</button>
+                      </div>
+                    </form>        
+    
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+        </div><!--whole modal-->
+    
+    
+        <!-- Manage Department modal -->
+        <div class="modal fade" id="ManageDepartmentModal" tabindex="-1" role="dialog" aria-labelledby="ManageDepartmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="ManageDepartmentModalLabel">Add a new department</h5>
+                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                  </button>
+                </div>
+                <form action="{% url 'workload_app:manage_department' %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                          {{ dept_form }}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+              </form>
+              
+              <div class="modal-header">
+                  <h5 class="modal-title" id="ManageScenariosModalLabel">Remove existing department</h5>
+              </div>
+                <form action="{% url 'workload_app:remove_department' %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                              {{ remove_dept_form }}
+                              <br>
+                              <p>Please note that all the workloads associated with the removed department will be assigned a "default" department</p>
+      
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Remove Selected</button>
+                    </div>
+                  </form>        
+    
+          </div><!-- Modal content -->
+        </div><!-- Mdal dialogue-->
+      </div><!--whole modal-->
+
+
+      <!-- Manage Faculties modal -->
+      <div class="modal fade" id="ManageFacultiesModal" tabindex="-1" role="dialog" aria-labelledby="ManageFacultiesModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="ManageFacultiesModalLabel">Add a new faculty</h5>
+                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                  </button>
+                </div>
+                <form action="{% url 'workload_app:manage_faculty' %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                          {{ fac_form }}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+              </form>
+              
+              <div class="modal-header">
+                  <h5 class="modal-title" id="ManageFacultiesModalLabel">Remove existing faculty</h5>
+              </div>
+                <form action="{% url 'workload_app:remove_faculty' %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                              {{ remove_fac_form }}
+                              <br>
+                              <p>Please note that all the departments associated with the removed faculty will be assigned a "default" faculty</p>
+      
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Remove Selected</button>
+                    </div>
+                  </form>        
+    
+          </div><!-- Modal content -->
+        </div><!-- Mdal dialogue-->
+      </div><!--whole modal-->
+
+
+      
+    <!-- Manage employment track  modal -->
+    <div class="modal fade" id="AddRemoveTracksModal" tabindex="-1" role="dialog" aria-labelledby="AddRemoveTracksModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="AddRemoveTracksModalLabel">Add a new employment track</h5>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                </button>
+              </div>
+             <form action="{% url 'workload_app:manage_employment_track' %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ employment_track_form }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>
+            
+            <div class="modal-header">
+                <h5 class="modal-title" id="AddRemoveTracksModalLabel">Remove existing employment track</h5>
+            </div>
+             <form action="{% url 'workload_app:remove_employment_track' %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_employment_track_form }}
+                        <br>
+                        <p>Note: all lecturers in the removed employment track will be assigned to a "No track" with adjustment = 1</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>        
+        </div><!-- Modal content -->
+      </div><!-- Modal dialogue-->
+    </div><!--whole modal--> 
+
+    <!-- Manage service role  modal -->
+    <div class="modal fade" id="AddRemoveServiceRoleModal" tabindex="-1" role="dialog" aria-labelledby="AddRemoveServiceRoleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="AddRemoveServiceRoleModalLabel">Add a new service role</h5>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                </button>
+              </div>
+             <form action="{% url 'workload_app:manage_service_role' %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ service_role_form }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>
+            
+            <div class="modal-header">
+                <h5 class="modal-title" id="AddRemoveServiceRoleModalLabel">Remove existing service role</h5>
+            </div>
+             <form action="{% url 'workload_app:remove_service_role' %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_service_role_form }}
+                            <br>
+                        <p>Note: all lecturers in the removed service role will be assigned to a "No special service role" with adjustment = 1</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>        
+        </div><!-- Modal content -->
+      </div><!-- Modal dialogue-->
+    </div><!--whole modal--> 
+
+
+
+    {% for entry in tracks_table %}
+
+    <!-- Edit track details modal -->
+    <div class="modal fade" id="{{ entry.no_space_track_name }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="{{ entry.no_space_track_name }}DetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="{{ entry.no_space_track_name }}DetailsModalLabel">Edit details for {{ entry.track_name }}</h5>
+            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+            </button>
+          </div>
+         <form action="{% url 'workload_app:manage_employment_track' %}" method="post">
+         {% csrf_token %}
+                <div class="modal-body">                
+                    {{ entry.edit_track_form.as_p }}
+                 </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            
+        </form>
+        </div>
+      </div>
+   </div>
+
+   {% endfor %}
+
+   {% for entry in roles_table %}
+
+   <!-- Edit role details modal -->
+   <div class="modal fade" id="{{ entry.no_space_role_name }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="{{ entry.no_space_role_name }}DetailsModalLabel" aria-hidden="true">
+     <div class="modal-dialog" role="document">
+       <div class="modal-content">
+         <div class="modal-header">
+           <h5 class="modal-title" id="{{ entry.no_space_role_name }}DetailsModalLabel">Edit details for {{ entry.role_name }}</h5>
+           <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+             <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+           </button>
+         </div>
+        <form action="{% url 'workload_app:manage_service_role' %}" method="post">
+        {% csrf_token %}
+               <div class="modal-body">                
+                   {{ entry.edit_role_form.as_p }}
+                </div>
+                 <div class="modal-footer">
+                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                   <button type="submit" class="btn btn-primary">Save changes</button>
+                 </div>
+           
+       </form>
+       </div>
+     </div>
+  </div>
+
+  {% endfor %}
+
+  {% for entry in department_table %}
+
+  <!-- Edit department details modal -->
+  <div class="modal fade" id="{{ entry.no_space_dept_name }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="{{ entry.no_space_dept_name }}DetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="{{ entry.no_space_dept_name }}DetailsModalLabel">Edit details for {{ entry.department_name }}</h5>
+          <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+            <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+          </button>
+        </div>
+       <form action="{% url 'workload_app:manage_department' %}" method="post">
+       {% csrf_token %}
+              <div class="modal-body">                
+                  {{ entry.edit_dept_form.as_p }}
+               </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                  <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+          
+      </form>
+      </div>
+    </div>
+ </div>
+
+ {% endfor %}
+
+
+ {% for entry in faculty_table %}
+
+ <!-- Edit faculty details modal -->
+ <div class="modal fade" id="{{ entry.no_space_fac_name }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="{{ entry.no_space_fac_name }}DetailsModalLabel" aria-hidden="true">
+   <div class="modal-dialog" role="document">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title" id="{{ entry.no_space_fac_name }}DetailsModalLabel">Edit details for {{ entry.fac_name }}</h5>
+         <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+           <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+         </button>
+       </div>
+      <form action="{% url 'workload_app:manage_faculty' %}" method="post">
+      {% csrf_token %}
+             <div class="modal-body">                
+                 {{ entry.edit_fac_form.as_p }}
+              </div>
+               <div class="modal-footer">
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                 <button type="submit" class="btn btn-primary">Save changes</button>
+               </div>
+     </form>
+     </div>
+   </div>
+</div>
+
+{% endfor %}
+
+{% include './footer.html' %}
+  </body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}
+   
+    {{ mod_form.media }}
+
+    {{ add_teaching_assignment_form.media }}
+
+  </head>
+  <body>
+  
+    {% include './top_bar.html' %}
+  
+<div class="overall_container" id="overall_container">
+  
+  <div class="main_section">
+    <h1>{{ name_of_active_scenario }} <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditActiveScenarioModal">
+                                <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button> </h1>
+
+  <!--Modal for editing the name of the active scenario-->
+  <div class="modal fade" id="EditActiveScenarioModal" tabindex="-1" role="dialog" aria-labelledby="EditActiveScenarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="EditActiveScenarioModalLabel">Edit workload</h5>
+              <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+              </button>
+            </div>
+            <form action="{% url 'workload_app:manage_scenario' %}" method="post">
+            {% csrf_token %}
+                <div class="modal-body">
+                      {{ edit_active_scenario_form }}
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                  <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+          </form>  
+
+      </div><!-- Modal content -->
+    </div><!-- Mdal dialogue-->
+  </div><!--whole modal--> 
+      
+  <div class="buttons_container">
+    {% include './button_container.html' %}    
+  </div><!-- end of buttons container-->
+  
+    <hr/>
+    
+    <div class="summary-container">
+        <div class="chart-container">
+            <canvas id="module_type_chart"></canvas>
+            {{ summary_data.hours_by_type|json_script:"hour_counts" }}
+            {{ summary_data.module_type_labels|json_script:"chart_labels" }}
+            
+            <script src="{% static   'workload_app/module_type_chart.js' %}"></script>
+        </div>
+        <div class="summarytable-container">
+            
+            <table class="table table-sm">
+                    <thead class="table-dark">
+                    <tr> 
+                        <th>Summary statistics </th>
+                        <th> #</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color:Gainsboro;">
+                            <td> Total hours counted in {{ name_of_active_scenario }}</td>
+                            <td> {{ summary_data.total_hours_for_workload }}</td>
+                        </tr>
+                        <tr>
+                            <td> Sem 1</td>
+                            <td> {{ summary_data.hours_sem_1 }} </td>
+                        </tr>           
+                        <tr>
+                            <td> Sem 2</td>
+                            <td> {{ summary_data.hours_sem_2 }}</td>
+                        </tr> 
+                        <tr>
+                            <td> Other Sems </td>
+                            <td> {{ summary_data.hours_other_sems }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                          <td><div class="not_counted_assignments"> Hours delivered but not counted (e.g., remunaretd separately)</div> </td>
+                          <td><div class="not_counted_assignments">{{ summary_data.total_hours_not_counted }} </div></td>
+                        </tr> 
+                        <tr style="background-color:LightSteelBlue;">
+                        <td>Total hours expected by Department</td>
+                        <td>{{ summary_data.total_module_hours_for_dept|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                        <td>Total teaching tFTE used in {{ name_of_active_scenario }}</td>
+                        <td>{{ summary_data.total_tFTE_for_workload|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                          <td>Total teaching tFTE of Department</td>
+                          <td>{{ summary_data.total_department_tFTE|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                          <td>Total teaching tFTE of Department of adjuncts</td>
+                          <td>{{ summary_data.total_adjunct_tFTE|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                          <td>Total number of adjuncts</td>
+                          <td>{{ summary_data.total_number_of_adjuncts|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:LightSteelBlue;">
+                          <td>Expected teaching hours for 1 tFTE</td>
+                          <td>{{ summary_data.expected_hours_per_tFTE|floatformat }}</td>
+                        </tr>
+
+                    </tbody>
+            </table> 
+        </div>
+    </div>
+    <hr/>
+    
+    <h2> Workload table by lecturer </h2>
+        {% include './workload_professor_table.html' %}    
+    <hr/>
+    <h2> Workload table by module </h2>
+        {% include './workload_module_table.html' %}  
+    <hr/>
+   </div> <!--Main panel-->
+  </div><!--overall container-->
+  {% include './footer.html' %}
+  </body>
+</html>
+
+
+

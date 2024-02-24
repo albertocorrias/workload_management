@@ -1,0 +1,28 @@
+{% load static %}
+
+    <!-- CSS: bootstrap, a custom one plus dataTable integration -->
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">  
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static  'Buttons-2.0.1/css/buttons.dataTables.min.css' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static  'Buttons-2.0.1/css/buttons.bootstrap5.min.css' %}"></script>
+    
+    <link rel="shortcut icon" type="icon" href="{% static 'favicon.ico' %}"/>
+    
+    <!-- JavaScript (jQuery, bootstrap, jSZip, pdfmake, buttons and dataTables integrations)-->
+    <script src="{% static  'jquery/jquery-3.5.1.js' %}"></script>
+    <script src="{% static  'data_tables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static  'Buttons-2.0.1/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static  'JSZip-2.5.0/jszip.min.js' %}"></script>
+    <script src="{% static  'pdfmake-0.1.36/pdfmake.min.js' %}"></script>
+    <script src="{% static  'pdfmake-0.1.36/vfs_fonts.js' %}"></script>
+    <script src="{% static  'Buttons-2.0.1/js/buttons.html5.min.js' %}"></script>
+    <script src="{% static  'Buttons-2.0.1/js/buttons.print.min.js' %}"></script>
+    <script src="{% static  'data_tables/dataTables.bootstrap5.min.js' %}"></script>
+    <script src="{% static   'bootstrap-5.1.1-dist/js/bootstrap.min.js' %}"></script>
+    <script src="{% static   'chart.js/chart.min.js' %}"></script>
+    
+    <!--Script to activate the DataTables objects. The DOM is pinched from this online discussion
+    https://stackoverflow.com/questions/32252616/datatable-styling-so-bootstrap-button-appears-on-same-row-as-other-elements
+    -->    
+    <script src="{% static   'workload_app/activate_data_tables.js' %}"></script>

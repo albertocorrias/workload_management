@@ -1,0 +1,126 @@
+{% load static %}
+
+<p>
+    <table id="TABLE_1" class="workload_tables display table table-striped">
+        <thead class="table-dark" id="workload_prof_table_id">
+        <tr> 
+            <th>&nbsp;</th>
+            <th>&nbsp;</th>
+            <th>Lecturer</th>
+            <th>tFTE</th>               
+            <th>Teaching Assignments</th>
+            <th>Total hours</th>
+            <th>Expected hours</th>
+            <th>Balance</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in wl_table %}
+        <tr>
+            <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditProf{{ entry.prof_id }}DetailsModal">
+                <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>
+            </td>
+            <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#AddToProf{{ entry.prof_id }}AddAssignmentModal">
+                <img src="{% static 'workload_app/plus-square-green.svg' %}" alt="edit"></td>
+            <td>{{ entry.prof_name }} 
+            </td>
+            <td>{{ entry.prof_tfte|floatformat:2 }}</td><!-- Teaching FTE-->
+            <td>{{ entry.assignments }} <div class="not_counted_assignments">{{ entry.not_counted_assignments }}</div></td><!--Assignments-->
+            <td>{{ entry.total_hours_for_prof|floatformat }}</td><!-- Total hours assigned-->
+            <td>{{ entry.prof_expected_hours|floatformat }}</td><!-- Expected hours-->
+            <td style="background-color: {{ entry.prof_hex_code }};">{{ entry.prof_balance|floatformat }}</td><!-- Balance -->
+
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</p>
+
+
+<!-- all modals from here to the end -->
+
+{% for entry in wl_table %}
+
+    <!-- Edit lecturer's details modal -->
+    <div class="modal fade" id="EditProf{{ entry.prof_id }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="EditProf{{ entry.prof_id }}DetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="EditProf{{ entry.prof_id }}DetailsModalLabel">Edit details for {{ entry.prof_name }}</h5>
+            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+            </button>
+          </div>
+         <form action="{% url 'workload_app:add_professor' workloadscenario_id %}" method="post">
+         {% csrf_token %}
+                <div class="modal-body">                
+                    {{ entry.prof_form.as_p }}
+                 </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            
+        </form>
+        {% if  entry.num_assigns_for_prof > 0 %}
+        <div class="modal-header">
+           <h5 class="modal-title" id="EditProf{{ entry.prof_id }}ManageAssignmentModalLabel">Edit assignments for {{ entry.prof_name }}</h5>
+        </div>
+        <form action="{% url 'workload_app:edit_lecturer_assignments' entry.prof_id%}" method="post">
+         {% csrf_token %}
+                <div class="modal-body">
+                  {% for field in entry.edit_assign_form %}
+                    {% if field.is_hidden %}
+                      <p class="header_of_edit_form">{{ field.label }}</p>
+                    {% else %}
+                       <p><div style="display:inline;">{{ field.label }} {{ field }}</div></p>
+                    {% endif %}
+                  {% endfor %}
+                 </div>
+                  <div class="modal-footer">
+                    <p>Note: if you indicate 0 hours, the module will be removed from those assigned to {{ entry.full_name }}</p>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+        </form>
+        {% endif %}
+        </div>
+      </div>
+   </div>
+
+
+    <!-- Add assignment modal for specific lecturer-->
+    <div class="modal fade" id="AddToProf{{ entry.prof_id }}AddAssignmentModal" tabindex="-1" role="dialog" aria-labelledby="AddToProf{{ entry.prof_id }}AddAssignmentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="AddToProf{{ entry.prof_id }}AddAssignmentModal">Add assignment for {{ entry.full_name }}</h5>
+            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+            </button>
+          </div>
+         <form action="{% url 'workload_app:add_assignment' workloadscenario_id %}" method="post">
+         {% csrf_token %}
+              <div class="modal-body">
+                    {{ entry.add_assignment_for_prof_form.as_p }}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+              </div>
+        </form>
+        </div><!--modal content-->
+      </div><!--modal dialogue-->
+    </div><!--Whole modal-->
+    
+    
+{% endfor %}
+
+
+
+    
+    
+    
+    
+
+
