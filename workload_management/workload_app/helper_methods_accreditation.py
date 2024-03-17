@@ -177,7 +177,8 @@ def DetermineIconBasedOnStrength(strength):
 
     return icon
 
-
+#This function generates the big MLO-SLO table for HTML viewing.
+#Each row is a module code as long as it is offered in the given period.
 def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
     all_module_codes = []
     for mod in (Module.objects.filter(primary_programme__id = programme_id) |\
@@ -203,7 +204,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
                 for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
                     if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
                         overall_strength = mapping.strength
-                        n_mlo_mapped = n_mlo_mapped + 1
+                    n_mlo_mapped = n_mlo_mapped + 1
             table_row_item['slo_identifiers'].append(slo.letter_associated)
             table_row_item['numerical_mappings'].append(overall_strength)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))

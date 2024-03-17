@@ -7,10 +7,11 @@ from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
                                 ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse
-from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures
+from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
+                                                        CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength
 from workload_app.helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
-class TestAccreditationReprot(TestCase):
+class TestAccreditationReport(TestCase):
     def setup_user(self):
         #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
@@ -810,9 +811,77 @@ class TestAccreditationReprot(TestCase):
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
         slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
         self.assertEqual(len(slo_3_survey_table),0)
-        
-        
-        
 
+        #Test the big slo mlo table
+        big_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021)
+        self.assertEqual(len(big_table), 0) #No workloads in the period
+        big_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2010,2021)
+        self.assertEqual(len(big_table), 4) 
+        self.assertEqual(big_table[0]["module_code"], mod_code_1)
+        self.assertEqual(len(big_table[0]["slo_identifiers"]), 3)
+        self.assertEqual(len(big_table[0]["numerical_mappings"]), 3)
+        self.assertEqual(big_table[0]["numerical_mappings"][0], 3)#SLO 1 - MOD 1
+        self.assertEqual(big_table[0]["numerical_mappings"][1], 3)#SLO 2 - MOD 1
+        self.assertEqual(big_table[0]["numerical_mappings"][2], 2)#SLO 3 - MOD 1
+        self.assertEqual(len(big_table[1]["numerical_mappings"]), 3)
+        self.assertEqual(big_table[1]["numerical_mappings"][0], 3)#SLO 1 - MOD 2
+        self.assertEqual(big_table[1]["numerical_mappings"][1], 3)#SLO 2 - MOD 2
+        self.assertEqual(big_table[1]["numerical_mappings"][2], 1)#SLO 3 - MOD 2
+        self.assertEqual(len(big_table[2]["numerical_mappings"]), 3)
+        self.assertEqual(big_table[2]["numerical_mappings"][0], 2)#SLO 1 - MOD 3 
+        self.assertEqual(big_table[2]["numerical_mappings"][1], 0)#SLO 2 - MOD 3
+        self.assertEqual(big_table[2]["numerical_mappings"][2], 3)#SLO 3 - MOD 3
+        self.assertEqual(len(big_table[3]["numerical_mappings"]), 3)
+        self.assertEqual(big_table[3]["numerical_mappings"][0], 0)#SLO 1 - MOD 4 
+        self.assertEqual(big_table[3]["numerical_mappings"][1], 1)#SLO 2 - MOD 4
+        self.assertEqual(big_table[3]["numerical_mappings"][2], 0)#SLO 3 - MOD 4
+
+        self.assertEqual(len(big_table[0]["icons"]), 3)
+        self.assertEqual(big_table[0]["icons"][0], DetermineIconBasedOnStrength(3))#SLO 1 - MOD 1
+        self.assertEqual(big_table[0]["icons"][1], DetermineIconBasedOnStrength(3))#SLO 2 - MOD 1
+        self.assertEqual(big_table[0]["icons"][2], DetermineIconBasedOnStrength(2))#SLO 3 - MOD 1
+        self.assertEqual(len(big_table[1]["icons"]), 3)
+        self.assertEqual(big_table[1]["icons"][0], DetermineIconBasedOnStrength(3))#SLO 1 - MOD 2
+        self.assertEqual(big_table[1]["icons"][1], DetermineIconBasedOnStrength(3))#SLO 2 - MOD 2
+        self.assertEqual(big_table[1]["icons"][2], DetermineIconBasedOnStrength(1))#SLO 3 - MOD 2
+        self.assertEqual(len(big_table[2]["icons"]), 3)
+        self.assertEqual(big_table[2]["icons"][0], DetermineIconBasedOnStrength(2))#SLO 1 - MOD 3 
+        self.assertEqual(big_table[2]["icons"][1], DetermineIconBasedOnStrength(0))#SLO 2 - MOD 3
+        self.assertEqual(big_table[2]["icons"][2], DetermineIconBasedOnStrength(3))#SLO 3 - MOD 3
+        self.assertEqual(len(big_table[3]["icons"]), 3)
+        self.assertEqual(big_table[3]["icons"][0], DetermineIconBasedOnStrength(0))#SLO 1 - MOD 4 
+        self.assertEqual(big_table[3]["icons"][1], DetermineIconBasedOnStrength(1))#SLO 2 - MOD 4
+        self.assertEqual(big_table[3]["icons"][2], DetermineIconBasedOnStrength(0))#SLO 3 - MOD 4
+
+        self.assertEqual(len(big_table[0]["n_mlo_mapped"]), 3)
+        self.assertEqual(big_table[0]["n_mlo_mapped"][0],3)#SLO 1 - MOD 1
+        self.assertEqual(big_table[0]["n_mlo_mapped"][1], 2)#SLO 2 - MOD 1
+        self.assertEqual(big_table[0]["n_mlo_mapped"][2], 2)#SLO 3 - MOD 1
+        self.assertEqual(len(big_table[1]["n_mlo_mapped"]), 3)
+        self.assertEqual(big_table[1]["n_mlo_mapped"][0], 2)#SLO 1 - MOD 2
+        self.assertEqual(big_table[1]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 2
+        self.assertEqual(big_table[1]["n_mlo_mapped"][2], 1)#SLO 3 - MOD 2
+        self.assertEqual(len(big_table[2]["n_mlo_mapped"]), 3)
+        self.assertEqual(big_table[2]["n_mlo_mapped"][0], 1)#SLO 1 - MOD 3 
+        self.assertEqual(big_table[2]["n_mlo_mapped"][1], 0)#SLO 2 - MOD 3
+        self.assertEqual(big_table[2]["n_mlo_mapped"][2], 2)#SLO 3 - MOD 3
+        self.assertEqual(len(big_table[3]["n_mlo_mapped"]), 3)
+        self.assertEqual(big_table[3]["n_mlo_mapped"][0], 0)#SLO 1 - MOD 4 
+        self.assertEqual(big_table[3]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 4
+        self.assertEqual(big_table[3]["n_mlo_mapped"][2], 0)#SLO 3 - MOD 4
+
+        #Now test the view (up to now testing only the helper methods)
+        response = self.client.get(reverse('workload_app:accreditation_report',  kwargs={'programme_id': prog_to_accredit.id, 
+                                                                                         'start_year' : 2020, 'end_year':2021}))
+        self.assertEqual(response.status_code, 200) #No issues
+
+        self.assertEqual(response.context['programme_id'], prog_to_accredit.id)
+        self.assertEqual(response.context['programme_name'], prog_to_accredit.programme_name)
+        self.assertEqual(response.context['start_year'], 2020)
+        self.assertEqual(response.context['end_year'], 2021)
+        self.assertEqual(len(response.context['slo_measures']),StudentLearningOutcome.objects.filter(programme__id = prog_to_accredit.id).count())
+        big_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021)
+        self.assertEqual(len(big_table), 0) #No workloads in the period
+        self.assertEqual(len(response.context['big_mlo_slo_table']),len(big_table))
 
         
