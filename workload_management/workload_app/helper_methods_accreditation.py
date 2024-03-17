@@ -2,6 +2,13 @@ import datetime
 from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, MLOPerformanceMeasure, Module,ModuleLearningOutcome
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
+#Calculate a table with surveys for a given SLO within a given period for HTML visualization.
+#It returns a list of dictionaries, each intended as row in the table
+#Each dictionary is a survey, with info for
+# - dates of the survey (opening and closing)
+# - question targeting teh SLO
+# - % positive (if more than one question, the average score is taken)
+# -  number of questions 
 def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     slo_survey_measures = [] #A list of all the slo survey measures. This one is ready for HTML
@@ -29,6 +36,17 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
             slo_survey_measures.append(single_slo_survey_measure)
     return slo_survey_measures
 
+#Calculate a table with MLO survey measures for the given SLO and 
+#a given period between start_year and end_year
+#It returns a list of items, one per row of the table. 
+#The columns of the table are the years.
+#Each row has the module code at first position and then the strengths of the
+#the survey measures for each year. If more MLOs contribute to the SLo for that year,
+#the weighted average is computed, with the mapping strength as weight.
+#After all the module codes (one per table row, as mentioned above),
+#the method appends a final row to be displayed which contains "Weighted average" at the start, 
+#and then, for each year, the weighted average of all the MLO survey measures for that year, 
+# with, again, the mapping strength as the weight
 def CalculateTableForMLOSurveys(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     mlo_survey_measures = []
@@ -180,6 +198,7 @@ def DetermineIconBasedOnStrength(strength):
 #This function generates the big MLO-SLO table for HTML viewing.
 #Referred to a programme from start_year to end_year
 #Each row is a module code as long as it is offered in the given period.
+#Each column is a SLO for the given programme
 #It returns a list, where each item is inteded as a table row (a dictionary)
 # - module code (unique)
 # - SLO identifiers (the letters ssociated) - A list
@@ -223,11 +242,11 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
 #Referred to a single SLO from start_year to end_year
 #Each row is a module code as long as it is offered in the given period.
 #It returns a list, where each item is inteded as a table row (a dictionary)
+# one column for each year
 # - module code (unique)
-# - SLO identifiers (the letters ssociated) - A list
-# - The numerical mapping strengths - A list with same length as above
+# - Maximal numerical mapping strength of the MLO - A list with same length as above
 # - The icons to be visualized based on strengths - A list with same length as above
-# - The number of MLO that each moduel contributes to that SLO
+# - The number of MLO that each moduel contributes to the SLO that year
 def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     mlo_mappings_table_rows = []# A list of table rows with mappings
