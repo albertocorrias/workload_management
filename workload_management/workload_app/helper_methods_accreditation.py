@@ -178,7 +178,14 @@ def DetermineIconBasedOnStrength(strength):
     return icon
 
 #This function generates the big MLO-SLO table for HTML viewing.
+#Referred to a programme from start_year to end_year
 #Each row is a module code as long as it is offered in the given period.
+#It returns a list, where each item is inteded as a table row (a dictionary)
+# - module code (unique)
+# - SLO identifiers (the letters ssociated) - A list
+# - The numerical mapping strengths - A list with same length as above
+# - The icons to be visualized based on strengths - A list with same length as above
+# - The number of MLO that each moduel contributes to that SLO
 def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
     all_module_codes = []
     for mod in (Module.objects.filter(primary_programme__id = programme_id) |\
@@ -212,14 +219,21 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
         table_rows.append(table_row_item)
     return table_rows
 
+#This function generates the MLO-SLO table for HTML viewing
+#Referred to a single SLO from start_year to end_year
+#Each row is a module code as long as it is offered in the given period.
+#It returns a list, where each item is inteded as a table row (a dictionary)
+# - module code (unique)
+# - SLO identifiers (the letters ssociated) - A list
+# - The numerical mapping strengths - A list with same length as above
+# - The icons to be visualized based on strengths - A list with same length as above
+# - The number of MLO that each moduel contributes to that SLO
 def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     mlo_mappings_table_rows = []# A list of table rows with mappings
-
-
     all_mods_involved = []
     #We look at all the mapped measures
-    for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo):
+    for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo).order_by('mlo__module_code'):
         all_mods_involved.append(mlo_mapping.mlo.module_code)
     all_mods_involved = list(dict.fromkeys(all_mods_involved))#eliminate duplicates
 
@@ -241,7 +255,7 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
                         total_mapping_for_year += mapping.strength
                         if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
                             numerical_mapping_for_year = mapping.strength
-                            n_mlo_mapped_for_year += 1
+                        n_mlo_mapped_for_year += 1
             table_row_item['numerical_mappings'].append(numerical_mapping_for_year)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(numerical_mapping_for_year))
             table_row_item['n_mlo_mapped'].append(n_mlo_mapped_for_year)

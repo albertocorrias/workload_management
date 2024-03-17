@@ -8,7 +8,7 @@ from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROL
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
                                 ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
-                                                        CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength
+                                                        CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable
 from workload_app.helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
 class TestAccreditationReport(TestCase):
@@ -811,6 +811,136 @@ class TestAccreditationReport(TestCase):
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
         slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
         self.assertEqual(len(slo_3_survey_table),0)
+
+
+        #Now create the mappings
+        #It will look like this
+        #                           SLO 1               SLO 2           SLO 3
+        # MOD 1 - MLO 1                3                   3               1
+        # MOD 1 - MLO 2                2
+        # MOD 1 - MLO 3                1                                   2
+        # MOD 1 - MLO 4                                    2
+        #
+        # MOD 2 - MLO 1                2                   3
+        # MOD 2 - MLO 2                                                    1
+        # MOD 2 - MLO 3                3
+        #
+        # MOD 3 - MLO 1                2                                   3
+        # MOD 3 - MLO 2                                                    3
+        # MOD 3 - MLO 3 (UNMAPPED)
+        #
+        # MOD 4 - MLO 1                                    1
+
+
+        #Test the MLO-SLO mapping table for a single SLO
+        slo_1_table = CalculateMLOSLOMappingTable(slo_1.id, 2012,2015)
+        self.assertEqual(len(slo_1_table), 3) #3 mods mapped
+        self.assertEqual(slo_1_table[0]["module_code"], mod_code_1)
+        self.assertEqual(slo_1_table[1]["module_code"], mod_code_2)
+        self.assertEqual(slo_1_table[2]["module_code"], mod_code_3)
+        self.assertEqual(len(slo_1_table[0]["numerical_mappings"]), 4)
+        self.assertEqual(slo_1_table[0]["numerical_mappings"][0], 3)#SLO 1 - MOD 1 - 2012
+        self.assertEqual(slo_1_table[0]["numerical_mappings"][1], 3)#SLO 1 - MOD 1 - 2013
+        self.assertEqual(slo_1_table[0]["numerical_mappings"][2], 3)#SLO 1 - MOD 1 - 2014
+        self.assertEqual(slo_1_table[0]["numerical_mappings"][3], 3)#SLO 1 - MOD 1 - 2014
+
+        self.assertEqual(slo_1_table[0]["n_mlo_mapped"][0], 3)#SLO 1 - MOD 1 - 2012
+        self.assertEqual(slo_1_table[0]["n_mlo_mapped"][1], 3)#SLO 1 - MOD 1 - 2013
+        self.assertEqual(slo_1_table[0]["n_mlo_mapped"][2], 3)#SLO 1 - MOD 1 - 2014
+        self.assertEqual(slo_1_table[0]["n_mlo_mapped"][3], 3)#SLO 1 - MOD 1 - 2015
+
+        self.assertEqual(slo_1_table[1]["numerical_mappings"][0], 3)#SLO 1 - MOD 2 - 2012
+        self.assertEqual(slo_1_table[1]["numerical_mappings"][1], 3)#SLO 1 - MOD 2 - 2013
+        self.assertEqual(slo_1_table[1]["numerical_mappings"][2], 3)#SLO 1 - MOD 2 - 2014
+        self.assertEqual(slo_1_table[1]["numerical_mappings"][3], 3)#SLO 1 - MOD 2 - 2014
+
+        self.assertEqual(slo_1_table[1]["n_mlo_mapped"][0], 2)#SLO 1 - MOD 2 - 2012
+        self.assertEqual(slo_1_table[1]["n_mlo_mapped"][1], 2)#SLO 1 - MOD 2 - 2013
+        self.assertEqual(slo_1_table[1]["n_mlo_mapped"][2], 2)#SLO 1 - MOD 2 - 2014
+        self.assertEqual(slo_1_table[1]["n_mlo_mapped"][3], 2)#SLO 1 - MOD 2 - 2015
+
+        self.assertEqual(slo_1_table[2]["numerical_mappings"][0], 2)#SLO 1 - MOD 3 - 2012
+        self.assertEqual(slo_1_table[2]["numerical_mappings"][1], 2)#SLO 1 - MOD 3 - 2013
+        self.assertEqual(slo_1_table[2]["numerical_mappings"][2], 2)#SLO 1 - MOD 3 - 2014
+        self.assertEqual(slo_1_table[2]["numerical_mappings"][3], 2)#SLO 1 - MOD 3 - 2014
+
+        self.assertEqual(slo_1_table[2]["n_mlo_mapped"][0], 1)#SLO 1 - MOD 3 - 2012
+        self.assertEqual(slo_1_table[2]["n_mlo_mapped"][1], 1)#SLO 1 - MOD 3 - 2013
+        self.assertEqual(slo_1_table[2]["n_mlo_mapped"][2], 1)#SLO 1 - MOD 3 - 2014
+        self.assertEqual(slo_1_table[2]["n_mlo_mapped"][3], 1)#SLO 1 - MOD 3 - 2015
+
+
+        slo_2_table = CalculateMLOSLOMappingTable(slo_2.id, 2012,2015)
+        self.assertEqual(len(slo_2_table), 3) #3 mods mapped
+        self.assertEqual(slo_2_table[0]["module_code"], mod_code_1)
+        self.assertEqual(slo_2_table[1]["module_code"], mod_code_2)
+        self.assertEqual(slo_2_table[2]["module_code"], mod_code_4)
+        self.assertEqual(len(slo_2_table[0]["numerical_mappings"]), 4)
+        self.assertEqual(slo_2_table[0]["numerical_mappings"][0], 3)#SLO 2 - MOD 1 - 2012
+        self.assertEqual(slo_2_table[0]["numerical_mappings"][1], 3)#SLO 2 - MOD 1 - 2013
+        self.assertEqual(slo_2_table[0]["numerical_mappings"][2], 3)#SLO 2 - MOD 1 - 2014
+        self.assertEqual(slo_2_table[0]["numerical_mappings"][3], 3)#SLO 2 - MOD 1 - 2014
+
+        self.assertEqual(slo_2_table[0]["n_mlo_mapped"][0], 2)#SLO 2 - MOD 1 - 2012
+        self.assertEqual(slo_2_table[0]["n_mlo_mapped"][1], 2)#SLO 2 - MOD 1 - 2013
+        self.assertEqual(slo_2_table[0]["n_mlo_mapped"][2], 2)#SLO 2 - MOD 1 - 2014
+        self.assertEqual(slo_2_table[0]["n_mlo_mapped"][3], 2)#SLO 2 - MOD 1 - 2015
+
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][0], 3)#SLO 2 - MOD 2 - 2012
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][1], 3)#SLO 2 - MOD 2 - 2013
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][2], 3)#SLO 2 - MOD 2 - 2014
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][3], 3)#SLO 2 - MOD 2 - 2014
+
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][0], 1)#SLO 2 - MOD 2 - 2012
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 2 - 2013
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][2], 1)#SLO 2 - MOD 2 - 2014
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][3], 1)#SLO 2 - MOD 2 - 2015
+
+        self.assertEqual(slo_2_table[2]["numerical_mappings"][0], 1)#SLO 2 - MOD 4 - 2012
+        self.assertEqual(slo_2_table[2]["numerical_mappings"][1], 1)#SLO 2 - MOD 4 - 2013
+        self.assertEqual(slo_2_table[2]["numerical_mappings"][2], 1)#SLO 2 - MOD 4 - 2014
+        self.assertEqual(slo_2_table[2]["numerical_mappings"][3], 1)#SLO 2 - MOD 4 - 2014
+
+        self.assertEqual(slo_2_table[2]["n_mlo_mapped"][0], 1)#SLO 2 - MOD 4 - 2012
+        self.assertEqual(slo_2_table[2]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 4 - 2013
+        self.assertEqual(slo_2_table[2]["n_mlo_mapped"][2], 1)#SLO 2 - MOD 4 - 2014
+        self.assertEqual(slo_2_table[2]["n_mlo_mapped"][3], 1)#SLO 2 - MOD 4 - 2015
+
+        slo_3_table = CalculateMLOSLOMappingTable(slo_3.id, 2012,2015)
+        self.assertEqual(len(slo_3_table), 3) #3 mods mapped
+        self.assertEqual(slo_3_table[0]["module_code"], mod_code_1)
+        self.assertEqual(slo_3_table[1]["module_code"], mod_code_2)
+        self.assertEqual(slo_3_table[2]["module_code"], mod_code_3)
+        self.assertEqual(len(slo_3_table[0]["numerical_mappings"]), 4)
+        self.assertEqual(slo_3_table[0]["numerical_mappings"][0], 2)#SLO 3 - MOD 1 - 2012
+        self.assertEqual(slo_3_table[0]["numerical_mappings"][1], 2)#SLO 3 - MOD 1 - 2013
+        self.assertEqual(slo_3_table[0]["numerical_mappings"][2], 2)#SLO 3 - MOD 1 - 2014
+        self.assertEqual(slo_3_table[0]["numerical_mappings"][3], 2)#SLO 3 - MOD 1 - 2014
+
+        self.assertEqual(slo_3_table[0]["n_mlo_mapped"][0], 2)#SLO 3 - MOD 1 - 2012
+        self.assertEqual(slo_3_table[0]["n_mlo_mapped"][1], 2)#SLO 3 - MOD 1 - 2013
+        self.assertEqual(slo_3_table[0]["n_mlo_mapped"][2], 2)#SLO 3 - MOD 1 - 2014
+        self.assertEqual(slo_3_table[0]["n_mlo_mapped"][3], 2)#SLO 3 - MOD 1 - 2015
+
+        self.assertEqual(slo_3_table[1]["numerical_mappings"][0], 1)#SLO 3 - MOD 2 - 2012
+        self.assertEqual(slo_3_table[1]["numerical_mappings"][1], 1)#SLO 3 - MOD 2 - 2013
+        self.assertEqual(slo_3_table[1]["numerical_mappings"][2], 1)#SLO 3 - MOD 2 - 2014
+        self.assertEqual(slo_3_table[1]["numerical_mappings"][3], 1)#SLO 3 - MOD 2 - 2014
+
+        self.assertEqual(slo_3_table[1]["n_mlo_mapped"][0], 1)#SLO 3 - MOD 2 - 2012
+        self.assertEqual(slo_3_table[1]["n_mlo_mapped"][1], 1)#SLO 3 - MOD 2 - 2012
+        self.assertEqual(slo_3_table[1]["n_mlo_mapped"][2], 1)#SLO 3 - MOD 2 - 2012
+        self.assertEqual(slo_3_table[1]["n_mlo_mapped"][3], 1)#SLO 3 - MOD 2 - 2012
+
+        self.assertEqual(slo_3_table[2]["numerical_mappings"][0], 3)#SLO 3 - MOD 4 - 2012
+        self.assertEqual(slo_3_table[2]["numerical_mappings"][1], 3)#SLO 3 - MOD 4 - 2013
+        self.assertEqual(slo_3_table[2]["numerical_mappings"][2], 3)#SLO 3 - MOD 4 - 2014
+        self.assertEqual(slo_3_table[2]["numerical_mappings"][3], 3)#SLO 3 - MOD 4 - 2015
+
+        self.assertEqual(slo_3_table[2]["n_mlo_mapped"][0], 2)#SLO 3 - MOD 3 - 2012
+        self.assertEqual(slo_3_table[2]["n_mlo_mapped"][1], 2)#SLO 3 - MOD 3 - 2013
+        self.assertEqual(slo_3_table[2]["n_mlo_mapped"][2], 2)#SLO 3 - MOD 3 - 2014
+        self.assertEqual(slo_3_table[2]["n_mlo_mapped"][3], 2)#SLO 3 - MOD 3 - 2015
 
         #Test the big slo mlo table
         big_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021)
