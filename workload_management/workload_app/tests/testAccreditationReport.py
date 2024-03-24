@@ -812,26 +812,6 @@ class TestAccreditationReport(TestCase):
         slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
         self.assertEqual(len(slo_3_survey_table),0)
 
-
-        #Now create the mappings
-        #It will look like this
-        #                           SLO 1               SLO 2           SLO 3
-        # MOD 1 - MLO 1                3                   3               1
-        # MOD 1 - MLO 2                2
-        # MOD 1 - MLO 3                1                                   2
-        # MOD 1 - MLO 4                                    2
-        #
-        # MOD 2 - MLO 1                2                   3
-        # MOD 2 - MLO 2                                                    1
-        # MOD 2 - MLO 3                3
-        #
-        # MOD 3 - MLO 1                2                                   3
-        # MOD 3 - MLO 2                                                    3
-        # MOD 3 - MLO 3 (UNMAPPED)
-        #
-        # MOD 4 - MLO 1                                    1
-
-
         #Test the MLO-SLO mapping table for a single SLO
         slo_1_table = CalculateMLOSLOMappingTable(slo_1.id, 2012,2015)
         self.assertEqual(len(slo_1_table), 3) #3 mods mapped

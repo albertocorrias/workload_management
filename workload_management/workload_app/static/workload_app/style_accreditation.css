@@ -20,3 +20,7 @@ div.survey_table_results_container{
 div.chart_results_container{
     width: 45%;
 }
+
+div.slo_tables_container{
+    min-width: 0;
+}

@@ -1,0 +1,40 @@
+div.main_section {
+    padding: 1vmin;
+  }
+
+ div.chart-container{
+    position: relative;
+    width: 50%;    
+    margin:auto;
+}
+
+div.summary-container{
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-gap: 1vmin;
+}
+
+ul.teaching_assignment_radio_buttons_style, ul.teaching_assignment_counted_style{ 
+    list-style-type: none;
+    list-style-image: none;
+    display: inline;
+}
+
+ul.teaching_assignment_radio_buttons_style > li, ul.teaching_assignment_counted_style > li{ 
+    display: inline;
+    padding-left: 5vmin;
+    padding-right: 5vmin;
+    margin:auto;
+}
+
+/*Used for the modal of the edit lecturer and edit module*/
+p.header_of_edit_form{
+    font-weight: bold;
+    color: brown;
+}
+
+div.not_counted_assignments {
+    display: inline; 
+    color: gray;
+    font-style: italic;
+  }

@@ -27,7 +27,6 @@ div.footer{
     padding:auto;
     text-align: center;
     color:beige;
-    
 }
 
 div.login_bar{
@@ -51,34 +50,6 @@ div.buttons_container {
   padding-bottom: 10px;
 }
 
-div.main_section {
-  padding: 1vmin;
-}
-
-div.chart-container{
-    position: relative;
-    width: 50%;    
-    margin:auto;
-}
-
-div.summary-container{
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-gap: 1vmin;
-}
-
-div.side_tables_container{
-    display: flex;
-    /*width:25%;*/
-    margin-left:-5px;
-    margin-right:-5px;
-    /*grid-template-columns: auto auto;*/
-}
-div.single_side_table_container{
-    flex: 40%;
-    padding: 5px;
-}
-
 table.workload_tables > tbody > tr > td, 
 table.workload_tables > thead > tr > th {
     text-align: center;
@@ -94,37 +65,8 @@ table.workload_tables > thead > tr > th {
     background-color: #003D7C;
 }
 
-div.add_workload_button_container{
-    margin: auto;
-    text-align: center;
-}
 
-div.workload_index_table {
-    width: 80%;
-    margin: auto;
-}
-
-div.settings_table_container{
-    display: grid;
-    grid-template-columns: auto auto;
-    grid-auto-rows: minmax(min-content, max-content);
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 3vmin;
-}
-
-div.settings_table_item{
-    width: 75%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-table.settings_table{
-    margin:auto;
-    width:100%
-}
-
+/*To be moved to department page style*/
 table.settings_tables > thead > tr > th {
     background-color: #617162;
     text-align: center;
@@ -134,44 +76,7 @@ table.settings_tables > tbody> tr > td {
     text-align: center;
     vertical-align: middle;
 }
-
-table.table_of_lists {
-	/*float: left;*/
-	max-width: 45%;
-	margin-left: 15px;
-}
-
-table.table_of_lists > thead > tr > th {
-    background-color: #617162;
-    text-align: center;
-}
-
-table.table_of_lists > tbody> tr > td {
-    text-align: center;
-    vertical-align: middle;
-}
-
-
-
-ul.teaching_assignment_radio_buttons_style, ul.teaching_assignment_counted_style{ 
-    list-style-type: none;
-    list-style-image: none;
-    display: inline;
-}
-
-ul.teaching_assignment_radio_buttons_style > li, ul.teaching_assignment_counted_style > li{ 
-    display: inline;
-    padding-left: 5vmin;
-    padding-right: 5vmin;
-    margin:auto;
-}
-
-/*Used for the modal of the edit lecturer and edit module*/
-p.header_of_edit_form{
-    font-weight: bold;
-    color: brown;
-
-}
+/*************************/
 
 div.table_flex_container {
     display: flex;
@@ -184,8 +89,3 @@ div.table_flex_container > div {
     max-width:40%;
   }
 
-  div.not_counted_assignments {
-    display: inline; 
-    color: gray;
-    font-style: italic;
-  }
