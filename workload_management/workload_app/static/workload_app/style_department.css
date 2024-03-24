@@ -1,0 +1,29 @@
+div.table-container{
+    width: 50%;
+}
+
+div.overall-department-report-container{
+    display: block;
+    margin: auto;
+    width:100%;
+    margin-bottom: 45vmin;
+}
+
+
+div.programme-divider-title{
+    display: block;
+    width: 100%; 
+    color: white; 
+    padding: 0.5vmin;
+    font-family:'Montserrat', sans-serif;
+    font-size: large;
+}
+table.settings_tables > thead > tr > th {
+    background-color: #617162;
+    text-align: center;
+}
+
+table.settings_tables > tbody> tr > td {
+    text-align: center;
+    vertical-align: middle;
+}
