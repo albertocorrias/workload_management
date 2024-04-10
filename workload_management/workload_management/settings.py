@@ -17,6 +17,17 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Figure out the git branch we are in, and, based on that, the DB to use
+GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+head_file = GIT_ROOT_DIR / ".git" / "HEAD"
+branch_name = ''
+with head_file.open("r") as f: content = f.read().splitlines()
+for line in content:
+    if line[0:4] == "ref:":
+        branch_name = line.partition("refs/heads/")[2]
+db_to_use = 'db.sqlite3'
+if ('devel' in str(branch_name)):
+    db_to_use = 'db_devel.sqlite3'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -79,7 +90,7 @@ WSGI_APPLICATION = 'workload_management.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(BASE_DIR / 'db.sqlite3'),
+        'NAME': str(BASE_DIR / db_to_use),
     }
 }
 
