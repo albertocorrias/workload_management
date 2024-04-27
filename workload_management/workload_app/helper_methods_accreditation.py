@@ -197,7 +197,9 @@ def DetermineIconBasedOnStrength(strength):
 
 #This function generates the big MLO-SLO table for HTML viewing.
 #Referred to a programme from start_year to end_year
-#Each row is a module code as long as it is offered in the given period.
+#Each row is a module code as long as 
+#  1) it is offered in the given period
+# and 2) it has at least one MLO mapped to one SLO
 #Each column is a SLO for the given programme
 #It returns a list, where each item is inteded as a table row (a dictionary)
 # - module code (unique)
@@ -220,23 +222,51 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
             'module_code' : mod_code,
             'slo_identifiers' : [],
             'numerical_mappings' : [],#A list as long as the SLOs of the programme
+            'summation_strengths' : [],#A list of the sum of alls trengths of all MLO mapped to each SLO
             'icons' : [],#Same as above, but icons instead
-            'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO opf this mod were mapped?
+            'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO of this mod were mapped?
         }
+        worth_appending = False #this will be switched to true as long as at least one mapping is found to ANY SLO
         for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
-            overall_strength = 0
+            overall_strength = 0 #Thisw ill store the maximal strength (used for half-moon/full-moon)
+            summation_strength = 0 #Thisw ill store the total strength, adding up all the strengths of all MLOs
             n_mlo_mapped = 0
             for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
                 for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
                     if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
                         overall_strength = mapping.strength
+                    summation_strength = summation_strength + mapping.strength #add anyway for the grand total
                     n_mlo_mapped = n_mlo_mapped + 1
             table_row_item['slo_identifiers'].append(slo.letter_associated)
             table_row_item['numerical_mappings'].append(overall_strength)
+            table_row_item['summation_strengths'].append(summation_strength)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))
             table_row_item['n_mlo_mapped'].append(n_mlo_mapped)
-        table_rows.append(table_row_item)
-    return table_rows
+            if (overall_strength > 0): #if there is any mapping, switch it true, this will be displayed
+                worth_appending = True
+        
+        if (worth_appending):        
+            table_rows.append(table_row_item)
+    #Done with the modules. Now compute the totals
+    slo_index = 0
+    totals_strengths_row = []
+    totals_n_mods_row = []
+    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
+        total_mapping_strength = 0
+        total_n_mlo_mapped = 0
+        for row in table_rows:
+            total_n_mlo_mapped = total_n_mlo_mapped + row['n_mlo_mapped'][slo_index]
+            total_mapping_strength = total_mapping_strength + row['summation_strengths'][slo_index]
+        slo_index = slo_index +1
+        totals_strengths_row.append(total_mapping_strength)
+        totals_n_mods_row.append(total_n_mlo_mapped)
+
+    ret = {
+        'main_body_table' : table_rows,
+        'totals_strengths_row' : totals_strengths_row,
+        'totals_n_mlo_row' :totals_n_mods_row
+    }
+    return ret
 
 #This function generates the MLO-SLO table for HTML viewing
 #Referred to a single SLO from start_year to end_year

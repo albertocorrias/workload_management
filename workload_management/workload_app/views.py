@@ -1578,8 +1578,6 @@ def accreditation_report(request,programme_id, start_year,end_year):
         mlo_direct_measures_table_rows = CalculateTableForMLODirectMeasures(slo.id,start_year,end_year)
         mlo_slo_mapping_table_rows = CalculateMLOSLOMappingTable(slo.id,start_year,end_year)
         
-
-
         years_for_tables = []
         for year in range(start_year, end_year+1):
             years_for_tables.append(year)
@@ -1601,8 +1599,11 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'start_year' : start_year,
         'end_year' : end_year,
         'slo_measures' : slo_measures, 
-        'big_mlo_slo_table' : big_mlo_slo_table,
-        'number_of_slo' : len(slo_measures)+1
+        'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
+        'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
+        'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
+        'number_of_slo_plus_one' : len(slo_measures)+1,
+        'number_of_slo' : len(slo_measures),
     }
     return HttpResponse(template.render(context, request))
 def survey_results(request,survey_id):
