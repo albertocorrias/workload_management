@@ -1572,6 +1572,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
     big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
 
     slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
+    slo_identifiers = []
     for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
         slo_survey_measures = CalculateTableForSLOSurveys(slo.id,start_year,end_year) #A list of all the slo survey measures. This one is ready for HTML
         mlo_slo_survey_table_rows = CalculateTableForMLOSurveys(slo.id,start_year,end_year)#A list of measurements for this SLO obtained via MLO survey
@@ -1592,6 +1593,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
             'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows
         }
         slo_measures.append(slo_info)
+        slo_identifiers.append(slo.slo_short_description)
     template = loader.get_template('workload_app/accreditation_report.html')
     context = {
         'programme_id' : programme_id,
@@ -1604,6 +1606,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
         'number_of_slo_plus_one' : len(slo_measures)+1,
         'number_of_slo' : len(slo_measures),
+        'slo_identifiers' : slo_identifiers
     }
     return HttpResponse(template.render(context, request))
 def survey_results(request,survey_id):

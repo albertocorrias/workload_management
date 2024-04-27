@@ -25,3 +25,7 @@ div.slo_tables_container{
     min-width: 0;
 }
 
+div.report_overall_summary_container{
+    width:100%;
+    display:flex;
+}
