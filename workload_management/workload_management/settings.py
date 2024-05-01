@@ -28,6 +28,7 @@ for line in content:
 db_to_use = 'db.sqlite3'
 if ('devel' in str(branch_name)):
     db_to_use = 'db_devel.sqlite3'
+print('Using database' + db_to_use)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/

@@ -25,7 +25,36 @@ div.slo_tables_container{
     min-width: 0;
 }
 
-div.report_overall_summary_container{
+div.accr_report_overall_summary{
+    display: flex;
+    justify-content: space-between;/*This, tiogether with 48% below allows for spacing*/
+}
+
+div.accr_report_overall_summary div.accr_report_overall_summary_item
+{
+    width: 48%;
+}
+
+div.slo_information{
+    display:block;
     width:100%;
+}
+
+div.slo_summary{
+    display: flex;
+    justify-content: space-between;/*This, tiogether with 48% below allows for spacing*/
+    margin-bottom: 40px;
+}
+
+div.slo_summary div.slo_summary_item{
+    width: 48%;
+}
+
+div.slo_measures_container{
     display:flex;
+    justify-content:  space-between;
+}
+
+div.slo_measures_container div.slo_measures_item{
+    width: 32%;
 }

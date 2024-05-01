@@ -5,17 +5,17 @@ var n_mlo_results = JSON.parse(document.getElementById('big_mlo_slo_table_totals
 var slo_labels = JSON.parse(document.getElementById('slo_identifiers').textContent);
 
 var bar_background_colors = ['rgba(0, 0, 71, 0.7)',
-                             'rgba(0, 0, 71, 0.6)',
-                             'rgba(0, 0, 71, 0.5)',
-                             'rgba(0, 0, 71, 0.4)',
-                             'rgba(0, 0, 71, 0.3)',
-                             'rgba(0, 0, 71, 0.2)', ]
-var bar_background_colors_2 = ['rgba(0, 60, 71, 0.7)',
-                             'rgba(10, 60, 71, 0.6)',
-                             'rgba(10, 60, 71, 0.5)',
-                             'rgba(10, 60, 71, 0.4)',
-                             'rgba(10, 60, 71, 0.3)',
-                             'rgba(10, 60, 71, 0.2)', ]
+                             'rgba(0, 0, 71, 0.7)',
+                             'rgba(0, 0, 71, 0.7)',
+                             'rgba(0, 0, 71, 0.7)',
+                             'rgba(0, 0, 71, 0.7)',
+                             'rgba(0, 0, 71, 0.7)', ]
+var bar_background_colors_2 = ['rgba(91, 60, 71, 0.7)',
+                             'rgba(91, 60, 71, 0.7)',
+                             'rgba(91, 60, 71, 0.7)',
+                             'rgba(91, 60, 71, 0.7)',
+                             'rgba(91, 60, 71, 0.7)',
+                             'rgba(91, 60, 71, 0.7)', ]
 const data = {
     labels: slo_labels,
     
@@ -39,12 +39,25 @@ const config = {
     type: 'bar',
     data: data,
     options: {
+
     scales: {
+        x:{
+            title:{
+                text: 'SLO',
+                display: true,
+                font: {size: 17}
+            }
+        },
         y: {
             beginAtZero: true,
             title:{
                 display: true,
-                text:'strength',
+                text:'Overall mapping strength',
+                color:bar_background_colors[0],
+                font: {size: 17}
+            },
+            ticks:{
+                color:bar_background_colors[0],
             },
             position: 'left',
         },
@@ -52,9 +65,14 @@ const config = {
             beginAtZero: true,
             title:{
                 display: true,
-                text:'# MLOs',
+                text:'Overall # MLOs',
+                color:bar_background_colors_2[0],
+                font: {size: 17}
             },
             position: 'right',
+            ticks:{
+                color:bar_background_colors_2[0],
+            },
             grid: {
                 drawOnChartArea: false, // only want the grid lines for one axis to show up
               },
@@ -63,7 +81,7 @@ const config = {
     plugins: {
         legend: {
             display: true,
-        }
+        },
     }
     },
 };
