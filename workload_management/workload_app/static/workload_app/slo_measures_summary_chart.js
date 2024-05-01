@@ -13,21 +13,21 @@ for (let i = 0; i < all_slo_IDs.length; i++) {
     const data = {
       labels: label_years,
       datasets: [{
-        label: 'MLO direct emasures',
+        label: 'MLO direct measures',
         data: mlo_direct_measures,
         fill: false,
         borderColor: 'rgba(91, 160, 0, 0.7)',
         backgroundColor: 'rgba(91, 160, 0, 0.7)'
       },
       {
-        label: 'MLO survey emasures',
+        label: 'MLO survey measures',
         data: mlo_survey_measures,
         fill: false,
         borderColor: 'rgba(151, 60, 71, 0.7)',
         backgroundColor: 'rgba(151, 60, 71, 0.7)'
       },
       {
-        label: 'SLO survey emasures',
+        label: 'SLO survey measures',
         data: slo_survey_measures,
         fill: false,
         borderColor: 'rgba(11, 60, 171, 0.7)',
