@@ -8,7 +8,9 @@ from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROL
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
                                 ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
-                                                        CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable
+                                                        CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
+                                                        CalculateAllInforAboutOneSLO
+
 from workload_app.helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
 class TestAccreditationReport(TestCase):
@@ -199,6 +201,25 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_3[1][2], 75.0)#75 measure in second academic year, total is 75
         self.assertEqual(table_slo_3[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_3[1][4], 0)#no measure in last academic year -> totals row is zero
+
+        #Call the colelctive method - test the data for plotting
+        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),4)#years
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),4)#direct emasures
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][2]),4)#mlo surveys
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][0],acad_year_1.start_year)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][1],acad_year_1.start_year+1)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][2],acad_year_1.start_year+2)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][3],acad_year_1.start_year+3)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][0],0)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][1][1],75.0)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][2],0)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][3],0)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][0],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][1],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][2],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][3],0)#NOT yet any mlo survey
 
         #Now add another measure for MLO 2, still module 1. This is mapped to SLO 1 (strength 2). So only the table for SLO1 should change - SAME academic year
         measure_2 = MLOPerformanceMeasure.objects.create(description = 'test 2', academic_year = acad_year_2, associated_mlo = mlo_1_2,percentage_score=45)
@@ -468,6 +489,25 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_3[2][4], 0)#no measure in last academic year -> totals row is zero
 
+        #Call the colelctive method - test the data for plotting (SLO 3, years andd direct measures)
+        all_info_slo_3 = CalculateAllInforAboutOneSLO(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year)
+        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][0]),4)#years
+        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][1]),4)#direct measures
+        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][2]),4)#MLO surveys
+        self.assertAlmostEqual(all_info_slo_3["slo_measures_plot_data"][0][0],acad_year_1.start_year)
+        self.assertAlmostEqual(all_info_slo_3["slo_measures_plot_data"][0][1],acad_year_1.start_year+1)
+        self.assertAlmostEqual(all_info_slo_3["slo_measures_plot_data"][0][2],acad_year_1.start_year+2)
+        self.assertAlmostEqual(all_info_slo_3["slo_measures_plot_data"][0][3],acad_year_1.start_year+3)
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][1][0],0)
+        self.assertAlmostEqual(all_info_slo_3["slo_measures_plot_data"][1][1],(75.0*1 + 15*3)/(1.0 + 3.0))
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][1][2],0)
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][1][3],0)
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][2][0],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][2][1],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][2][2],0)#NOT yet any mlo survey
+        self.assertEqual(all_info_slo_3["slo_measures_plot_data"][2][3],0)#NOT yet any mlo survey
+
         #Now ad a measure with secondary and tertiary target        
         measure_6 = MLOPerformanceMeasure.objects.create(description = 'test 6', academic_year = acad_year_4, associated_mlo = mlo_1_2,\
                                                         secondary_associated_mlo = mlo_1_3,
@@ -576,6 +616,19 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
         self.assertAlmostEqual(mlo_table_slo_1[1][1],100*CalulatePositiveResponsesFractionForQuestion(response_1.id))#MLO 1of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2021
+        
+        #call the collective method - test the structures for plotting
+        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),2)#years
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),2)#direct measures
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][2]),2)#mlo surveys
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][0],2020)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][1],2021)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][0],0)
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][1],0)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][2][0],100*CalulatePositiveResponsesFractionForQuestion(response_1.id))#
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][1],0)#NO mlo survey in 2021
 
         #Generate the table for SLO 2 - at this stage this is the same as the one for SLO 1, with just one measure
         mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
