@@ -7,6 +7,7 @@ for (let i = 0; i < all_slo_IDs.length; i++) {
     let index = String(all_slo_IDs[i]);
     var mlo_direct_measures = all_slo_plot_data[i][1];
     var mlo_survey_measures = all_slo_plot_data[i][2];
+    var slo_survey_measures = all_slo_plot_data[i][3];
     var label_years = all_slo_plot_data[i][0];
 
     const data = {
@@ -21,8 +22,16 @@ for (let i = 0; i < all_slo_IDs.length; i++) {
       {
         label: 'MLO survey emasures',
         data: mlo_survey_measures,
+        fill: false,
         borderColor: 'rgba(151, 60, 71, 0.7)',
         backgroundColor: 'rgba(151, 60, 71, 0.7)'
+      },
+      {
+        label: 'SLO survey emasures',
+        data: slo_survey_measures,
+        fill: false,
+        borderColor: 'rgba(11, 60, 171, 0.7)',
+        backgroundColor: 'rgba(11, 60, 171, 0.7)'
       }
     ]
     };

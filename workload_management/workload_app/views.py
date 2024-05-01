@@ -1604,7 +1604,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
         slo_identifiers.append(slo.slo_short_description)
         all_slo_data_for_plot.append(slo_measures_data_plot)
         all_slo_ids.append(slo.id)
-    #print(all_slo_data_for_plot)
+    
     template = loader.get_template('workload_app/accreditation_report.html')
     context = {
         'programme_id' : programme_id,
