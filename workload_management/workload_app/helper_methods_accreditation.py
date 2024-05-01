@@ -251,19 +251,34 @@ def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year):
     
     #Calculate data for plot
     years =[]
+    slo_survey_plot = []
     for year in range(start_year,end_year+1):
         years.append(year)
+        slo_survey_plot.append(0)
     mlo_direct_plot = copy.deepcopy(ret["mlo_direct_measures_for_slo"][-1])
     mlo_survey_plot = copy.deepcopy(ret["mlo_surveys_for_slo"][-1])
 
     del mlo_direct_plot[0] #remove firts element, it is a lebl "weighted average"
     del mlo_survey_plot[0] #remove firts element, it is a lebl "weighted average"
 
-    #indices: 0: years, 1:direct emasures, 2: survey measures
+    all_slo_surveys = copy.deepcopy(ret["slo_surveys"])
+    for srv in all_slo_surveys:
+        for i in range (0,len(years)):
+            n_for_year = 0
+            if (srv["date"].year == years[i]):
+                slo_survey_plot[i] += srv["percent_positive"]
+                n_for_year +=1
+            #calculate average for year
+            if (n_for_year > 0):
+                slo_survey_plot[i] = slo_survey_plot[i]/n_for_year
+                
+
+    #indices: 0: years, 1:direct emasures, 2: mlo survey measures, 3L slo survey measures
     ret["slo_measures_plot_data"] = []
     ret["slo_measures_plot_data"].append(years)
     ret["slo_measures_plot_data"].append(mlo_direct_plot)
     ret["slo_measures_plot_data"].append(mlo_survey_plot)
+    ret["slo_measures_plot_data"].append(slo_survey_plot)
 
     return ret
 

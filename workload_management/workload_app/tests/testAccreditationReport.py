@@ -204,7 +204,7 @@ class TestAccreditationReport(TestCase):
 
         #Call the colelctive method - test the data for plotting
         all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year)
-        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),4)#years
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),4)#direct emasures
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][2]),4)#mlo surveys
@@ -491,7 +491,7 @@ class TestAccreditationReport(TestCase):
 
         #Call the colelctive method - test the data for plotting (SLO 3, years andd direct measures)
         all_info_slo_3 = CalculateAllInforAboutOneSLO(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year)
-        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"]),4)
         self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][0]),4)#years
         self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][1]),4)#direct measures
         self.assertEqual(len(all_info_slo_3["slo_measures_plot_data"][2]),4)#MLO surveys
@@ -619,7 +619,7 @@ class TestAccreditationReport(TestCase):
         
         #call the collective method - test the structures for plotting
         all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
-        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),3)
+        self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),2)#years
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),2)#direct measures
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][2]),2)#mlo surveys
