@@ -61,12 +61,12 @@ NUS_SLO_SURVEY_LABELS = ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Stro
 
 def CalculateNumHoursBasedOnWeeklyInfo(weekly_lect_hrs, weekly_tut_hrs, weeks_assigned, num_tut_grps):
 
-    if (weekly_lect_hrs <= 0) and (weekly_lect_hrs <= 0):
+    if (weekly_lect_hrs <= 0) and (weekly_tut_hrs <= 0):
         return 0
     if weeks_assigned<=0:
         return 0;
 
-    return int(weekly_lect_hrs*weeks_assigned + weekly_tut_hrs*weeks_assigned + (num_tut_grps - 1)*(weeks_assigned)*REPEATED_TUTORIAL_MULTIPLIER)
+    return int(weekly_lect_hrs*weeks_assigned + weekly_tut_hrs*weeks_assigned + (num_tut_grps - 1)*(weeks_assigned*weekly_tut_hrs)*REPEATED_TUTORIAL_MULTIPLIER)
 
 #This is a quick method to retrun a string with a HEX color code for the
 # color of the "balance" column in the HTML table.
