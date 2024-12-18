@@ -92,7 +92,8 @@
                     </td>
                     <td> 
                       {% for wl_id in year.draft_wl_ids %}
-                      {{ wl_id }}
+                      <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-secondary" role="button">
+                        <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View draft</a>  
                       {% endfor %}
                     </td>
                   </tr>

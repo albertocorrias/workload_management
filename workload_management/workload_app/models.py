@@ -286,7 +286,9 @@ class Module(models.Model):
     total_hours = models.PositiveIntegerField(null=True);
     #The type of module
     module_type = models.ForeignKey(ModuleType, on_delete=models.PROTECT, null=True)
-    
+    #Whether it is compulsory in primary programme
+    compulsory_in_primary_programme = models.BooleanField(default=False)
+
     #The semester in which it is offered
     semester_offered = models.CharField(max_length=300, choices=SEMESTER_OFFERED,default=UNASSIGNED)
     #The number of student groups
