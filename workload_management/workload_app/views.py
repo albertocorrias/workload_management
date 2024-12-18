@@ -979,7 +979,7 @@ def department(request,department_id):
             dept_name = dept_obj.department_name
             prog_form = ProgrammeOfferedForm(initial={'fresh_record': True})
             sub_prog_form = SubProgrammeOfferedForm(initial={'fresh_record': True})
-            prog_offered = [];
+            prog_offered = []
             for prg in ProgrammeOffered.objects.filter(primary_dept=department_id):
                 item = {
                     "programme_name" : prg.programme_name,
@@ -1003,6 +1003,24 @@ def department(request,department_id):
 
             remove_prog_form = RemoveProgrammeForm(department_id = department_id)
             remove_sub_prog_form = RemoveSubProgrammeForm(department_id = department_id)
+
+            #Table with all the workloads for this Department
+            dept_wls = []
+            this_year = datetime.datetime.now().year
+            for start_year_dept in range(this_year-6,this_year+5):
+                item = {
+                    "academic_year" : str(start_year_dept)+'/'+str(start_year_dept+1),
+                    "official_wl_ids" : [],
+                    "draft_wl_ids" : [],
+                }
+                for wl in WorkloadScenario.objects.filter(dept = department_id).filter(academic_year__start_year = start_year_dept):
+                    if (wl.status==WorkloadScenario.OFFICIAL):
+                        item["official_wl_ids"].append(wl.id)
+                    else:
+                        item["draft_wl_ids"].append(wl.id)
+                dept_wls.append(item)
+
+            #Generate the report for the year
             if (start_year == 0 ):
                 acad_year_form = SelectAcademicYearForm()
             else:
@@ -1013,7 +1031,7 @@ def department(request,department_id):
             academic_year = ''
             tables_for_year=[]
             workload_there=False
-            no_show_message = "" #This is the message to be displayed if there are not tables to be shown for one reason or another.
+            no_show_message = "" #This is the message to be displayed if there are no tables to be shown for one reason or another.
             if (scen_qs.count()==1):         
                 workload_there=True
                 scen  = scen_qs.get()
@@ -1055,6 +1073,7 @@ def department(request,department_id):
                 'dept_name' : dept_name,
                 'acad_year_form' : acad_year_form,
                 'prog_offered' : prog_offered, #This is a list of dictionary items
+                'dept_wls' : dept_wls,#This is the table with workloads from recent yearss
                 'prog_form' : prog_form,
                 'sub_prog_form' : sub_prog_form,
                 'remove_prog_form' : remove_prog_form,

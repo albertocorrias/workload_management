@@ -1,3 +1,4 @@
+import datetime
 from django.test import TestCase
 from django.urls import reverse
 from django.test.client import Client
@@ -242,6 +243,7 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.filter(department_name = new_name_tried).count(), 0)
 
     def testDepartmentSummaryView(self):
+        this_year = datetime.datetime.now().year
         #Create a Dept affiliated to a faculty
         dept_name = 'test_dept'
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
@@ -256,7 +258,7 @@ class TestDepartments(TestCase):
         self.assertEqual(ProgrammeOffered.objects.all().count(), 2)
 
         #Create an academic year
-        test_acad_year = Academicyear.objects.create(start_year = 2023)
+        test_acad_year = Academicyear.objects.create(start_year = this_year)
         #Create a Workload scenario
         test_scenario_name = "test_scen"
         wl_scen = WorkloadScenario.objects.create(label = test_scenario_name, dept = test_dept, academic_year = test_acad_year,\
@@ -304,11 +306,25 @@ class TestDepartments(TestCase):
         self.assertEqual(response.status_code, 302) #Re-direct
         #Now the Get
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': test_dept.id}))
+        #Programmes offered
         self.assertEqual(response.context["workload_there"], True)
         self.assertEqual(len(response.context["prog_offered"]), 2)
         self.assertEqual(response.context["prog_offered"][0]["programme_id"], ug_prog.id)
         self.assertEqual(response.context["prog_offered"][1]["programme_id"], pg_prog.id)
         self.assertEqual(len(response.context["tables_for_year"]), 2)#Note: content of the table is tested under helper methods
         self.assertEqual(response.context["no_show_message"], "")
+        #Department workloads
+        self.assertEqual(len(response.context["dept_wls"]), 11)
+        first_year = this_year - 6
+        self.assertEqual(response.context["dept_wls"][0]["academic_year"], str(first_year)+'/'+str(first_year+1))
+        self.assertEqual(response.context["dept_wls"][6]["academic_year"], str(this_year)+'/'+str(this_year+1))
+        self.assertEqual(len(response.context["dept_wls"][6]["official_wl_ids"]),1)#One official wl in this year
+        self.assertEqual(len(response.context["dept_wls"][6]["draft_wl_ids"]),0)#no unofficial ones
+        self.assertEqual(response.context["dept_wls"][6]["official_wl_ids"][0],wl_scen.id)#
+
+        #No wl the year after
+        self.assertEqual(len(response.context["dept_wls"][7]["official_wl_ids"]),0)#No official wls
+        self.assertEqual(len(response.context["dept_wls"][7]["draft_wl_ids"]),0)#no unofficial ones
+        
 
         

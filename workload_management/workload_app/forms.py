@@ -758,7 +758,7 @@ class SelectFacultyForReport(forms.Form):
 
 class SelectAcademicYearForm(forms.Form):
     this_year = datetime.datetime.now().year
-    select_academic_year = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gt=(this_year-5)).filter(start_year__lt=(this_year+5)))
+    select_academic_year = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
 
 class SelectAccreditationReportForm(forms.Form):
     this_year = datetime.datetime.now().year

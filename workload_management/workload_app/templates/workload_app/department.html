@@ -68,7 +68,38 @@
                 </tr>
               </tbody>
               </table>
-            </div>
+
+              <table class="settings_tables table table-bordered">
+                <thead>
+                <tr>
+                  <th colspan="3">Teaching workloads</th>
+                </tr>
+                <tr>
+                  <th>Year</th>
+                  <th> Official workload</th>
+                  <th> Draft workloads </th>
+                </tr>
+                </thead>
+                <tbody>
+                  {% for year in dept_wls %}
+                  <tr>
+                    <td> {{ year.academic_year }}</td>
+                    <td> 
+                      {% for wl_id in year.official_wl_ids %}
+                      <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-success" role="button">
+                        <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View workload</a>  
+                      {% endfor %}
+                    </td>
+                    <td> 
+                      {% for wl_id in year.draft_wl_ids %}
+                      {{ wl_id }}
+                      {% endfor %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+        </div>
         <hr>
         <div class = "report-select-form-container">
           <h2>Prgramme Analysis by academic years</h2>
