@@ -19,88 +19,91 @@
         Department of {{ dept_name }}
         <br>
         <br>
-        <div class="table-container">
-            <table class="settings_tables table table-bordered">
-              <thead>
-              <tr>
-                <th colspan="3">Programmes offered</th>
-              </tr>
-              <tr>
-                <th></th>
-                <th> Programme name</th>
-                <th> Sub-programme name</th>
-              </tr>
-              </thead>
-              <tbody>
-                {% for prog in prog_offered %}
-                  <tr>
-                    <td rowspan="{{ prog.n_subprogrammes_rowspan }}"><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#Edit{{ prog.programme_id }}DetailsModal">
-                      <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"></td>
-                    <td rowspan="{{ prog.n_subprogrammes_rowspan }}" style="text-align: left; vertical-align: middle;">{{ prog.programme_name }}
-                      <br><a href="/workload_app/accreditation/{{ prog.programme_id }}" class="btn btn-outline-success" role="button">
-                        <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View accreditation</a>  
-                    </td>
-                    {% if prog.n_subprogrammes > 0 %}
-                      <td> {{ prog.sub_programmes.0 }} </td>
-                    {% else %}
-                      <td>  </td>
-                    {% endif %}
-                  </tr>
-                  {% if prog.n_subprogrammes > 1 %}
-                      {% for sub_prog in prog.sub_programmes %}
-                        {% if forloop.counter > 1 %}
-                        <tr>
-                          <td>{{ sub_prog }}</td>
-                        </tr>
-                        {% endif %}
-                      {% endfor %}
-                  {% endif %}
-                {% endfor %}
-                <tr>
-                  <td colspan="3">
-                    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#NewProgrammeModal">
-                      Add/Remove programmes..
-                    </button>
-                    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#NewSubProgrammeModal">
-                      Add/Remove sub-programmes..
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-              </table>
-
+        <div class="tables-container">
+            <div class="individual_table">
               <table class="settings_tables table table-bordered">
                 <thead>
                 <tr>
-                  <th colspan="3">Teaching workloads</th>
+                  <th colspan="3">Programmes offered</th>
                 </tr>
                 <tr>
-                  <th>Year</th>
-                  <th> Official workload</th>
-                  <th> Draft workloads </th>
+                  <th></th>
+                  <th> Programme name</th>
+                  <th> Sub-programme name</th>
                 </tr>
                 </thead>
                 <tbody>
-                  {% for year in dept_wls %}
+                  {% for prog in prog_offered %}
+                    <tr>
+                      <td rowspan="{{ prog.n_subprogrammes_rowspan }}"><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#Edit{{ prog.programme_id }}DetailsModal">
+                        <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"></td>
+                      <td rowspan="{{ prog.n_subprogrammes_rowspan }}" style="text-align: left; vertical-align: middle;">{{ prog.programme_name }}
+                        <br><a href="/workload_app/accreditation/{{ prog.programme_id }}" class="btn btn-outline-success" role="button">
+                          <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View accreditation</a>  
+                      </td>
+                      {% if prog.n_subprogrammes > 0 %}
+                        <td> {{ prog.sub_programmes.0 }} </td>
+                      {% else %}
+                        <td>  </td>
+                      {% endif %}
+                    </tr>
+                    {% if prog.n_subprogrammes > 1 %}
+                        {% for sub_prog in prog.sub_programmes %}
+                          {% if forloop.counter > 1 %}
+                          <tr>
+                            <td>{{ sub_prog }}</td>
+                          </tr>
+                          {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                  {% endfor %}
                   <tr>
-                    <td> {{ year.academic_year }}</td>
-                    <td> 
-                      {% for wl_id in year.official_wl_ids %}
-                      <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-success" role="button">
-                        <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View workload</a>  
-                      {% endfor %}
-                    </td>
-                    <td> 
-                      {% for wl_id in year.draft_wl_ids %}
-                      <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-secondary" role="button">
-                        <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View draft</a>  
-                      {% endfor %}
+                    <td colspan="3">
+                      <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#NewProgrammeModal">
+                        Add/Remove programmes..
+                      </button>
+                      <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#NewSubProgrammeModal">
+                        Add/Remove sub-programmes..
+                      </button>
                     </td>
                   </tr>
-                  {% endfor %}
                 </tbody>
-              </table>
-        </div>
+                </table>
+              </div>
+              <div class="individual_table">
+                <table class="settings_tables table table-bordered">
+                  <thead>
+                  <tr>
+                    <th colspan="3">Teaching workloads</th>
+                  </tr>
+                  <tr>
+                    <th>Year</th>
+                    <th> Official workload</th>
+                    <th> Draft workloads </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    {% for year in dept_wls %}
+                    <tr>
+                      <td> {{ year.academic_year }}</td>
+                      <td> 
+                        {% for wl_id in year.official_wl_ids %}
+                        <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-success" role="button">
+                          <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View workload</a>  
+                        {% endfor %}
+                      </td>
+                      <td> 
+                        {% for wl_id in year.draft_wl_ids %}
+                        <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-secondary" role="button">
+                          <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View draft</a>  
+                        {% endfor %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+      </div>
         <hr>
         <div class = "report-select-form-container">
           <h2>Prgramme Analysis by academic years</h2>
@@ -121,8 +124,8 @@
                     {{ table.table_with_hours.programme_name }} - Main programme
                   </div>
 
-                <div class="table_flex_container">                  
-                  <div> <!-- main hourly table of programme-->
+                <div class="tables-container">                  
+                  <div class="individual_table"> <!-- main hourly table of programme-->
                     <table id="TABLE_{{ workload_id }}-{{ table.prog_id }}" class="workload_tables table table-striped">
                       <thead class="table-dark">
                       <tr> 
@@ -201,7 +204,7 @@
                     </table>
                   </div><!-- end of main hourly table of programme-->
 
-                  <div> <!-- module type analysis table for programme-->
+                  <div class="individual_table"> <!-- module type analysis table for programme-->
                     <table id="TABLE_{{ workload_id }}-{{ table.prog_id }}-modtypes" class="workload_tables table table-striped">
                         <thead class="table-dark" id="workload_module_table_id">
                         <tr> 
@@ -241,16 +244,16 @@
                           </tr>
                         </thead>
                       </table>
-                    </div> <!-- end of module type analysis table for programme-->
-                  </div><!-- Container flex-->
-                  {% if table.hourly_tables_with_subprogrammes|length > 0 %}
-                    <div style="background-color:{{ table.colour_scheme.darkest }};" class="programme-divider-title" >
-                      {{ table.table_with_hours.programme_name }} - sub programmes
-                    </div>
-                  {% endif %}
-                  <div class="table_flex_container"> <!--Second flex container for sub-programmes-->
+                  </div> <!-- end of module type analysis table for programme-->
+                </div><!-- Container flex-->
+                {% if table.hourly_tables_with_subprogrammes|length > 0 %}
+                  <div style="background-color:{{ table.colour_scheme.darkest }};" class="programme-divider-title" >
+                    {{ table.table_with_hours.programme_name }} - sub programmes
+                  </div>
+                {% endif %}
+                <div class="tables-container"> <!--Second flex container for sub-programmes-->
                     {% for sub_prg_table in table.hourly_tables_with_subprogrammes %}
-                      <div> <!-- Hourly tables for sub-programmes-->
+                      <div class="individual_table"> <!-- Hourly tables for sub-programmes-->
                         <table id="TABLE_{{ workload_id }}-{{ table.prog_id }}" class="workload_tables table table-striped">
                           <thead class="table-dark">
                           <tr> 

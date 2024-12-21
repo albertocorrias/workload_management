@@ -1,5 +1,17 @@
-div.table-container{
-    width: 50%;
+div.tables-container{
+    width: 100%;
+    display: flex;
+    gap: 50px;
+}
+
+@media (max-width: 600px) {
+    div.tables-container {
+      display: block;
+    }
+  }
+
+div.individual_table{
+    flex: 1;
 }
 
 div.overall-department-report-container{
@@ -17,6 +29,7 @@ div.programme-divider-title{
     padding: 0.5vmin;
     font-family:'Montserrat', sans-serif;
     font-size: large;
+    margin-bottom: 0.5vmin;
 }
 table.settings_tables > thead > tr > th {
     background-color: #617162;
