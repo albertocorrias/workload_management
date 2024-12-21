@@ -35,7 +35,8 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateSingleModuleInformationTable
 from .helper_methods_survey import CalculateSurveyDetails, CalculateTotalResponsesForQuestion, CalulatePositiveResponsesFractionForQuestion
 from .helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
-                                            DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,CalculateMLOSLOMappingTable
+                                            DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,CalculateMLOSLOMappingTable,\
+                                            CalculateAllInforAboutOneSLO
 
 from .report_methods import GetLastFiveYears,CalculateProfessorIndividualWorkload, CalculateFacultyReportTable
 
@@ -1591,28 +1592,38 @@ def accreditation_report(request,programme_id, start_year,end_year):
     big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
 
     slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
+    slo_identifiers = []
+    all_slo_data_for_plot = []
+    all_slo_ids = []
     for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
-        slo_survey_measures = CalculateTableForSLOSurveys(slo.id,start_year,end_year) #A list of all the slo survey measures. This one is ready for HTML
-        mlo_slo_survey_table_rows = CalculateTableForMLOSurveys(slo.id,start_year,end_year)#A list of measurements for this SLO obtained via MLO survey
-        mlo_direct_measures_table_rows = CalculateTableForMLODirectMeasures(slo.id,start_year,end_year)
-        mlo_slo_mapping_table_rows = CalculateMLOSLOMappingTable(slo.id,start_year,end_year)
+        all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year) 
+        slo_survey_measures = all_slo_info["slo_surveys"] #A list of all the slo survey measures. This one is ready for HTML
+        mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
+        mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
+        mlo_slo_mapping_table_rows = all_slo_info["mlo_mapping_for_slo"] 
         
-
-
+        slo_measures_data_plot = all_slo_info["slo_measures_plot_data"]
         years_for_tables = []
         for year in range(start_year, end_year+1):
             years_for_tables.append(year)
         slo_info = {
             'slo_id' : slo.id,
             'slo_desc' : slo.slo_short_description,
+            'slo_full_description' : slo.slo_description,
+            'slo_letter' : slo.letter_associated,
             'mlo_mappings' : mlo_slo_mapping_table_rows,
             'slo_surveys' : slo_survey_measures,
             'mlo_direct_measures' : mlo_direct_measures_table_rows,
             'colspan_param' : end_year - start_year + 2,
             'years_for_tables' : years_for_tables,
-            'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows
+            'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows,
+            'slo_measures_plot_data' : slo_measures_data_plot #unused here?
         }
         slo_measures.append(slo_info)
+        slo_identifiers.append(slo.slo_short_description)
+        all_slo_data_for_plot.append(slo_measures_data_plot)
+        all_slo_ids.append(slo.id)
+    
     template = loader.get_template('workload_app/accreditation_report.html')
     context = {
         'programme_id' : programme_id,
@@ -1620,8 +1631,14 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'start_year' : start_year,
         'end_year' : end_year,
         'slo_measures' : slo_measures, 
-        'big_mlo_slo_table' : big_mlo_slo_table,
-        'number_of_slo' : len(slo_measures)+1
+        'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
+        'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
+        'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
+        'number_of_slo_plus_one' : len(slo_measures)+1,
+        'number_of_slo' : len(slo_measures),
+        'slo_identifiers' : slo_identifiers,
+        'all_slo_data_for_plot' : all_slo_data_for_plot,
+        'all_slo_ids' : all_slo_ids
     }
     return HttpResponse(template.render(context, request))
 def survey_results(request,survey_id):

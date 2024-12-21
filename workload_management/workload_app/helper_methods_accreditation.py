@@ -1,4 +1,5 @@
 import datetime
+import copy
 from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, MLOPerformanceMeasure, Module,ModuleLearningOutcome
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
@@ -195,49 +196,6 @@ def DetermineIconBasedOnStrength(strength):
 
     return icon
 
-#This function generates the big MLO-SLO table for HTML viewing.
-#Referred to a programme from start_year to end_year
-#Each row is a module code as long as it is offered in the given period.
-#Each column is a SLO for the given programme
-#It returns a list, where each item is inteded as a table row (a dictionary)
-# - module code (unique)
-# - SLO identifiers (the letters ssociated) - A list
-# - The numerical mapping strengths - A list with same length as above
-# - The icons to be visualized based on strengths - A list with same length as above
-# - The number of MLO that each moduel contributes to that SLO
-def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
-    all_module_codes = []
-    for mod in (Module.objects.filter(primary_programme__id = programme_id) |\
-                Module.objects.filter(secondary_programme__id = programme_id)):
-                if (mod.scenario_ref.academic_year.start_year >= start_year and\
-                    mod.scenario_ref.academic_year.start_year <= end_year):
-                    all_module_codes.append(mod.module_code)
-    all_module_codes = list(dict.fromkeys(all_module_codes))#eliminate duplicates
-    #Prepare the HTMl table
-    table_rows = []
-    for mod_code in all_module_codes:
-        table_row_item = {
-            'module_code' : mod_code,
-            'slo_identifiers' : [],
-            'numerical_mappings' : [],#A list as long as the SLOs of the programme
-            'icons' : [],#Same as above, but icons instead
-            'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO opf this mod were mapped?
-        }
-        for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
-            overall_strength = 0
-            n_mlo_mapped = 0
-            for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
-                for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
-                    if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
-                        overall_strength = mapping.strength
-                    n_mlo_mapped = n_mlo_mapped + 1
-            table_row_item['slo_identifiers'].append(slo.letter_associated)
-            table_row_item['numerical_mappings'].append(overall_strength)
-            table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))
-            table_row_item['n_mlo_mapped'].append(n_mlo_mapped)
-        table_rows.append(table_row_item)
-    return table_rows
-
 #This function generates the MLO-SLO table for HTML viewing
 #Referred to a single SLO from start_year to end_year
 #Each row is a module code as long as it is offered in the given period.
@@ -281,6 +239,118 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
         
         mlo_mappings_table_rows.append(table_row_item)
     return mlo_mappings_table_rows
+
+#This function calculates all the info about one particular SLO. It calls the 4 methods above and computes
+#summary data as well
+def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year):
+    ret = {}
+    ret["mlo_mapping_for_slo"] = CalculateMLOSLOMappingTable(slo_id, start_year,end_year)
+    ret["mlo_direct_measures_for_slo"] =CalculateTableForMLODirectMeasures(slo_id, start_year,end_year)
+    ret["mlo_surveys_for_slo"] = CalculateTableForMLOSurveys(slo_id, start_year,end_year)
+    ret["slo_surveys"] = CalculateTableForSLOSurveys(slo_id, start_year,end_year)
+    
+    #Calculate data for plot
+    years =[]
+    slo_survey_plot = []
+    for year in range(start_year,end_year+1):
+        years.append(year)
+        slo_survey_plot.append(0)
+    mlo_direct_plot = copy.deepcopy(ret["mlo_direct_measures_for_slo"][-1])
+    mlo_survey_plot = copy.deepcopy(ret["mlo_surveys_for_slo"][-1])
+
+    del mlo_direct_plot[0] #remove firts element, it is a lebl "weighted average"
+    del mlo_survey_plot[0] #remove firts element, it is a lebl "weighted average"
+
+    all_slo_surveys = copy.deepcopy(ret["slo_surveys"])
+    for srv in all_slo_surveys:
+        for i in range (0,len(years)):
+            n_for_year = 0
+            if (srv["date"].year == years[i]):
+                slo_survey_plot[i] += srv["percent_positive"]
+                n_for_year +=1
+            #calculate average for year
+            if (n_for_year > 0):
+                slo_survey_plot[i] = slo_survey_plot[i]/n_for_year
                 
 
-            
+    #indices: 0: years, 1:direct emasures, 2: mlo survey measures, 3L slo survey measures
+    ret["slo_measures_plot_data"] = []
+    ret["slo_measures_plot_data"].append(years)
+    ret["slo_measures_plot_data"].append(mlo_direct_plot)
+    ret["slo_measures_plot_data"].append(mlo_survey_plot)
+    ret["slo_measures_plot_data"].append(slo_survey_plot)
+
+    return ret
+
+#This function generates the big MLO-SLO table for HTML viewing.
+#Referred to a programme from start_year to end_year
+#Each row is a module code as long as 
+#     1) it is offered in the given period,
+# and 2) it has at least one MLO mapped to one SLO
+#Each column is a SLO for the given programme
+#It returns a list, where each item is inteded as a table row (a dictionary)
+# - module code (unique)
+# - SLO identifiers (the letters associated) - A list
+# - The numerical mapping strengths - A list with same length as above. This will contain the highest mapping for the period
+# - The icons to be visualized based on strengths - A list with same length as above
+# - The number of MLO that each moduel contributes to that SLO
+def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
+    all_module_codes = []
+    for mod in (Module.objects.filter(primary_programme__id = programme_id) |\
+                Module.objects.filter(secondary_programme__id = programme_id)):
+                if (mod.scenario_ref.academic_year.start_year >= start_year and\
+                    mod.scenario_ref.academic_year.start_year <= end_year):
+                    all_module_codes.append(mod.module_code)
+    all_module_codes = list(dict.fromkeys(all_module_codes))#eliminate duplicates
+    #Prepare the HTMl table
+    table_rows = []
+    for mod_code in all_module_codes:
+        table_row_item = {
+            'module_code' : mod_code,
+            'slo_identifiers' : [],
+            'numerical_mappings' : [],#A list as long as the SLOs of the programme
+            'summation_strengths' : [],#A list of the sum of alls trengths of all MLO mapped to each SLO
+            'icons' : [],#Same as above, but icons instead
+            'n_mlo_mapped' : []#Same as above. For each SLO, how many MLO of this mod were mapped?
+        }
+        worth_appending = False #this will be switched to true as long as at least one mapping is found to ANY SLO
+        for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
+            overall_strength = 0 #Thisw ill store the maximal strength (used for half-moon/full-moon)
+            summation_strength = 0 #Thisw ill store the total strength, adding up all the strengths of all MLOs
+            n_mlo_mapped = 0
+            for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
+                for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
+                    if (mapping.strength > overall_strength): #The table will show the highest of the mappings (e.g., one 3 and one 1, only full moon will be shown)
+                        overall_strength = mapping.strength
+                    summation_strength = summation_strength + mapping.strength #add anyway for the grand total
+                    n_mlo_mapped = n_mlo_mapped + 1
+            table_row_item['slo_identifiers'].append(slo.letter_associated)
+            table_row_item['numerical_mappings'].append(overall_strength)
+            table_row_item['summation_strengths'].append(summation_strength)
+            table_row_item['icons'].append(DetermineIconBasedOnStrength(overall_strength))
+            table_row_item['n_mlo_mapped'].append(n_mlo_mapped)
+            if (overall_strength > 0): #if there is any mapping, switch it true, this will be displayed
+                worth_appending = True
+        
+        if (worth_appending):        
+            table_rows.append(table_row_item)
+    #Done with the modules. Now compute the totals
+    slo_index = 0
+    totals_strengths_row = []
+    totals_n_mods_row = []
+    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
+        total_mapping_strength = 0
+        total_n_mlo_mapped = 0
+        for row in table_rows:
+            total_n_mlo_mapped = total_n_mlo_mapped + row['n_mlo_mapped'][slo_index]
+            total_mapping_strength = total_mapping_strength + row['summation_strengths'][slo_index]
+        slo_index = slo_index +1
+        totals_strengths_row.append(total_mapping_strength)
+        totals_n_mods_row.append(total_n_mlo_mapped)
+
+    ret = {
+        'main_body_table' : table_rows,
+        'totals_strengths_row' : totals_strengths_row,
+        'totals_n_mlo_row' :totals_n_mods_row
+    }
+    return ret            

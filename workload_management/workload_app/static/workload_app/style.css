@@ -56,6 +56,14 @@ table.workload_tables > thead > tr > th {
 	vertical-align: middle;
 }
 
+table.workload_tables > thead > tr > th.overall_header{
+    background-color: #EF7C00;
+}
+
+table.workload_tables > thead > tr > th.secondary_header{
+    background-color: darkgrey;
+}
+
 .background_buttons {
     background-color: #003D7C;
     border: none;
