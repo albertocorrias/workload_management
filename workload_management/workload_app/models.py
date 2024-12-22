@@ -288,6 +288,8 @@ class Module(models.Model):
     module_type = models.ForeignKey(ModuleType, on_delete=models.PROTECT, null=True)
     #Whether it is compulsory in primary programme
     compulsory_in_primary_programme = models.BooleanField(default=False)
+    #year of study of students
+    students_year_of_study = models.PositiveIntegerField(default=0)
 
     #The semester in which it is offered
     semester_offered = models.CharField(max_length=300, choices=SEMESTER_OFFERED,default=UNASSIGNED)
