@@ -247,7 +247,8 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
         if (assign_counter==0): formatted_string = "No lecturer assigned  " #Note the two spaces at the end
         if (formatted_string == ''): formatted_string = '  '
         if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
-
+        student_year_of_study=0
+        if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
         item = {
             "module_code" : mod.module_code,
             "module_title" : ShortenString(mod.module_title),
@@ -265,6 +266,8 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
                                           'semester_offered' : mod.semester_offered,\
                                           'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
                                           'primary_programme' : mod.primary_programme,\
+                                          'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
+                                          'students_year_of_study' : student_year_of_study,\
                                           'secondary_programme' : mod.secondary_programme,\
                                           'sub_programme' : mod.sub_programme,\
                                           'secondary_sub_programme' : mod.secondary_sub_programme,\
