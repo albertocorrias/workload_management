@@ -39,6 +39,9 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.count(),1)# mods now after this addition
         self.assertEqual(all_mods.filter(module_code='XXXX1').exists(),True)
         self.assertEqual(all_mods.filter(module_title='testing').exists(),True)
+        self.assertEqual(all_mods.filter(compulsory_in_primary_programme=True).count(),0)
+        self.assertEqual(all_mods.filter(compulsory_in_primary_programme=False).count(),1)#Covers defaut value
+        self.assertEqual(all_mods.filter(students_year_of_study__isnull=True).count(),1)#
         self.assertEqual(all_mods.filter(primary_programme__isnull=True).count(),1)
         self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),1)
         self.assertEqual(all_mods.filter(sub_programme__isnull=True).count(),1)
@@ -313,13 +316,27 @@ class TestModule(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         all_mods = Module.objects.all()
         self.assertEqual(all_mods.count(),1)#Still 1
-        
+        self.assertEqual(Module.objects.filter(total_hours='234').exists(),False)
+        self.assertEqual(Module.objects.filter(total_hours='10').exists(),True)
+        self.assertEqual(Module.objects.filter(compulsory_in_primary_programme=True).exists(),False)
+
+        #Now edit the existing module. KEY CHANGHES: make it compulsory and add year of study
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, \
+        'module_title' : 'testing', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'compulsory_in_primary_programme' : Module.YES,\
+        'students_year_of_study' : 2,\
+        'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : False})    
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        all_mods = Module.objects.all()
+        self.assertEqual(all_mods.count(),1)#Still 1
+        self.assertEqual(Module.objects.filter(compulsory_in_primary_programme=True).exists(),True)
+        self.assertEqual(Module.objects.filter(students_year_of_study=2).exists(),True)
+        self.assertEqual(Module.objects.filter(students_year_of_study=0).exists(),False)
         self.assertEqual(all_mods.get().scenario_ref.id,WorkloadScenario.objects.all().get().id)#Still 1, as we are editing the only one present
         #One only with this code
         self.assertEqual(Module.objects.filter(module_code=mod_code).count(),1)
         
-        self.assertEqual(Module.objects.filter(total_hours='10').exists(),True)
-        self.assertEqual(Module.objects.filter(total_hours='234').exists(),False)
+
         
         #Now edit the existing module. KEY CHANGHE: module title from testing to hello
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, 'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : False})    
@@ -372,7 +389,10 @@ class TestModule(TestCase):
         
         mod_code = 'XXX1'
         #Add a new module
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code,\
+         'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, \
+         'compulsory_in_primary_programme' : False,'students_year_of_study' : '1',
+        'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         all_mods = Module.objects.all()
         self.assertEqual(response.status_code, 200) #No issues
@@ -380,6 +400,8 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.filter(module_code=mod_code).exists(),True)
         self.assertEqual(all_mods.filter(module_title='testing').exists(),True)
         self.assertEqual(Module.objects.filter(total_hours='234').exists(),True)
+        self.assertEqual(Module.objects.filter(compulsory_in_primary_programme=True).exists(),False)
+        self.assertEqual(Module.objects.filter(students_year_of_study=1).exists(),True)
         
         #CREATE ANOTHER SCENARIO - COPYING FROM EXISTING
         default_scen_id = first_scen.id
@@ -395,6 +417,8 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.filter(module_code=mod_code).count(),2)
         self.assertEqual(all_mods.filter(module_title='testing').count(),2)
         self.assertEqual(Module.objects.filter(total_hours='234').count(),2)
+        self.assertEqual(Module.objects.filter(compulsory_in_primary_programme=True).exists(),False)
+        self.assertEqual(Module.objects.filter(students_year_of_study=1).exists(),True)
         
         #Now edit the one in this scenario
         #Now edit the existing module. KEY CHANGHE: total hours from 234 to 10

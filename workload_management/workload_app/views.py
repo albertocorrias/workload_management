@@ -503,15 +503,16 @@ def add_module(request,workloadscenario_id):
         if form.is_valid():
             supplied_module_code = form.cleaned_data['module_code'];
             supplied_module_title = form.cleaned_data['module_title'];
-            
             supplied_type = form.cleaned_data['module_type'];
             supplied_sem_offered = form.cleaned_data['semester_offered'];
             supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups'];
             supplied_programme_belongs_to = form.cleaned_data['primary_programme']
+            supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
+            supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
             supplied_secondary_programme_belongs_to = form.cleaned_data['secondary_programme']
             supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
             supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
-            
+
             supplied_hours = 0;
             if (form.cleaned_data['total_hours']):
                 supplied_hours = form.cleaned_data['total_hours']
@@ -527,6 +528,8 @@ def add_module(request,workloadscenario_id):
                                          semester_offered = supplied_sem_offered,\
                                          number_of_tutorial_groups = supplied_n_tutorial_groups,\
                                          primary_programme = supplied_programme_belongs_to,\
+                                         compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
+                                         students_year_of_study = supplied_students_year_of_study,\
                                          secondary_programme = supplied_secondary_programme_belongs_to,\
                                          sub_programme = supplied_sub_programme_belongs_to,\
                                          secondary_sub_programme = supplied_secondary_sub_programme_belongs_to);                  
@@ -549,7 +552,9 @@ def add_module(request,workloadscenario_id):
                                                 module_type = supplied_type,\
                                                 semester_offered = supplied_sem_offered,\
                                                 number_of_tutorial_groups = supplied_n_tutorial_groups,\
-                                                primary_programme = supplied_programme_belongs_to,
+                                                primary_programme = supplied_programme_belongs_to,\
+                                                compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
+                                                students_year_of_study = supplied_students_year_of_study,\
                                                 secondary_programme = supplied_secondary_programme_belongs_to,\
                                                 sub_programme = supplied_sub_programme_belongs_to,\
                                                 secondary_sub_programme = supplied_secondary_sub_programme_belongs_to)

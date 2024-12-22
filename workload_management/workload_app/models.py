@@ -266,7 +266,9 @@ class Module(models.Model):
     BOTH_SEMESTERS = 'Sem 1 and sem 2'
     SPECIAL_TERM_1 = 'Special term 1'
     SPECIAL_TERM_2 = 'Special term 2'
-      
+    YES = True
+    NO = False
+    
     SEMESTER_OFFERED = [
             (UNASSIGNED, 'No semester assigned yet'),
             (SEM_1, 'Semester 1'),
@@ -276,6 +278,8 @@ class Module(models.Model):
             (SPECIAL_TERM_2, 'Special term 2')
             ]
     
+    YES_NO_MODULE = [(YES, 'Yes'),(NO, 'No')]
+
     #The module code
     module_code = models.CharField(max_length=300)
     #The module title
@@ -289,7 +293,7 @@ class Module(models.Model):
     #Whether it is compulsory in primary programme
     compulsory_in_primary_programme = models.BooleanField(default=False)
     #year of study of students
-    students_year_of_study = models.PositiveIntegerField(default=0)
+    students_year_of_study = models.PositiveIntegerField(default=0,null=True)
 
     #The semester in which it is offered
     semester_offered = models.CharField(max_length=300, choices=SEMESTER_OFFERED,default=UNASSIGNED)
