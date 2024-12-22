@@ -1394,6 +1394,7 @@ def accreditation(request,programme_id):
             
             supplied_opening_date = slo_survey_form.cleaned_data["start_date"]
             supplied_closing_date = slo_survey_form.cleaned_data["end_date"]
+            supplied_targeted_cohort = slo_survey_form.cleaned_data["cohort_targeted"]
             supplied_max_respondents = slo_survey_form.cleaned_data["totoal_N_recipients"]
             supplied_comments = slo_survey_form.cleaned_data["comments"]
             file_obj = None
@@ -1402,9 +1403,10 @@ def accreditation(request,programme_id):
             
             if (is_slo_survey): supplied_survey_title = slo_survey_form.cleaned_data["slo_survey_title"]
             if (is_peo_survey): supplied_survey_title = peo_survey_form.cleaned_data["peo_survey_title"]
-            #Crate the survey file
+            #Crate the survey object
             new_survey = Survey.objects.create(survey_title = supplied_survey_title,\
                                                opening_date = supplied_opening_date, closing_date = supplied_closing_date,\
+                                               cohort_targeted = supplied_targeted_cohort,\
                                                max_respondents =  supplied_max_respondents, comments = supplied_comments,\
                                                original_file = file_obj)
             new_survey.save()

@@ -23,6 +23,7 @@
             <table id="SummarySurveyTable" class="workload_tables table table-striped">
                 <thead class="table-dark">
                     <th> Dates </th>
+                    <th>Cohort targeted</th>
                     <th> Type </th>
                     <th> Total recipients </th>
                     <th> Average response rate </th>
@@ -31,6 +32,7 @@
                 </thead>
                 <tbody>
                     <td> {{ survey_details.start_date }} - {{survey_details.end_date }}</td>
+                    <td> {{survey_details.cohort_targeted }}</td>
                     <td>{{ survey_details.type_of_survey }}</survey_details></td>
                     <td> {{ survey_details.recipients }}</td>
                     <td> {{ average_response_rate|floatformat }}%</td>

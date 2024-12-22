@@ -369,15 +369,19 @@ class RemoveSLOForm(forms.Form):
         self.fields['select_slo_to_remove'] = forms.ModelChoiceField(label = 'Select the SLO to remove', queryset=StudentLearningOutcome.objects.filter(programme__id = prog_id))
 
 class AddSLOSurveyForm(forms.Form):
+
     def __init__(self, *args, **kwargs):
         years_to_show = []
+        year_now = datetime.datetime.now().year
         for gap in range(-6,3):
-            years_to_show.append(datetime.datetime.now().year + gap)
+            years_to_show.append(year_now + gap)
         programme_id = kwargs.pop('programme_id')
         super(AddSLOSurveyForm, self).__init__(*args, **kwargs)
         self.fields['slo_survey_title'] = forms.CharField(label="Survey title (e.g., graduiate exit survey)")
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
+        self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Cohort targeted', required=False,\
+                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)

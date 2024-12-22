@@ -354,6 +354,8 @@ class Survey(models.Model):
     opening_date = models.DateField()
     #The closing date when the survey stopped accepting answers
     closing_date = models.DateField()
+    #cohort targeted, NULL if not available
+    cohort_targeted = models.ForeignKey(Academicyear,on_delete=models.SET_NULL,null=True)
     #Maximum number of respondents (used to calculate response rate). Defaults to -1 if unknown.
     max_respondents = models.IntegerField(default=-1)
     #A storage for some comments about the survey

@@ -41,7 +41,9 @@ def CalculateSurveyDetails(survey_id):
         if (resp.associated_peo is not None): survey_type = 'PEO'
         if (resp.associated_slo is not None): survey_type = 'SLO'
         if (resp.associated_mlo is not None): survey_type = 'MLO'
-
+        cohort_targeted = 'N/A'
+        if (survey.cohort_targeted is not None):
+            cohort_targeted = survey.cohort_targeted.__str__()
         ret = {
         'survey_id' : survey_id,
         'type_of_survey' : survey_type,
@@ -49,6 +51,7 @@ def CalculateSurveyDetails(survey_id):
         'file' : original_file_url,
         'start_date' : survey.opening_date,
         'end_date' : survey.closing_date,
+        'cohort_targeted' : cohort_targeted,
         'recipients' : n_recipients,
         'comments' : survey.comments,
         'average_response_rate' : av_response_rate

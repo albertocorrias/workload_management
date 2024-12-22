@@ -259,7 +259,7 @@ class TestSurveys(TestCase):
         self.assertContains(response, slo_3.slo_description)
         survey_comment = "hello, this is a test survey"
         survey_title = "title of teh survey"
-        #Now try the POST witha dding a SLO survey
+        #Now try the POST with adding a SLO survey
         response = self.client.post(reverse('workload_app:accreditation',kwargs={'programme_id' : prog_off.id}),{
             'slo_survey_title' : survey_title,
             'start_date_month' : 1,
@@ -293,6 +293,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
+        self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),1)#Default is NULL if not specified
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each SLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_1).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_2).count(),1)
@@ -420,6 +421,7 @@ class TestSurveys(TestCase):
         self.assertEqual(srv_details["file"], '')
         self.assertEqual(srv_details["start_date"], surv_obj.opening_date)
         self.assertEqual(srv_details["end_date"], surv_obj.closing_date)
+        self.assertEqual(srv_details["cohort_targeted"], 'N/A')
         self.assertEqual(srv_details["recipients"], 150)
         self.assertEqual(srv_details["comments"], survey_comment)
         self.assertEqual(srv_details["type_of_survey"], 'SLO')
@@ -438,6 +440,44 @@ class TestSurveys(TestCase):
         self.assertEqual(response.status_code, 200)
         calculated_survey_table= response.context["slo_survey_table"]
         self.assertEqual(len(calculated_survey_table),0)
+
+
+        #Now add abother one, same as beforem  but with targeted cohort
+        cohort_year = Academicyear.objects.create(start_year=2020)
+        response = self.client.post(reverse('workload_app:accreditation',kwargs={'programme_id' : prog_off.id}),{
+            'slo_survey_title' : survey_title + "number_2",
+            'start_date_month' : 1,
+            'start_date_day' : 15,
+            'start_date_year' : 2021,
+            'end_date_month' : 1,
+            'end_date_day' : 15,
+            'end_date_year' : 2023,
+            'totoal_N_recipients' : "150",
+            'cohort_targeted' : cohort_year.id,
+            'comments' : survey_comment,
+            'slo_descr' + str(slo_1.id) : slo_1.slo_description,
+            'n_highest_score' + str(slo_1.id): "100",            
+            'n_second_highest_score' + str(slo_1.id) : "10",
+            'n_third_highest_score' + str(slo_1.id): "10",
+            'n_fourth_highest_score' + str(slo_1.id): "20",
+            'n_fifth_highest_score' + str(slo_1.id): "20",
+            'slo_descr' + str(slo_2.id) : slo_2.slo_description,
+            'n_highest_score' + str(slo_2.id): "99",            
+            'n_second_highest_score' + str(slo_2.id): "10",
+            'n_third_highest_score' + str(slo_2.id): "10",
+            'n_fourth_highest_score' + str(slo_2.id) : "20",
+            'n_fifth_highest_score' + str(slo_2.id): "120",
+            'slo_descr' + str(slo_3.id) : slo_3.slo_description,
+            'n_highest_score' + str(slo_3.id) : "98",            
+            'n_second_highest_score' + str(slo_3.id) : "1",
+            'n_third_highest_score' + str(slo_3.id) : "1",
+            'n_fourth_highest_score' + str(slo_3.id) : "48",
+            'n_fifth_highest_score' + str(slo_3.id): "20",
+        })
+        self.assertEqual(response.status_code, 302) #post re-directs
+        self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
+        self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
+        self.assertEqual(Survey.objects.filter(cohort_targeted__start_year =2020).count(),1)#should be specified as 2020 (see above)
 
     def test_add_remove_peo_survey(self):
 
