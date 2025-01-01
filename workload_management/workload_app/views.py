@@ -1313,7 +1313,7 @@ def module(request, module_code):
             if (len(measure.original_file.name) > 0):
                 mlo_measure_table_row["download_url"] = measure.original_file.url
 
-        #Determine the primary department this module is on. We take as the dept of teh first workload this module appears in
+        #Determine the primary department this module is on. We take as the dept of the first workload this module appears in
         dept_id = ''
         dept_name = ''
         for mod in Module.objects.filter(module_code = module_code):

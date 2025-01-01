@@ -28,7 +28,9 @@
               <table id="MODULE_YEARLY_TABLE" class="workload_tables table table-striped">
                 <thead class="table-dark">
                 <tr>
-                    <th> Year </th> 
+                    <th> Year </th>
+                    <th> Primary programme</th>
+                    <th> Compulsory? </th> 
                     <th> Hours</th>
                     <th> Lecturers</th>
                 </tr>
@@ -37,6 +39,8 @@
                   {% for entry in module_table %}
                       <tr>
                           <td>{{ entry.academic_year }}</td>
+                          <td> {{ entry.primary_programme }}</td>
+                          <td> {{ entry.compulsory_in_primary_programme }}</td>
                           <td>{{ entry.total_hours_delivered }}</td>
                           <td>{{ entry.lecturers_involved }} </td>
                       </tr>

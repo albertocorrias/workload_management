@@ -550,7 +550,7 @@ class testHelperMethods(TestCase):
         module_2 = Module.objects.create(module_code = "BN201", module_title="Second module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1,\
                                         primary_programme = programme_2)
         module_3 = Module.objects.create(module_code = "BN301", module_title="Third module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1,\
-                                        primary_programme = programme_1, secondary_programme = programme_2, sub_programme = sub_programme_1)
+                                        students_year_of_study = 1, compulsory_in_primary_programme = True, primary_programme = programme_1, secondary_programme = programme_2, sub_programme = sub_programme_1)
         #Do some assignments
         #2 lecturers for module 1
         TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours = 25, workload_scenario=scenario_1)
@@ -571,6 +571,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(calc[0]["secondary_programme"],"")
         self.assertEqual(calc[0]["primary_subprogramme"],"")
         self.assertEqual(calc[0]["secondary_subprogramme"],"")
+        self.assertEqual(calc[0]["year_of_study"],0)
+        self.assertEqual(calc[0]["compulsory_in_primary_programme"],"No")
         self.assertEqual(calc[0]["total_hours_delivered"],25+55)
         self.assertEqual(calc[0]["lecturers_involved"],"lecturer_1 (25), lecturer_2 (55)")
         
@@ -583,6 +585,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(calc[0]["secondary_programme"],"")
         self.assertEqual(calc[0]["primary_subprogramme"],"")
         self.assertEqual(calc[0]["secondary_subprogramme"],"")
+        self.assertEqual(calc[0]["year_of_study"],0)
+        self.assertEqual(calc[0]["compulsory_in_primary_programme"],"No")
         self.assertEqual(calc[0]["total_hours_delivered"],100)
         self.assertEqual(calc[0]["lecturers_involved"],"lecturer_3 (100)")
 
@@ -595,6 +599,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(calc[0]["secondary_programme"],programme_2.programme_name)
         self.assertEqual(calc[0]["primary_subprogramme"],sub_programme_1.sub_programme_name)
         self.assertEqual(calc[0]["secondary_subprogramme"],"")
+        self.assertEqual(calc[0]["year_of_study"],1)
+        self.assertEqual(calc[0]["compulsory_in_primary_programme"], "Yes")
         self.assertEqual(calc[0]["total_hours_delivered"],35+45)
         self.assertEqual(calc[0]["lecturers_involved"],"lecturer_1 (35), lecturer_3 (45)")
 

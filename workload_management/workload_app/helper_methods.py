@@ -608,10 +608,14 @@ def CalculateSingleModuleInformationTable(module_code):
     for acad_year in Academicyear.objects.all():
         for workload in WorkloadScenario.objects.filter(academic_year = acad_year).filter(status=WorkloadScenario.OFFICIAL):
             for module in Module.objects.filter(module_code=module_code).filter(scenario_ref=workload):
+                text_for_compulsory = "No"
+                if (module.compulsory_in_primary_programme): text_for_compulsory = "Yes"
                 table_row_item = {
                     "academic_year": acad_year.__str__(),
                     "module_type" : module.module_type.type_name,
                     "semester_offered" : module.semester_offered,
+                    "year_of_study" :  module.students_year_of_study,
+                    "compulsory_in_primary_programme" : text_for_compulsory,
                     "primary_programme" : "",
                     "secondary_programme" : "",
                     "primary_subprogramme" : "",
