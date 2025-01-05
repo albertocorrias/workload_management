@@ -229,6 +229,11 @@ class ProgrammeEducationalObjective(models.Model):
     #Letter associated to the peo
     letter_associated = models.CharField(max_length=2, default='')
     
+    #Cohort validity from
+    peo_cohort_valid_from = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name="peo_cohort_valid_from")
+    #Cohort validity to
+    peo_cohort_valid_to = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name = "peo_cohort_valid_to")
+    
     def __str__(self):
         return self.letter_associated + ') ' + self.peo_short_description
 
