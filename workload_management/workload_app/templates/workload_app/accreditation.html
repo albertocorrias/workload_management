@@ -145,7 +145,8 @@
                 <tr>
                   <th> Survey </th>
                   <th> Type </th>
-                  <th> Dates </th>
+                  <th> Cohort targeted </th>
+                  <th> Distribution Dates </th>
                   <th> Total recipients </th>
                   <th> Notes </th>
                   <th> Original file </th>
@@ -157,6 +158,7 @@
               <tr style="border-bottom: black solid thin;">
                 <td> {{ survey.title }} </td>
                 <td> {{ survey.type_of_survey }} </td>
+                <td> {{ survey.cohort_targeted }}</td>
                 <td> {{ survey.start_date }} - {{survey.end_date }}</td>
                 <td> {{ survey.recipients }}</td>
                 <td> {{ survey.comments }} </td>

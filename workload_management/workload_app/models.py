@@ -182,6 +182,10 @@ class StudentLearningOutcome(models.Model):
     letter_associated = models.CharField(max_length=2, default='')
     #The programme this SLO belongs to
     programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True)
+    #Cohort validity from
+    cohort_valid_from = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name="cohort_valid_from")
+    #Cohort validity to
+    cohort_valid_to = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name = "cohort_valid_to")
 
     def __str__(self):
         return self.letter_associated + ') ' + self.slo_short_description

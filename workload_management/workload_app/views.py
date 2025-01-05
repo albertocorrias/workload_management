@@ -372,7 +372,8 @@ def manage_scenario(request):
                 #check if we need to copy teaching assignments, profs and modules over
                 supplied_copy_from = form.cleaned_data['copy_from']
                 if (supplied_copy_from != None):
-                    #Copy the modules
+                    #Copy the modules. #See here for the pk tricks below
+                    # https://docs.djangoproject.com/en/5.1/topics/db/queries/#copying-model-instances
                     for mod in Module.objects.filter(scenario_ref__label = supplied_copy_from):
                         mod.pk = None
                         mod.scenario_ref = new_scen
