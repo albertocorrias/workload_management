@@ -1522,7 +1522,9 @@ def accreditation(request,programme_id):
             peo_edit_form = PEOForm(initial = {'fresh_rescord' : False, 'peo_id' : peo.id,\
                                                 'peo_description' : peo.peo_description,\
                                                 'peo_short_description' : peo.peo_short_description,\
-                                                'letter_associated' : peo.letter_associated})
+                                                'letter_associated' : peo.letter_associated,\
+                                                'peo_cohort_valid_from' : peo.peo_cohort_valid_from,\
+                                                'peo_cohort_valid_to': peo.peo_cohort_valid_to })
             peo_item = {
                 'peo_desc' : peo.peo_description,
                 'peo_short_desc' : peo.peo_short_description,
@@ -1538,7 +1540,9 @@ def accreditation(request,programme_id):
                                             'slo_description' : slo.slo_description,\
                                             'slo_short_description' : slo.slo_short_description,\
                                             'is_default_by_accreditor' : slo.is_default_by_accreditor,\
-                                            'letter_associated' : slo.letter_associated})
+                                            'letter_associated' : slo.letter_associated,\
+                                            'cohort_valid_from' : slo.cohort_valid_from,\
+                                            'cohort_valid_to': slo.cohort_valid_to})
             slo_item = {
                 'slo_desc' : slo.slo_description,
                 'slo_short_desc' : slo.slo_short_description,

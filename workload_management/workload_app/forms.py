@@ -335,7 +335,9 @@ class SLOForm(forms.ModelForm):
         super(SLOForm, self).__init__(*args, **kwargs)
         self.fields['cohort_valid_from'].required = False
         self.fields['cohort_valid_to'].required = False
-
+        self.fields['cohort_valid_from'].initial = None
+        self.fields['cohort_valid_to'].initial = None
+        
     class Meta:
 
         model = StudentLearningOutcome;
@@ -460,6 +462,9 @@ class PEOForm(forms.ModelForm):
         super(PEOForm, self).__init__(*args, **kwargs)
         self.fields['peo_cohort_valid_from'].required = False
         self.fields['peo_cohort_valid_to'].required = False
+        self.fields['peo_cohort_valid_from'].initial = None
+        self.fields['peo_cohort_valid_to'].initial = None
+
     class Meta:
         model = ProgrammeEducationalObjective;
         fields = ['peo_description', 'peo_short_description', 'letter_associated', 'peo_cohort_valid_from', 'peo_cohort_valid_to']

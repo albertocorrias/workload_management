@@ -17,12 +17,6 @@
               <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>  
             <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
                 <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to department page</a>  
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewSLOModal">
-                Add/Remove SLOs..
-            </button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewPEOModal">
-              Add/Remove PEOs..
-          </button>
         </div><!-- end of buttons container-->
         <hr>
         <h1>Accreditation page for {{ programme_name }}</h1>
@@ -58,6 +52,13 @@
                                 <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                         </tr>
                     {% endfor %}
+                    <tr>
+                      <td colspan="3">
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#NewSLOModal">
+                          Add/Remove SLOs..
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -84,6 +85,13 @@
                                 <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                         </tr>
                     {% endfor %}
+                    <tr>
+                      <td colspan="3">
+                        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#NewPEOModal">
+                          Add/Remove PEOs..
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -181,7 +189,7 @@
         {% endif %}
         <!--Modal for new SLOs-->
         <div class="modal fade" id="NewSLOModal" tabindex="-1" role="dialog" aria-labelledby="NewSLOModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-xl" role="document">
               <div class="modal-content">
                     <div class="modal-header">
                       <h5 class="modal-title" id="NewSLOModalLabel">Add new SLO</h5>
@@ -221,7 +229,7 @@
 
         <!--Modal for new PEOs-->
         <div class="modal fade" id="NewPEOModal" tabindex="-1" role="dialog" aria-labelledby="NewPEOModalLabel" aria-hidden="true">
-          <div class="modal-dialog" role="document">
+          <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                   <div class="modal-header">
                     <h5 class="modal-title" id="NewPEOModalLabel">Add new PEO</h5>
@@ -391,7 +399,7 @@
           <!-- Modals to edit SLOs-->
           {% for entry in slo_list %}
               <div class="modal fade" id="EditSLO{{ entry.slo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditSLO{{ entry.slo_id }}Label" aria-hidden="true">
-                <div class="modal-dialog" role="document">
+                <div class="modal-dialog modal-xl" role="document">
                   <div class="modal-content">
                         <div class="modal-header">
                           <h5 class="modal-title" id="EditSLO{{ entry.slo_id }}Label">Edit existing SLO</h5>
@@ -417,7 +425,7 @@
           <!-- Modals to edit PEOs-->
           {% for entry in peo_list %}
                 <div class="modal fade" id="EditPEO{{ entry.peo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditPEO{{ entry.peo_id }}Label" aria-hidden="true">
-                  <div class="modal-dialog" role="document">
+                  <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
                           <div class="modal-header">
                             <h5 class="modal-title" id="EditPEO{{ entry.peo_id }}Label">Edit existing PEO</h5>
