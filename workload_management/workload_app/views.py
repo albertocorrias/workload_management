@@ -834,7 +834,7 @@ def manage_programme_offered(request, dept_id):
 
 def manage_subprogramme_offered(request, dept_id):
     if request.method =='POST':
-        form = SubProgrammeOfferedForm(request.POST);
+        form = SubProgrammeOfferedForm(request.POST, department_id = dept_id);
         if form.is_valid():
             supplied_sub_prog_name = form.cleaned_data['sub_programme_name']
             supplied_main_programme = form.cleaned_data['main_programme']
@@ -985,7 +985,7 @@ def department(request,department_id):
             dept_obj = Department.objects.filter(id = department_id).get()
             dept_name = dept_obj.department_name
             prog_form = ProgrammeOfferedForm(initial={'fresh_record': True})
-            sub_prog_form = SubProgrammeOfferedForm(initial={'fresh_record': True})
+            sub_prog_form = SubProgrammeOfferedForm(department_id = dept_obj.id,initial={'fresh_record': True})
             prog_offered = []
             for prg in ProgrammeOffered.objects.filter(primary_dept=department_id):
                 item = {

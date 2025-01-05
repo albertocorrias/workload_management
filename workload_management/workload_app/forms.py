@@ -170,7 +170,7 @@ class DepartmentForm(forms.ModelForm):
                   'department_acronym' : _('Acronym to be used (max 4 letters)'),
                   'faculty' : _('Select the faculty this department belongs to ')}
     def clean(self):
-        cleaned_data = super().clean();
+        cleaned_data = super().clean()
         dept_name  = cleaned_data.get("department_name")
         #if it is a fesh record, we must make sure no duplicate names 
         if (cleaned_data.get("fresh_record") == True):
@@ -269,17 +269,14 @@ class RemoveProgrammeForm(forms.Form):
         #Make user select programmes only offered by this department
         self.fields['select_programme_to_remove'] = forms.ModelChoiceField(label = 'Select the programe to remove', queryset=ProgrammeOffered.objects.filter(primary_dept__id = dept_id))
 
-class SubProgrammeOfferedForm(forms.ModelForm):
-
-    fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
-    sub_prog_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
-    dept_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
-
-    class Meta:
-        model = SubProgrammeOffered;
-        fields = ['sub_programme_name', 'main_programme']
-        labels = {'sub_programme_name' : _('Name of the sub programme (e.g., Specialization in...)'),
-                  'main_programme' : _('Main programme this subprogramme belongs to ')}
+class SubProgrammeOfferedForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        department_id = kwargs.pop('department_id')
+        super(SubProgrammeOfferedForm, self).__init__(*args, **kwargs)
+        self.fields["fresh_record"] = forms.BooleanField(widget=forms.HiddenInput(), required=False)
+        self.fields["sub_prog_id"] = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+        self.fields["sub_programme_name"] = forms.CharField(label="Name of the sub programme (e.g., Specialization in...)")
+        self.fields["main_programme"] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=department_id))
     
     def clean(self):
         cleaned_data = super().clean();
@@ -337,7 +334,7 @@ class SLOForm(forms.ModelForm):
         self.fields['cohort_valid_to'].required = False
         self.fields['cohort_valid_from'].initial = None
         self.fields['cohort_valid_to'].initial = None
-        
+
     class Meta:
 
         model = StudentLearningOutcome;
@@ -789,5 +786,5 @@ class SelectAcademicYearForm(forms.Form):
 
 class SelectAccreditationReportForm(forms.Form):
     this_year = datetime.datetime.now().year
-    academic_year_start = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
-    academic_year_end = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_start = forms.ModelChoiceField(label = "From cohort ", queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_end = forms.ModelChoiceField(label = "To cohort (included)",queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
