@@ -331,14 +331,21 @@ class SLOForm(forms.ModelForm):
 
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     slo_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+    def __init__(self, *args, **kwargs):
+        super(SLOForm, self).__init__(*args, **kwargs)
+        self.fields['cohort_valid_from'].required = False
+        self.fields['cohort_valid_to'].required = False
 
     class Meta:
+
         model = StudentLearningOutcome;
-        fields = ['slo_description', 'slo_short_description', 'is_default_by_accreditor', 'letter_associated']
+        fields = ['slo_description', 'slo_short_description', 'is_default_by_accreditor', 'letter_associated', 'cohort_valid_from', 'cohort_valid_to']
         labels = {'slo_description' : _('Description of the SLO'),
                   'slo_short_description' : _('A shorter description of the SLO'),
                   'is_default_by_accreditor' : _('Is this SLO a default one established by the accreditor? (If it is programme-sepcific, leave unticked)'),
-                  'letter_associated' : _('The alphabetical letter this SLO is usually associated with')}
+                  'letter_associated' : _('The alphabetical letter this SLO is usually associated with'),
+                  'cohort_valid_from' : _('This SLO applies to cohorts starting from  '),
+                  'cohort_valid_to' : _('This SLO applies to cohorts until  ')}
         widgets = {'slo_description' : forms.Textarea}
 
 class MLOForm(forms.ModelForm):
@@ -449,13 +456,18 @@ class RemovePEOSurveyForm(forms.Form):
 class PEOForm(forms.ModelForm):
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     peo_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
-
+    def __init__(self, *args, **kwargs):
+        super(PEOForm, self).__init__(*args, **kwargs)
+        self.fields['peo_cohort_valid_from'].required = False
+        self.fields['peo_cohort_valid_to'].required = False
     class Meta:
         model = ProgrammeEducationalObjective;
-        fields = ['peo_description', 'peo_short_description', 'letter_associated']
+        fields = ['peo_description', 'peo_short_description', 'letter_associated', 'peo_cohort_valid_from', 'peo_cohort_valid_to']
         labels = {'peo_description' : _('Description of the PEO'),
                   'peo_short_description' : _('A shorter description of the PEO'),
-                  'letter_associated' : _('The alphabetical letter this PEO is usually associated with')}
+                  'letter_associated' : _('The alphabetical letter this PEO is usually associated with'),
+                  'peo_cohort_valid_from': _('Cohort where this PEO started being valid'),
+                  'peo_cohort_valid_to': _('Cohort where this PEO stopped being valid'),}
         widgets = {'peo_description' : forms.Textarea}
 
 class RemovePEOForm(forms.Form):

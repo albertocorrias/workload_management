@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping
+from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping, Academicyear
 
 
 class TestAccreditation(TestCase):
@@ -35,6 +35,8 @@ class TestAccreditation(TestCase):
         self.assertEqual(StudentLearningOutcome.objects.filter(is_default_by_accreditor=False).count(),0)
         self.assertEqual(StudentLearningOutcome.objects.filter(letter_associated='a').count(),1)
         self.assertEqual(StudentLearningOutcome.objects.filter(programme=new_prog).count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__isnull=True).count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__isnull=True).count(),1)
         #Try editing
         slo_in_db = StudentLearningOutcome.objects.filter(slo_description=slo_descr).get()
         new_description = "new one"
@@ -51,7 +53,34 @@ class TestAccreditation(TestCase):
         response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
                         {'select_slo_to_remove':slo_in_db.id })
         self.assertEqual(response.status_code, 302) #Re-direct
-        #self.assertEqual(StudentLearningOutcome.objects.all().count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.all().count(),0)
+
+        acad_year_1 = Academicyear.objects.create(start_year=2020)
+        acad_year_2 = Academicyear.objects.create(start_year=2022)
+        #Add another one with "Expiry dates"
+        response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+                        {'slo_description':"hello", 'slo_short_description': "h", 'is_default_by_accreditor' : True, 'letter_associated' : 'a',\
+                        'fresh_record' : True, 'cohort_valid_from':acad_year_1.id, 'cohort_valid_to':acad_year_2.id})
+        self.assertEqual(StudentLearningOutcome.objects.all().count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__isnull=True).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__isnull=True).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__start_year=2020).count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__start_year=2022).count(),1)
+        #now edit this one
+        acad_year_3 = Academicyear.objects.create(start_year=2018)
+        acad_year_4 = Academicyear.objects.create(start_year=2024)
+        slo_in_db = StudentLearningOutcome.objects.filter(slo_description='hello').get()
+        response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+                        {'slo_description':"hello", 'slo_short_description': "h", 'is_default_by_accreditor' : True, 'letter_associated' : 'a',\
+                        'fresh_record' : False, 'cohort_valid_from':acad_year_3.id, 'cohort_valid_to':acad_year_4.id, 'slo_id' : slo_in_db.id})
+        self.assertEqual(StudentLearningOutcome.objects.all().count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__isnull=True).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__isnull=True).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__start_year=2020).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__start_year=2022).count(),0)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_from__start_year=2018).count(),1)
+        self.assertEqual(StudentLearningOutcome.objects.filter(cohort_valid_to__start_year=2024).count(),1)
+
 
         self.assertEqual(ProgrammeEducationalObjective.objects.all().count(),0)
         #Add a PEO
@@ -65,6 +94,8 @@ class TestAccreditation(TestCase):
         self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_description=peo_descr).count(),1)
         self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_short_description=peo_short_desc).count(),1)
         self.assertEqual(ProgrammeEducationalObjective.objects.filter(letter_associated='a').count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__isnull=True).count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__isnull=True).count(),1)
 
         peo_in_db = ProgrammeEducationalObjective.objects.filter(peo_description  = peo_descr).get()
         #edit
@@ -84,6 +115,30 @@ class TestAccreditation(TestCase):
                         {'select_peo_to_remove':peo_in_db.id })
         self.assertEqual(response.status_code, 302) #Re-direct
         self.assertEqual(ProgrammeEducationalObjective.objects.all().count(),0)
+
+        #Create another one with "expiry dates"
+        response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+                        {'peo_description':peo_descr, 'peo_short_description': peo_short_desc,'letter_associated' : 'a',\
+                         'peo_cohort_valid_from': acad_year_1.id,'peo_cohort_valid_to': acad_year_2.id,
+                        'fresh_record' : True})
+        self.assertEqual(ProgrammeEducationalObjective.objects.all().count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__isnull=True).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__isnull=True).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__start_year=2020).count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__start_year=2022).count(),1)
+        #Now edit this one
+        peo_in_db = ProgrammeEducationalObjective.objects.filter(peo_description  = peo_descr).get()
+        response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+                        {'peo_description':new_peo_descr, 'peo_short_description': peo_short_desc, 'letter_associated' : 'a','peo_id' : peo_in_db.id,\
+                         'peo_cohort_valid_from': acad_year_3.id,'peo_cohort_valid_to': acad_year_4.id,
+                        'fresh_record' : False})
+        self.assertEqual(ProgrammeEducationalObjective.objects.all().count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__isnull=True).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__isnull=True).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__start_year=2020).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__start_year=2022).count(),0)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__start_year=2018).count(),1)
+        self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__start_year=2024).count(),1)
 
     def testSLOPEOMapping(self):
         self.setup_user()

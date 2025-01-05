@@ -1363,12 +1363,15 @@ def accreditation(request,programme_id):
             slo_short_text = slo_form.cleaned_data["slo_short_description"]
             default_or_not = slo_form.cleaned_data["is_default_by_accreditor"]
             letter = slo_form.cleaned_data["letter_associated"]
-            
+            academic_year_start = slo_form.cleaned_data['cohort_valid_from']
+            academic_year_end = slo_form.cleaned_data['cohort_valid_to']
             if (slo_form.cleaned_data['fresh_record'] == True):
                 new_slo = StudentLearningOutcome.objects.create(slo_description = slo_text,\
                                                                 slo_short_description = slo_short_text,\
                                                                 is_default_by_accreditor = default_or_not,
                                                                 letter_associated = letter,
+                                                                cohort_valid_from = academic_year_start,
+                                                                cohort_valid_to = academic_year_end,
                                                                 programme = programme)
                 new_slo.save()
             else: #edit
@@ -1377,6 +1380,8 @@ def accreditation(request,programme_id):
                            slo_short_description = slo_short_text,\
                            is_default_by_accreditor = default_or_not,
                            letter_associated = letter,
+                           cohort_valid_from = academic_year_start,
+                           cohort_valid_to = academic_year_end,
                            programme = programme)
                 
 
@@ -1458,10 +1463,14 @@ def accreditation(request,programme_id):
             peo_text = peo_form.cleaned_data["peo_description"]
             peo_short_text = peo_form.cleaned_data["peo_short_description"]
             letter = peo_form.cleaned_data["letter_associated"]
+            supplied_acad_year_start = peo_form.cleaned_data['peo_cohort_valid_from']
+            supplied_acad_year_to = peo_form.cleaned_data['peo_cohort_valid_to']
             if (peo_form.cleaned_data['fresh_record'] == True):
                 new_peo = ProgrammeEducationalObjective.objects.create(peo_description = peo_text,\
                                                                 peo_short_description = peo_short_text,\
                                                                 letter_associated = letter,
+                                                                peo_cohort_valid_from = supplied_acad_year_start,
+                                                                peo_cohort_valid_to = supplied_acad_year_to,
                                                                 programme = programme)
                 new_peo.save()
             else: #edit
@@ -1469,6 +1478,8 @@ def accreditation(request,programme_id):
                 ProgrammeEducationalObjective.objects.filter(id = int(peo_id)).update(peo_description = peo_text,\
                            peo_short_description = peo_short_text,\
                            letter_associated = letter,\
+                           peo_cohort_valid_from = supplied_acad_year_start,\
+                           peo_cohort_valid_to = supplied_acad_year_to,\
                            programme = programme)
         
         remove_peo_form = RemovePEOForm(request.POST, programme_id = programme_id)
