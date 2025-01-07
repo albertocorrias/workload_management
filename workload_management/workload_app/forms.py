@@ -352,12 +352,20 @@ class MLOForm(forms.ModelForm):
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     mlo_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
     mod_code = forms.CharField(widget=forms.HiddenInput(), required=False)
+    def __init__(self, *args, **kwargs):
+        super(MLOForm, self).__init__(*args, **kwargs)
+        self.fields['mlo_valid_from'].required = False
+        self.fields['mlo_valid_to'].required = False
+        self.fields['mlo_valid_from'].initial = None
+        self.fields['mlo_valid_to'].initial = None
 
     class Meta:
         model = ModuleLearningOutcome;
-        fields = ['mlo_description', 'mlo_short_description',]
+        fields = ['mlo_description', 'mlo_short_description','mlo_valid_from','mlo_valid_to']
         labels = {'mlo_description' : _('Description of the MLO'),
-                  'mlo_short_description' : _('A shorter description of the MLO')}
+                  'mlo_short_description' : _('A shorter description of the MLO'),
+                  'mlo_valid_from': _('Valid from '),
+                  'mlo_valid_to': _('Valid to '),}
         widgets = {'mlo_description' : forms.Textarea}
 
 class RemoveMLOForm(forms.Form):

@@ -103,6 +103,28 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(display_string_3, "Valid until 2015-2016")
         self.assertEqual(display_string_4, "Always")
 
+        mod_code_1 = 'AA101'
+        mod_code_2 = 'AA201'
+        mod_code_3 = 'AA301'
+        mod_code_4 = 'AA401'
+
+        mlo_1 = ModuleLearningOutcome.objects.create(mlo_description = "hello1", mlo_short_description = 'h4', module_code = mod_code_4,\
+            mlo_valid_from = acad_year_1, mlo_valid_to = acad_year_4)
+        mlo_2 = ModuleLearningOutcome.objects.create(mlo_description = "hello2", mlo_short_description = 'h2', module_code = mod_code_2,\
+            mlo_valid_from = acad_year_1)
+        mlo_3 = ModuleLearningOutcome.objects.create(mlo_description = "hello3", mlo_short_description = 'h3', module_code = mod_code_3,\
+            mlo_valid_to = acad_year_4)
+        mlo_4 = ModuleLearningOutcome.objects.create(mlo_description = "hello4", mlo_short_description = 'h1', module_code = mod_code_1)
+        
+        display_string_1 = DisplayOutcomeValidity(mlo_1.id, accreditation_outcome_type.MLO)
+        display_string_2 = DisplayOutcomeValidity(mlo_2.id, accreditation_outcome_type.MLO)
+        display_string_3 = DisplayOutcomeValidity(mlo_3.id, accreditation_outcome_type.MLO)
+        display_string_4 = DisplayOutcomeValidity(mlo_4.id, accreditation_outcome_type.MLO)
+        self.assertEqual(display_string_1, "Valid from 2012-2013 until 2015-2016")
+        self.assertEqual(display_string_2, "Valid since 2012-2013")
+        self.assertEqual(display_string_3, "Valid until 2015-2016")
+        self.assertEqual(display_string_4, "Always")
+
     def test_report(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')

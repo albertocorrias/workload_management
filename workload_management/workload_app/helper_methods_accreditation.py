@@ -29,6 +29,14 @@ def DisplayOutcomeValidity(outcome_id, outcome_type):
                 start = peo_obj.peo_cohort_valid_from.__str__()
             if (peo_obj.peo_cohort_valid_to is not None):
                 end = peo_obj.peo_cohort_valid_to.__str__()
+    if (outcome_type == accreditation_outcome_type.MLO):
+        mlo = ModuleLearningOutcome.objects.filter(id = outcome_id)
+        if mlo.count()==1:#it should really be one, if, not, do nothing instead of trhowing errors
+            mlo_obj = mlo.get()
+            if (mlo_obj.mlo_valid_from is not None):
+                start = mlo_obj.mlo_valid_from.__str__()
+            if (mlo_obj.mlo_valid_to is not None):
+                end = mlo_obj.mlo_valid_to.__str__()
     ret = ""
     if (start == None) and (end ==None):
         ret =  "Always"

@@ -68,6 +68,7 @@ class TestModulePage(TestCase):
         self.client.login(username='test_user', password='test_user_password')
 
         acad_year_1 = Academicyear.objects.create(start_year=2021)
+        acad_year_2 = Academicyear.objects.create(start_year=2025)
         dept_name = 'test_dept'
         mod_type_1 = ModuleType.objects.create(type_name = "one type")
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
@@ -95,19 +96,26 @@ class TestModulePage(TestCase):
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_description = descr).count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_short_description = short_desc).count(),1)
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_from__isnull=True).count(),1)#empty in form, default to NULL
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_to__isnull=True).count(),1)#empty in form, default to NULL
 
         #Try editing it
         mlo_obj = ModuleLearningOutcome.objects.filter(mlo_description = descr).get()
         new_description = "NEW description"
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
             {"mlo_description" : new_description,\
-            "mlo_short_description" : short_desc, "fresh_record" : False, "mod_code" : module_1.module_code, "mlo_id" : mlo_obj.id})
+            "mlo_short_description" : short_desc, "fresh_record" : False, "mod_code" : module_1.module_code, "mlo_id" : mlo_obj.id,\
+            "mlo_valid_from" : acad_year_1.id, "mlo_valid_to" : acad_year_2.id})
         
         self.assertEqual(response.status_code, 302) #re-direct triggered
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_description = descr).count(),0)#Not there any more
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_description = new_description).count(),1)#New description
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_short_description = short_desc).count(),1)
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_from__isnull=True).count(),0)#No more NULLS, edited
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_to__isnull=True).count(),0)#No more NULLS, edited
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_from__start_year=2021).count(),1)#
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_to__start_year=2025).count(),1)#
 
         #Test the get directly, with one MLO
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
@@ -168,13 +176,18 @@ class TestModulePage(TestCase):
         new_MLO_short_desc = "NEW MLo short"
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
             {"mlo_description" : new_MLO_descr,\
-            "mlo_short_description" : new_MLO_short_desc, "fresh_record" : True, "mod_code" : module_1.module_code})
+            "mlo_short_description" : new_MLO_short_desc, "fresh_record" : True, "mod_code" : module_1.module_code,\
+            "mlo_valid_from" : acad_year_1.id, "mlo_valid_to" : acad_year_2.id})
         self.assertEqual(response.status_code, 302) #re-direct triggered
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),2)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_description = new_description).count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_short_description = short_desc).count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_description = new_MLO_descr).count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_short_description = new_MLO_short_desc).count(),1)
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_from__isnull=True).count(),0)#No more NULLS,
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_to__isnull=True).count(),0)#No more NULLS,
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_from__start_year=2021).count(),2)#the one before, plus this new one
+        self.assertEqual(ModuleLearningOutcome.objects.filter(mlo_valid_to__start_year=2025).count(),2)#the one before, plus this new one
         new_mlo_obj = ModuleLearningOutcome.objects.filter(mlo_description = new_MLO_descr).get()
         #Get again
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))

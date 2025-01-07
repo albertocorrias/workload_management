@@ -1109,13 +1109,17 @@ def module(request, module_code):
         if (mlo_form.is_valid()):
             mlo_text = mlo_form.cleaned_data["mlo_description"]
             mlo_short_text = mlo_form.cleaned_data["mlo_short_description"]
+            mlo_valid_from = mlo_form.cleaned_data["mlo_valid_from"]
+            mlo_valid_to = mlo_form.cleaned_data["mlo_valid_to"]
             if (mlo_form.cleaned_data['fresh_record'] == True):
-                new_mlo = ModuleLearningOutcome.objects.create(mlo_description = mlo_text,mlo_short_description= mlo_short_text,module_code = module_code)
+                new_mlo = ModuleLearningOutcome.objects.create(mlo_description = mlo_text,mlo_short_description= mlo_short_text,module_code = module_code,\
+                                mlo_valid_from=mlo_valid_from, mlo_valid_to=mlo_valid_to)
                 new_mlo.save()
             else: #This is an edit
                 mlo_id = mlo_form.cleaned_data['mlo_id']
                 ModuleLearningOutcome.objects.filter(id = int(mlo_id)).update(mlo_description = mlo_text,\
-                           mlo_short_description = mlo_short_text)
+                            mlo_short_description = mlo_short_text,\
+                            mlo_valid_from=mlo_valid_from, mlo_valid_to=mlo_valid_to)
         
         remove_mlo_form = RemoveMLOForm(request.POST, module_code = module_code)
         if (remove_mlo_form.is_valid() == True):
@@ -1211,11 +1215,14 @@ def module(request, module_code):
         for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
             mlo_edit_form = MLOForm(initial = {'fresh_rescord' : False, 'mlo_id' : mlo.id,\
                                                 'mlo_description' : mlo.mlo_description,\
-                                                'mlo_short_description' : mlo.mlo_short_description})
+                                                'mlo_short_description' : mlo.mlo_short_description,\
+                                                'mlo_valid_from': mlo.mlo_valid_from,\
+                                                'mlo_valid_to'  :mlo.mlo_valid_to})
             mlo_item = {
                 'mlo_desc' : mlo.mlo_description,
                 'mlo_short_desc' : mlo.mlo_short_description,
                 'mlo_edit_form' : mlo_edit_form,
+                'mlo_validity' : DisplayOutcomeValidity(mlo.id, accreditation_outcome_type.MLO),
                 'mlo_id' : mlo.id,
                 'slo_mapping' : [],
                 'slo_mapping_form' : None

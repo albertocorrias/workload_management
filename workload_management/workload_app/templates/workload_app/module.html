@@ -66,11 +66,13 @@
                     <tr>
                       <th style="background-color:#f4f3f1;"> </th>
                       <th style="background-color:#f4f3f1;"> </th>
+                      <th style="background-color:#f4f3f1;"> </th>
                       <th colspan="{{ slo_list|length }}"> Student Learning Outcome </th>
                     </tr>
                     <tr>
                         <th> </th>
                         <th> MLO Description</th>
+                        <th>Validity</th>
                         {% for slo_item in slo_list %}
                           <th> {{ slo_item.slo_letter }} </th>
                         {% endfor %}
@@ -82,6 +84,7 @@
                               <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditMLO{{ entry.mlo_id }}">
                                   <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                               <td style="text-align:left;">{{ entry.mlo_desc }}</td>
+                              <td> {{ entry.mlo_validity }} </td>
                               {% for slo_item in entry.slo_mapping %}
                                 <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ slo_item.mapping_icon }}" alt="edit"/> </td>
                               {% endfor %}
