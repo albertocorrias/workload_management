@@ -27,7 +27,8 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import DEFAULT_MODULE_TYPE_NAME,DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,  REPEATED_TUTORIAL_MULTIPLIER,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              DEFAULT_PROGRAMME_OFFERED_NAME,requested_table_type,COLOUR_SCHEMES,NUS_MLO_SURVEY_LABELS, NUS_SLO_SURVEY_LABELS
+                              DEFAULT_PROGRAMME_OFFERED_NAME,requested_table_type,COLOUR_SCHEMES,NUS_MLO_SURVEY_LABELS, \
+                              NUS_SLO_SURVEY_LABELS, accreditation_outcome_type
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -36,7 +37,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
 from .helper_methods_survey import CalculateSurveyDetails, CalculateTotalResponsesForQuestion, CalulatePositiveResponsesFractionForQuestion
 from .helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                             DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,CalculateMLOSLOMappingTable,\
-                                            CalculateAllInforAboutOneSLO
+                                            CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
 from .report_methods import GetLastFiveYears,CalculateProfessorIndividualWorkload, CalculateFacultyReportTable
 
@@ -1529,6 +1530,7 @@ def accreditation(request,programme_id):
                 'peo_desc' : peo.peo_description,
                 'peo_short_desc' : peo.peo_short_description,
                 'peo_letter' : peo.letter_associated,
+                'peo_validity' : DisplayOutcomeValidity(peo.id,accreditation_outcome_type.PEO),
                 'peo_edit_form' : peo_edit_form,
                 'peo_id' : peo.id
             }
@@ -1548,6 +1550,7 @@ def accreditation(request,programme_id):
                 'slo_short_desc' : slo.slo_short_description,
                 'slo_letter' : slo.letter_associated,
                 'slo_edit_form' : edit_form,
+                'slo_validity' : DisplayOutcomeValidity(slo.id,accreditation_outcome_type.SLO),
                 'slo_id' : slo.id,
                 'slo_mapping_form' : PEOSLOMappingForm(prog_id=programme_id),
                 'peo_mapping' : []

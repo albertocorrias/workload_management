@@ -59,6 +59,12 @@ COLOUR_SCHEMES = [colour_scheme_1,colour_scheme_2, colour_scheme_3]
 NUS_MLO_SURVEY_LABELS = ['All the time', "Most of the time", "Sometimes", "Never"]
 NUS_SLO_SURVEY_LABELS = ['Strongly Agree', 'Agree', 'Neutral', 'Disagree', 'Strongly disagree']
 
+#This enum class is used to for methods that calculate things for all types of outcomes.
+class accreditation_outcome_type(Enum):
+    SLO = 1
+    PEO = 2
+    MLO = 3
+
 def CalculateNumHoursBasedOnWeeklyInfo(weekly_lect_hrs, weekly_tut_hrs, weeks_assigned, num_tut_grps):
 
     if (weekly_lect_hrs <= 0) and (weekly_tut_hrs <= 0):

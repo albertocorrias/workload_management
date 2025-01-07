@@ -1,7 +1,44 @@
 import datetime
 import copy
-from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, MLOPerformanceMeasure, Module,ModuleLearningOutcome
+from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, \
+                    MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
+from .global_constants import accreditation_outcome_type
+
+
+#Little short-hand method to figure out the string to display for 
+#the validity period of an outcome
+# outcome_id is the Id of the ourcome in the DB
+# outcome_type is the type of outcome (accreditation_outcome_type enum class)
+def DisplayOutcomeValidity(outcome_id, outcome_type):
+    start = None
+    end = None
+    if (outcome_type == accreditation_outcome_type.SLO):
+        slo = StudentLearningOutcome.objects.filter(id = outcome_id)
+        if slo.count()==1:#it should really be one, if, not, do nothing instead of trhowing errors
+            slo_obj = slo.get()
+            if (slo_obj.cohort_valid_from is not None):
+                start = slo_obj.cohort_valid_from.__str__()
+            if (slo_obj.cohort_valid_to is not None):
+                end = slo_obj.cohort_valid_to.__str__()
+    if (outcome_type == accreditation_outcome_type.PEO):
+        peo = ProgrammeEducationalObjective.objects.filter(id = outcome_id)
+        if peo.count()==1:#it should really be one, if, not, do nothing instead of trhowing errors
+            peo_obj = peo.get()
+            if (peo_obj.peo_cohort_valid_from is not None):
+                start = peo_obj.peo_cohort_valid_from.__str__()
+            if (peo_obj.peo_cohort_valid_to is not None):
+                end = peo_obj.peo_cohort_valid_to.__str__()
+    ret = ""
+    if (start == None) and (end ==None):
+        ret =  "Always"
+    if (start == None) and (end is not None):
+        ret = "Valid until " + end
+    if (start is not None) and (end is None):
+        ret =  "Valid since " + start
+    if (start is not None) and (end is not None):
+        ret = "Valid from " + start + " until " + end
+    return ret
 
 #Calculate a table with surveys for a given SLO within a given period for HTML visualization.
 #It returns a list of dictionaries, each intended as row in the table

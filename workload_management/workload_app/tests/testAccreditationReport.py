@@ -4,12 +4,13 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
+from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME, accreditation_outcome_type
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
-                                ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse
+                                ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse,\
+                                ProgrammeEducationalObjective
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                                         CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
-                                                        CalculateAllInforAboutOneSLO
+                                                        CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
 from workload_app.helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 
@@ -19,7 +20,89 @@ class TestAccreditationReport(TestCase):
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
     
-    
+    def test_display_outcome_validity(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        #create 4 academic years
+        start_year = 2012
+        acad_year_1 = Academicyear.objects.create(start_year=start_year)
+        acad_year_4 = Academicyear.objects.create(start_year=start_year+3)
+
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        prog_to_accredit = ProgrammeOffered.objects.create(programme_name="test_prog", primary_dept = new_dept)
+
+        #Valid from 2012 to 2015
+        slo_1 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_1', \
+                                                      slo_short_description = 'slo_1', \
+                                                      is_default_by_accreditor = True,\
+                                                      letter_associated  = 'a',
+                                                      cohort_valid_from = acad_year_1,
+                                                      cohort_valid_to = acad_year_4,
+                                                      programme = prog_to_accredit)
+        #Valid from 2012 onwards
+        slo_2 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_2', \
+                                                      slo_short_description = 'slo_2', \
+                                                      is_default_by_accreditor = True,\
+                                                      letter_associated  = 'b',
+                                                      cohort_valid_from = acad_year_1,
+                                                      programme = prog_to_accredit)
+        #Valid until 2015
+        slo_3 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_3', \
+                                                      slo_short_description = 'slo_3', \
+                                                      is_default_by_accreditor = True,\
+                                                      letter_associated  = 'c',
+                                                      cohort_valid_to = acad_year_4,
+                                                      programme = prog_to_accredit)
+        #Always valid (default NULL years)
+        slo_4 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_4', \
+                                                      slo_short_description = 'slo_4', \
+                                                      is_default_by_accreditor = True,\
+                                                      letter_associated  = 'd',
+                                                      programme = prog_to_accredit)
+        display_string_1 = DisplayOutcomeValidity(slo_1.id, accreditation_outcome_type.SLO)
+        display_string_2 = DisplayOutcomeValidity(slo_2.id, accreditation_outcome_type.SLO)
+        display_string_3 = DisplayOutcomeValidity(slo_3.id, accreditation_outcome_type.SLO)
+        display_string_4 = DisplayOutcomeValidity(slo_4.id, accreditation_outcome_type.SLO)
+        self.assertEqual(display_string_1, "Valid from 2012-2013 until 2015-2016")
+        self.assertEqual(display_string_2, "Valid since 2012-2013")
+        self.assertEqual(display_string_3, "Valid until 2015-2016")
+        self.assertEqual(display_string_4, "Always")
+
+        #Valid from 2012 to 2015
+        peo_1 = ProgrammeEducationalObjective.objects.create(peo_description = 'This is peo_1', \
+                                                      peo_short_description = 'peo_1', \
+                                                      letter_associated  = 'a',
+                                                      peo_cohort_valid_from = acad_year_1,
+                                                      peo_cohort_valid_to = acad_year_4,
+                                                      programme = prog_to_accredit)
+        #Valid from 2012 onwards
+        peo_2 = ProgrammeEducationalObjective.objects.create(peo_description = 'This is peo_2', \
+                                                      peo_short_description = 'peo_2', \
+                                                      letter_associated  = 'b',
+                                                      peo_cohort_valid_from = acad_year_1,
+                                                      programme = prog_to_accredit)
+        #Valid until 2015
+        peo_3 = ProgrammeEducationalObjective.objects.create(peo_description = 'This is peo_3', \
+                                                      peo_short_description = 'peo_3', \
+                                                      letter_associated  = 'c',
+                                                      peo_cohort_valid_to = acad_year_4,
+                                                      programme = prog_to_accredit)
+        #Always valid (default NULL years)
+        peo_4 = ProgrammeEducationalObjective.objects.create(peo_description = 'This is peo_4', \
+                                                      peo_short_description = 'peo_4', \
+                                                      letter_associated  = 'd',
+                                                      programme = prog_to_accredit)
+
+        display_string_1 = DisplayOutcomeValidity(peo_1.id, accreditation_outcome_type.PEO)
+        display_string_2 = DisplayOutcomeValidity(peo_2.id, accreditation_outcome_type.PEO)
+        display_string_3 = DisplayOutcomeValidity(peo_3.id, accreditation_outcome_type.PEO)
+        display_string_4 = DisplayOutcomeValidity(peo_4.id, accreditation_outcome_type.PEO)
+        self.assertEqual(display_string_1, "Valid from 2012-2013 until 2015-2016")
+        self.assertEqual(display_string_2, "Valid since 2012-2013")
+        self.assertEqual(display_string_3, "Valid until 2015-2016")
+        self.assertEqual(display_string_4, "Always")
+
     def test_report(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')

@@ -40,7 +40,8 @@
                   <tr>
                       <th> ID </th> 
                       <th> SLO description</th>
-                      <th> </th>
+                      <th> Validity </th>
+                      <th> Edit </th>
                   </tr>
                   </thead>
                   <tbody>
@@ -48,12 +49,13 @@
                         <tr>
                             <td>{{ entry.slo_letter }}</td>
                             <td style="text-align:left;">{{ entry.slo_desc }}</td>
+                            <td> {{ entry.slo_validity }}</td>
                             <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditSLO{{ entry.slo_id }}">
                                 <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                         </tr>
                     {% endfor %}
                     <tr>
-                      <td colspan="3">
+                      <td colspan="4">
                         <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#NewSLOModal">
                           Add/Remove SLOs..
                         </button>
@@ -73,7 +75,8 @@
                   <tr>
                       <th> ID </th> 
                       <th> PEO description</th>
-                      <th> </th>
+                      <th> Validity </th>
+                      <th> Edit </th>
                   </tr>
                   </thead>
                   <tbody>
@@ -81,12 +84,13 @@
                         <tr>
                             <td>{{ entry.peo_letter }}</td>
                             <td style="text-align:left;">{{ entry.peo_desc }}</td>
+                            <td>{{ entry.peo_validity }}</td>
                             <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditPEO{{ entry.peo_id }}">
                                 <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                         </tr>
                     {% endfor %}
                     <tr>
-                      <td colspan="3">
+                      <td colspan="4">
                         <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#NewPEOModal">
                           Add/Remove PEOs..
                         </button>
