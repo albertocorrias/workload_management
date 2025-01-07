@@ -198,8 +198,12 @@ class ModuleLearningOutcome(models.Model):
     mlo_description = models.CharField(max_length=3000)
     #A short description 
     mlo_short_description = models.CharField(max_length=500, default='')
-    #Moduel code associated. #NOTE: as module objects are dependent on the workload scenario, we associate with module code only
+    #Module code associated. #NOTE: as module objects are dependent on the workload scenario, we associate with module code only
     module_code = models.CharField(max_length=300)
+    #Valid from
+    mlo_valid_from = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name="mlo_valid_from")
+    #Valid until
+    mlo_valid_to = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name="mlo_valid_to")
 
     def __str__(self):
         return self.mlo_description

@@ -610,11 +610,19 @@ def CalculateSingleModuleInformationTable(module_code):
             for module in Module.objects.filter(module_code=module_code).filter(scenario_ref=workload):
                 text_for_compulsory = "No"
                 if (module.compulsory_in_primary_programme): text_for_compulsory = "Yes"
+                #Infer the year of study to display
+                display_year_of_study = ""
+                if module.students_year_of_study == 0:
+                    display_year_of_study = str(module_code[3])
+                else:
+                    display_year_of_study = str(module.students_year_of_study)
+
+
                 table_row_item = {
                     "academic_year": acad_year.__str__(),
                     "module_type" : module.module_type.type_name,
                     "semester_offered" : module.semester_offered,
-                    "year_of_study" :  module.students_year_of_study,
+                    "year_of_study" :  display_year_of_study,
                     "compulsory_in_primary_programme" : text_for_compulsory,
                     "primary_programme" : "",
                     "secondary_programme" : "",
