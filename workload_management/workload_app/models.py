@@ -2,6 +2,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+from .global_constants import ShortenString
 import datetime
 
 
@@ -444,3 +445,16 @@ class MLOPerformanceMeasure(models.Model):
 
     def __str__(self):
         return self.academic_year.__str__() + " - " + self.description
+    
+class CorrectiveAction(models.Model):
+    #module code - the module code for which this action is relevant
+    module_code = models.CharField(max_length=10)
+    #The description of the corrective action
+    description = models.CharField(max_length=1000000)
+    #The academic year where it will be implemented
+    implementation_acad_year = models.ForeignKey(Academicyear, null=True, on_delete=models.SET_NULL)
+    #Observed results
+    observed_results =  models.CharField(max_length=1000000)
+    
+    def __str__(self):
+        return ShortenString(self.description) + ' (' + self.implementation_acad_year.__str__() + ')'

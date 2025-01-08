@@ -53,7 +53,7 @@
             <hr>
             <h2>Accreditation information</h2>
             <div class="buttons_container">
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOModal">
+              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOModal">
                 Add/Remove MLOs..
               </button>
             </div><!-- end of buttons container-->
@@ -110,7 +110,7 @@
               <h2>MLO measures</h2>
               <h3>Surveys</h3>
               <div class="buttons_container">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOSurveyModal">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOSurveyModal">
                   Add a new MLO survey
                 </button>
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOSurveyModal">
@@ -157,7 +157,7 @@
                 {% endif %}
                 <h3>Direct MLO performance measures</h3>
                 <div class="buttons_container">
-                  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#NewMLOPerformanceMeasure">
+                  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOPerformanceMeasure">
                     Add new performance masure for MLOs
                   </button>
                   <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOPerformanceMeasure">
@@ -189,6 +189,42 @@
                           {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <div>
+                  <hr>
+                  <h2>Reflections and improvements</h2>
+                  <div class="buttons_container">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewCorrectiveAction">
+                      Add new reflection for improvement
+                    </button>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveCorrectiveAction">
+                      Remove existing reflection for improvement
+                    </button>
+                  </div>
+                  <div>
+                    <table id="REFLECTIONS_ACTIONS_TABLE" class="workload_tables table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                              <th>Reflection</th>
+                              <th>Implementation year </th>
+                              <th>Observed improvements</th>
+                              <th>Edit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          {% for table_row in corrective_action_table %}
+                          <tr>
+                            <td>{{ table_row.description }}</td>
+                            <td>{{ table_row.year }}</td>
+                            <td>{{ table_row.results }} </td>
+                            <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditAction{{ table_row.action_id }}">
+                              <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 </div>
         {% endif %} <!-- of the check for error messages-->
 
@@ -371,7 +407,7 @@
                               </form>  
                           </div><!-- Modal content -->
                         </div><!-- Mdal dialogue-->
-                      </div><!--whole modal--> 
+                  </div><!--whole modal--> 
 
                       <!--Modal to REMOVE MLO performance masure-->
                       <div class="modal fade" id="RemoveMLOPerformanceMeasure" tabindex="-1" role="dialog" aria-labelledby="RemoveMLOPerformanceMeasureLabel" aria-hidden="true">
@@ -396,6 +432,80 @@
                           </div><!-- Modal content -->
                         </div><!-- Mdal dialogue-->
                       </div><!--whole modal--> 
+
+                <!--Modal for new actions-->
+                <div class="modal fade" id="NewCorrectiveAction" tabindex="-1" role="dialog" aria-labelledby="NewCorrectiveActionLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="NewCorrectiveActionLabel">Add new action/reflection</h5>
+                            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                            </button>
+                          </div>
+                          <form action="{% url 'workload_app:module' module_code %}" method="post">
+                          {% csrf_token %}
+                              <div class="modal-body">
+                                    {{ corrective_action_form.as_p }}
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                <button type="submit" class="btn btn-primary">Save changes</button>
+                              </div>
+                        </form>  
+                    </div><!-- Modal content -->
+                  </div><!-- Mdal dialogue-->
+                </div><!--whole modal--> 
+                <!--Modal to REMOVE corrective action-->
+                <div class="modal fade" id="RemoveCorrectiveAction" tabindex="-1" role="dialog" aria-labelledby="RemoveCorrectiveActionLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="RemoveCorrectiveActionLabel">Remove existing reflection/action</h5>
+                            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                            </button>
+                          </div>
+                        <form action="{% url 'workload_app:module'  module_code %}" method="post">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                              {{ remove_corrective_action_form.as_p }}
+                            </div><!--modal body-->
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                            <button type="submit" class="btn btn-danger">Remove selected</button>
+                          </div>
+                      </form>  
+                    </div><!-- Modal content -->
+                  </div><!-- Mdal dialogue-->
+                </div><!--whole modal--> 
+
+                <!-- Edit existing corrective actions-->
+                {% for entry in corrective_action_table %}
+                    <div class="modal fade" id="EditAction{{ entry.action_id }}" tabindex="-1" role="dialog" aria-labelledby="EditAction{{ entry.action_id }}Label" aria-hidden="true">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="EditAction{{ entry.action_id }}Label">Edit action/reflection</h5>
+                                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                                </button>
+                              </div>
+                              <form action="{% url 'workload_app:module' module_code %}" method="post">
+                              {% csrf_token %}
+                                  <div class="modal-body">
+                                        {{ entry.corr_act_edit_form.as_p }}
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                                  </div>
+                              </form>
+                        </div><!-- Modal content -->
+                      </div><!-- Mdal dialogue-->
+                    </div><!--whole modal--> 
+                {% endfor %}
+
     </div><!--overall container-->
 {% include './footer.html' %}
 </body>

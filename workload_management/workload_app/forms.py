@@ -7,7 +7,8 @@ import datetime
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, \
                     Department, EmploymentTrack,ServiceRole,Faculty, ProgrammeOffered, \
                     StudentLearningOutcome,SubProgrammeOffered,Academicyear,ProgrammeEducationalObjective,\
-                    ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure
+                    ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure,\
+                    CorrectiveAction
 from .global_constants import NUS_SLO_SURVEY_LABELS
 
 class ProfessorForm(ModelForm):
@@ -360,13 +361,39 @@ class MLOForm(forms.ModelForm):
         self.fields['mlo_valid_to'].initial = None
 
     class Meta:
-        model = ModuleLearningOutcome;
+        model = ModuleLearningOutcome
         fields = ['mlo_description', 'mlo_short_description','mlo_valid_from','mlo_valid_to']
         labels = {'mlo_description' : _('Description of the MLO'),
                   'mlo_short_description' : _('A shorter description of the MLO'),
                   'mlo_valid_from': _('Valid from '),
                   'mlo_valid_to': _('Valid to '),}
         widgets = {'mlo_description' : forms.Textarea}
+
+class CorrectiveActionForm(forms.ModelForm):
+    fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
+    action_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+    module_code = forms.CharField(widget=forms.HiddenInput(), required=False)
+    def __init__(self, *args, **kwargs):
+        mod_code = kwargs.pop('module_code')
+        super(CorrectiveActionForm, self).__init__(*args, **kwargs)
+        self.fields['observed_results'].required = False
+        self.fields['module_code'].value = mod_code
+
+    class Meta:
+        model = CorrectiveAction
+        fields = ['description', 'implementation_acad_year','observed_results']
+        labels = {'description' : _('Description of the reflecition/corrective action taken'),
+                  'implementation_acad_year' : _('When will this be implemented?'),
+                  'observed_results': _('Results observed after implementation')}
+        widgets = {'description' : forms.Textarea,
+                   'observed_results': forms.Textarea}
+        
+class RemoveCorrectiveActionForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        module_code = kwargs.pop('module_code')
+        super(RemoveCorrectiveActionForm, self).__init__(*args, **kwargs)
+        #Make user select only actions of this module
+        self.fields['select_action_to_remove'] = forms.ModelChoiceField(label = 'Select the action to remove', queryset=CorrectiveAction.objects.filter(module_code = module_code))   
 
 class RemoveMLOForm(forms.Form):
     def __init__(self, *args, **kwargs):

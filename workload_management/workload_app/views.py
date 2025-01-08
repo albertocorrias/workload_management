@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
                     ProgrammeEducationalObjective,PEOSLOMapping, ModuleLearningOutcome, MLOSLOMapping,Survey,\
-                    SurveyQuestionResponse,MLOPerformanceMeasure
+                    SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction
 from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleForm,AddTeachingAssignmentForm,\
                    RemoveTeachingAssignmentForm,ScenarioForm,RemoveScenarioForm,EditTeachingAssignmentForm,\
                    EditModuleAssignmentForm, RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
@@ -23,7 +23,8 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    RemoveProgrammeForm,SLOForm,RemoveSLOForm,SubProgrammeOfferedForm,RemoveSubProgrammeForm,\
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
-                   AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm
+                   AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
+                   CorrectiveActionForm, RemoveCorrectiveActionForm
 
 from .global_constants import DEFAULT_MODULE_TYPE_NAME,DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,  REPEATED_TUTORIAL_MULTIPLIER,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
@@ -855,7 +856,7 @@ def manage_subprogramme_offered(request, dept_id):
             }
             return HttpResponse(template.render(context, request))
     #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}));
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
 
 def remove_programme_offered(request, dept_id):
     if request.method =='POST':
@@ -865,7 +866,7 @@ def remove_programme_offered(request, dept_id):
             ProgrammeOffered.objects.filter(primary_dept__id=dept_id).filter(programme_name=supplied_prog_name).delete()
 
     #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}));
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
 
 def remove_subprogramme_offered(request, dept_id):
     if request.method =='POST':
@@ -1195,6 +1196,24 @@ def module(request, module_code):
                     supplied_mlo_id = mlo_slo_mapping_form.cleaned_data["mlo_id"]
                     MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=supplied_mlo_id).update(strength = supplied_strength)
 
+        corr_action_form = CorrectiveActionForm(request.POST, module_code=module_code)
+        if(corr_action_form.is_valid()):
+            supplied_corr_desc = corr_action_form.cleaned_data['description']
+            supplied_implementation_acad_year = corr_action_form.cleaned_data['implementation_acad_year']
+            supplied_observed_results = corr_action_form.cleaned_data['observed_results']
+            if (corr_action_form.cleaned_data['fresh_record'] == True):
+                new_act = CorrectiveAction.objects.create(description = supplied_corr_desc,implementation_acad_year= supplied_implementation_acad_year,module_code = module_code,\
+                                observed_results=supplied_observed_results)
+                new_act.save()
+            else: #This is an edit
+                act_id = corr_action_form.cleaned_data['action_id']
+                CorrectiveAction.objects.filter(id = act_id).update(description = supplied_corr_desc,implementation_acad_year= supplied_implementation_acad_year,module_code = module_code,\
+                                observed_results=supplied_observed_results)
+        
+        remove_corective_action_form = RemoveCorrectiveActionForm(request.POST, module_code = module_code)
+        if (remove_corective_action_form.is_valid()):
+            CorrectiveAction.objects.filter(id=request.POST.get('select_action_to_remove')).delete()
+
         return HttpResponseRedirect(reverse('workload_app:module', kwargs={'module_code' : module_code}));#Trigger a get
     else:#This is a get
         module_name_qs = Module.objects.filter(module_code = module_code)
@@ -1321,6 +1340,25 @@ def module(request, module_code):
             mlo_measure_table.append(mlo_measure_table_row)
             if (len(measure.original_file.name) > 0):
                 mlo_measure_table_row["download_url"] = measure.original_file.url
+        
+        #############################
+        # Corrective actions
+        ################################
+        new_corrective_action_form = CorrectiveActionForm(module_code=module_code, initial = {'module_code' : module_code,'fresh_record' : True})
+        remove_correctiove_action_form = RemoveCorrectiveActionForm(module_code=module_code)
+        corrective_action_table = []
+        for action in CorrectiveAction.objects.filter(module_code=module_code):
+            corr_action_table_row = {
+                'description' : action.description,
+                'year' : action.implementation_acad_year,
+                'results' : action.observed_results,
+                'action_id' : action.id,
+                'corr_act_edit_form' : CorrectiveActionForm(module_code=module_code, initial = {'fresh_rescord' : False,\
+                                                'description' : action.description,\
+                                                'implementation_acad_year' : action.implementation_acad_year,\
+                                                'observed_results': action.observed_results,\
+                                                'action_id'  :action.id})}
+            corrective_action_table.append(corr_action_table_row)
 
         #Determine the primary department this module is on. We take as the dept of the first workload this module appears in
         dept_id = ''
@@ -1329,6 +1367,7 @@ def module(request, module_code):
             dept_id  = mod.scenario_ref.dept.id
             dept_name  = mod.scenario_ref.dept.department_acronym
             break
+        
         template = loader.get_template('workload_app/module.html')
         context = {
                     'module_title' : module_name,
@@ -1347,6 +1386,9 @@ def module(request, module_code):
                     'mlo_performance_measure_form' : mlo_performance_measure_form,
                     'remove_mlo_perfroamnce_measure_form' : remove_mlo_perfroamnce_measure_form,
                     'mlo_measure_table' : mlo_measure_table,
+                    'corrective_action_table' : corrective_action_table,
+                    'corrective_action_form' : new_corrective_action_form,
+                    'remove_corrective_action_form' : remove_correctiove_action_form,
                     'department_id' : dept_id,
                     'department_name' : dept_name
                     }

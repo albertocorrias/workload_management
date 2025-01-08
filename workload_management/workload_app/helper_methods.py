@@ -612,7 +612,7 @@ def CalculateSingleModuleInformationTable(module_code):
                 if (module.compulsory_in_primary_programme): text_for_compulsory = "Yes"
                 #Infer the year of study to display
                 display_year_of_study = ""
-                if module.students_year_of_study == 0:
+                if module.students_year_of_study == 0 and len(module_code)>2:
                     display_year_of_study = str(module_code[3])
                 else:
                     display_year_of_study = str(module.students_year_of_study)

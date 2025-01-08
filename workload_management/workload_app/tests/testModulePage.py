@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, Academicyear,WorkloadScenario,EmploymentTrack,ServiceRole,\
-    ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure
+    ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure, CorrectiveAction
 
 
 class TestModulePage(TestCase):
@@ -370,3 +370,68 @@ class TestModulePage(TestCase):
         self.assertEqual(table[0]["description"],measure_desc)
         self.assertEqual(table[0]["mlos_mapped"],short_desc)
         self.assertEqual(table[0]["score"],78)
+
+    def test_corrective_action(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+
+        acad_year_1 = Academicyear.objects.create(start_year=2021)
+        dept_name = 'test_dept'
+        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
+        scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
+        mod_code = "BN101"
+        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, \
+                                        total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
+        self.assertEqual(CorrectiveAction.objects.all().count(),0)
+        #New action
+        response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
+            {"description" : 'hello',
+             'fresh_record' : True,
+            "implementation_acad_year" : acad_year_1.id,
+            "module_code" : mod_code}) #Note: no observed results: supposed to be optional, will edit later
+        self.assertEqual(response.status_code, 302) #No issues, re-direct
+        self.assertEqual(CorrectiveAction.objects.all().count(),1)
+        self.assertEqual(CorrectiveAction.objects.filter(description='hello').count(),1)
+
+        #now edit
+        #get the ID of the existing one
+        existing_id = CorrectiveAction.objects.filter(description='hello').get().id
+        response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
+            {"description" : 'hello2', #EDITED
+             'fresh_record' : False,#edit
+            "implementation_acad_year" : acad_year_1.id,
+            "observed_results" : "improvement observed in test scores",#ADDED
+            "action_id": existing_id,
+            "module_code" : mod_code}) #
+        self.assertEqual(response.status_code, 302) #No issues, re-direct
+        self.assertEqual(CorrectiveAction.objects.all().count(),1)
+        self.assertEqual(CorrectiveAction.objects.filter(description='hello').count(),0)
+        self.assertEqual(CorrectiveAction.objects.filter(description='hello2').count(),1)
+
+        #Call the get again
+        response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
+        self.assertEqual(response.status_code, 200) #No issues
+
+        self.assertEqual(CorrectiveAction.objects.all().count(),1)
+        self.assertEqual(CorrectiveAction.objects.filter(description='hello2').count(),1)
+        #Test the table passed to the template
+        table = response.context["corrective_action_table"]
+        self.assertEqual(len(table),1)
+        self.assertEqual(table[0]["description"],'hello2')
+        self.assertEqual(table[0]["year"],acad_year_1)
+        self.assertEqual(table[0]["results"],"improvement observed in test scores")
+        
+        #And finally remove it
+        response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
+            {"select_action_to_remove" : existing_id})
+        self.assertEqual(response.status_code, 302) #No issues, re-direct
+        self.assertEqual(CorrectiveAction.objects.all().count(),0)
+        
+        response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(CorrectiveAction.objects.all().count(),0)
+        table = response.context["corrective_action_table"]
+        self.assertEqual(len(table),0)
+        
