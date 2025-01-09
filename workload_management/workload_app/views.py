@@ -1703,8 +1703,8 @@ def accreditation_report(request,programme_id, start_year,end_year):
     context = {
         'programme_id' : programme_id,
         'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
-        'start_year' : start_year,
-        'end_year' : end_year,
+        'start_year' : str(start_year)+'/'+str(start_year+1),
+        'end_year' : str(end_year)+'/'+str(end_year+1),
         'slo_measures' : slo_measures, 
         'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
         'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],

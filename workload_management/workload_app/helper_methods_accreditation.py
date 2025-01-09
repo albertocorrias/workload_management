@@ -1,7 +1,8 @@
 import datetime
 import copy
 from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, \
-                    MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective
+                    MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective,\
+                    TeachingAssignment
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 from .global_constants import accreditation_outcome_type
 
@@ -47,6 +48,56 @@ def DisplayOutcomeValidity(outcome_id, outcome_type):
     if (start is not None) and (end is not None):
         ret = "Valid from " + start + " until " + end
     return ret
+
+#Little convenience method to figure out whether an outcome is valid for that year.
+#Works for MLO, PEO and SLO
+# outcome_id is the Id of the ourcome in the DB
+# outcome_type is the type of outcome (accreditation_outcome_type enum class)
+# year is a number of the start year of the academic year under consideration
+def IsOutcomeValidForYear(outcome_id,outcome_type,year):
+    if (outcome_type == accreditation_outcome_type.SLO):
+        slo = StudentLearningOutcome.objects.filter(id = outcome_id).get()
+        if (slo.cohort_valid_from is None):
+            if (slo.cohort_valid_to is None):
+                return True
+            if (slo.cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (slo.cohort_valid_to is None):#Note None-None case is above...no need here
+            if (slo.cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (slo.cohort_valid_from.start_year <= year and slo.cohort_valid_to.start_year >= year):
+            return True
+    if (outcome_type == accreditation_outcome_type.PEO):
+        peo = ProgrammeEducationalObjective.objects.filter(id = outcome_id).get()
+        if (peo.peo_cohort_valid_from is None):
+            if (peo.peo_cohort_valid_to is None):
+                return True
+            if (peo.peo_cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (peo.peo_cohort_valid_to is None):#Note None-None case is above...no need here
+            if (peo.peo_cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (peo.peo_cohort_valid_from.start_year <= year and peo.peo_cohort_valid_to.start_year >= year):
+            return True
+    if (outcome_type == accreditation_outcome_type.MLO):
+        mlo = ModuleLearningOutcome.objects.filter(id = outcome_id).get()
+        if (mlo.mlo_valid_from is None):
+            if (mlo.mlo_valid_to is None):
+                return True
+            if (mlo.mlo_valid_to.start_year >= year):
+                return True
+            return False
+        if (mlo.mlo_valid_to is None):#Note None-None case is above...no need here
+            if (mlo.mlo_valid_from.start_year <= year):
+                return True
+            return False
+        if (mlo.mlo_valid_from.start_year <= year and mlo.mlo_valid_to.start_year >= year):
+            return True
+    return False
 
 #Calculate a table with surveys for a given SLO within a given period for HTML visualization.
 #It returns a list of dictionaries, each intended as row in the table
@@ -318,7 +369,7 @@ def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year):
                 slo_survey_plot[i] = slo_survey_plot[i]/n_for_year
                 
 
-    #indices: 0: years, 1:direct emasures, 2: mlo survey measures, 3L slo survey measures
+    #indices: 0: years, 1:direct measures, 2: mlo survey measures, 3 slo survey measures
     ret["slo_measures_plot_data"] = []
     ret["slo_measures_plot_data"].append(years)
     ret["slo_measures_plot_data"].append(mlo_direct_plot)
@@ -399,3 +450,48 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
         'totals_n_mlo_row' :totals_n_mods_row
     }
     return ret            
+
+def CalculateAccreditationSummaryTable(programme_id, start_year,end_year):
+    table_rows = []
+    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id):
+        table_row = {
+            'letter' : slo.letter_associated,
+            'description' : slo.slo_short_description,
+            'attention_scores_direct' : [],
+            'attention_scores_mlo_surveys' : [],
+            'attention_scores_slo_surveys' : []
+        }
+        for matric_year in range(start_year,end_year+1):
+            if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,matric_year)):
+                mlo_direct_attention_score = 0
+                mlo_survey_attention_score = 0
+                slo_survey_attention_score = 0
+                for mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
+                    mlo = mapping.mlo
+                    if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year))
+                        for measure in MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id):
+                            mod_code = measure.associated_mlo.module_code
+                            
+                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True):#Only compulsory courses
+                                year_delivered = module.scenario_ref.academic_year.start_year
+                                student_year_of_study = module.students_year_of_study
+                                if (year_delivered - student_year_of_study == matric_year) and\
+                                    TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
+                                    mlo_direct_attention_score += mapping.strength
+                        for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
+                            mod_code = mlo.module_code
+                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True):#Only compulsory courses
+                                year_delivered = module.scenario_ref.academic_year.start_year
+                                student_year_of_study = module.students_year_of_study
+                                if (year_delivered - student_year_of_study == matric_year) and\
+                                    TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
+                                    mlo_survey_attention_score += mapping.strength
+                for slo_srv_resp in SurveyQuestionResponse.objects.filter(associated_slo__id = slo.id).filter(parent_survey__cohort_targeted__start_year = matric_year):
+                    slo_survey_attention_score +=1
+
+            table_row['attention_scores_direct'].append(mlo_direct_attention_score)
+            table_row['attention_scores_mlo_surveys'].append(mlo_survey_attention_score)
+            table_row['attention_scores_slo_surveys'].append(slo_survey_attention_score)
+
+    table_rows.append(table_row)
+                    
