@@ -225,17 +225,27 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year):
     #We look at all the mapped measures
     for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo):
         mod_code = mlo_mapping.mlo.module_code
-        for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo = mlo_mapping.mlo)| \
-                        MLOPerformanceMeasure.objects.filter(secondary_associated_mlo = mlo_mapping.mlo) | \
+        for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo = mlo_mapping.mlo) or \
+                        MLOPerformanceMeasure.objects.filter(secondary_associated_mlo = mlo_mapping.mlo) or \
                         MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo = mlo_mapping.mlo)):
-            if (measure.academic_year.start_year >= start_year and measure.academic_year.start_year <= end_year ):
-                single_mlo_direct_measure= {
-                    'module_code' : mod_code,
-                    'mapping_strength' : mlo_mapping.strength,
-                    'year' : measure.academic_year.start_year,
-                    'score' : measure.percentage_score
-                }
-                all_mlo_measures.append(single_mlo_direct_measure)
+            year_of_measurement = measure.academic_year.start_year
+            module_obj_qs = Module.objects.filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year = year_of_measurement)
+            if (module_obj_qs.count()==1):#Nothing if it wasn't offered...
+                year_of_study = module_obj_qs.get().students_year_of_study
+                target_cohort = year_of_measurement - year_of_study + 1#Figure out targeted cohort
+                if (target_cohort >= start_year and target_cohort<= end_year ):
+                    #Before adding, check validity of the MLO involved
+                    if (IsOutcomeValidForYear(mlo_mapping.mlo.id,accreditation_outcome_type.MLO,target_cohort)):
+                        single_mlo_direct_measure= {
+                            'module_code' : mod_code,
+                            'mapping_strength' : mlo_mapping.strength,
+                            'year' : target_cohort,
+                            'score' : measure.percentage_score
+                        }
+                        all_mlo_measures.append(single_mlo_direct_measure)
+    
+
+    
     #Now we have an array with all the measures, we start preparing the HTML table rows
     #First we get a list of all the module codes involved, and make it unique
     mod_codes_present_direct = []
@@ -451,9 +461,9 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
     }
     return ret            
 
-def CalculateAccreditationSummaryTable(programme_id, start_year,end_year):
+def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
     table_rows = []
-    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id):
+    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
         table_row = {
             'letter' : slo.letter_associated,
             'description' : slo.slo_short_description,
@@ -468,7 +478,7 @@ def CalculateAccreditationSummaryTable(programme_id, start_year,end_year):
                 slo_survey_attention_score = 0
                 for mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
                     mlo = mapping.mlo
-                    if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year))
+                    if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year)):
                         for measure in MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id):
                             mod_code = measure.associated_mlo.module_code
                             
@@ -477,7 +487,7 @@ def CalculateAccreditationSummaryTable(programme_id, start_year,end_year):
                                 student_year_of_study = module.students_year_of_study
                                 if (year_delivered - student_year_of_study == matric_year) and\
                                     TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
-                                    mlo_direct_attention_score += mapping.strength
+                                    mlo_direct_attention_score += mapping.strength/3 #3 is the highest possible
                         for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
                             mod_code = mlo.module_code
                             for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True):#Only compulsory courses
@@ -485,13 +495,19 @@ def CalculateAccreditationSummaryTable(programme_id, start_year,end_year):
                                 student_year_of_study = module.students_year_of_study
                                 if (year_delivered - student_year_of_study == matric_year) and\
                                     TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
-                                    mlo_survey_attention_score += mapping.strength
+                                    mlo_survey_attention_score += mapping.strength/3 #3 is the highest possible
                 for slo_srv_resp in SurveyQuestionResponse.objects.filter(associated_slo__id = slo.id).filter(parent_survey__cohort_targeted__start_year = matric_year):
                     slo_survey_attention_score +=1
 
-            table_row['attention_scores_direct'].append(mlo_direct_attention_score)
-            table_row['attention_scores_mlo_surveys'].append(mlo_survey_attention_score)
-            table_row['attention_scores_slo_surveys'].append(slo_survey_attention_score)
+                table_row['attention_scores_direct'].append(mlo_direct_attention_score)
+                table_row['attention_scores_mlo_surveys'].append(mlo_survey_attention_score)
+                table_row['attention_scores_slo_surveys'].append(slo_survey_attention_score)
+            else:#SLO not valid for that year
+                table_row['attention_scores_direct'].append("N/A")
+                table_row['attention_scores_mlo_surveys'].append("N/A")
+                table_row['attention_scores_slo_surveys'].append("N/A")
 
-    table_rows.append(table_row)
+        table_rows.append(table_row)
+
+    return table_rows
                     
