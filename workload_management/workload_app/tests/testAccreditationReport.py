@@ -840,7 +840,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][1], 15)#15 measure in first academic year -> totals row is zero
         self.assertAlmostEqual(table_slo_3[2][2], 75)#75 measure in second academic year (strength 1) ONLY
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
-        self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure
+        self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure just added 
 
         # #####################################################################
         # # Test the MLO survey table
