@@ -109,28 +109,32 @@ def IsOutcomeValidForYear(outcome_id,outcome_type,year):
 def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     slo_survey_measures = [] #A list of all the slo survey measures. This one is ready for HTML
+
     #First look among the surveys, to see if any SLO measure is found
-    for survey in Survey.objects.filter(opening_date__gte=datetime.date(start_year, 1, 1)).filter(opening_date__lte=datetime.date(end_year, 12, 31)):
-        single_slo_survey_measure = {
-            'date' : survey.opening_date,
-            'survey' : survey.survey_title,
-            'question' : '',
-            'percent_positive' : 0,
-            'n_questions' : 0
-        }
-        n_questions = 0
-        fraction_positive = 0
-        questions = ''
-        #Look, within this survey for all responses associated with this SLO. We will condense them in one line of the table
-        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id):
-            fraction_positive += CalulatePositiveResponsesFractionForQuestion(response.id)
-            questions += response.question_text + ', '
-            n_questions+=1
-        if (n_questions > 0):
-            single_slo_survey_measure['question'] = questions[:-2]
-            single_slo_survey_measure['percent_positive'] = 100*fraction_positive/n_questions
-            single_slo_survey_measure['n_questions'] = n_questions
-            slo_survey_measures.append(single_slo_survey_measure)
+    for survey in Survey.objects.filter(cohort_targeted__start_year__gte=start_year).filter(cohort_targeted__start_year__lte=end_year):
+        year_of_cohort_targeted = survey.opening_date.year
+        if survey.cohort_targeted is not None: year_of_cohort_targeted = survey.cohort_targeted.start_year
+        if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,year_of_cohort_targeted)):
+            single_slo_survey_measure = {
+                'date' : survey.opening_date,
+                'survey' : survey.survey_title,
+                'question' : '',
+                'percent_positive' : 0,
+                'n_questions' : 0
+            }
+            n_questions = 0
+            fraction_positive = 0
+            questions = ''
+            #Look, within this survey for all responses associated with this SLO. We will condense them in one line of the table
+            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id):
+                fraction_positive += CalulatePositiveResponsesFractionForQuestion(response.id)
+                questions += response.question_text + ', '
+                n_questions+=1
+            if (n_questions > 0):
+                single_slo_survey_measure['question'] = questions[:-2]
+                single_slo_survey_measure['percent_positive'] = 100*fraction_positive/n_questions
+                single_slo_survey_measure['n_questions'] = n_questions
+                slo_survey_measures.append(single_slo_survey_measure)
     return slo_survey_measures
 
 #Calculate a table with MLO survey measures for the given SLO and 
@@ -144,30 +148,41 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
 #the method appends a final row to be displayed which contains "Weighted average" at the start, 
 #and then, for each year, the weighted average of all the MLO survey measures for that year, 
 # with, again, the mapping strength as the weight
+#start year and year are interpreted as the starting year of the acadmeic year, intended as the cohort targeted
+#if you want a report for matriculated cohorts 2010/2011 to 2020/2021, then start_yera is 2010 and end year is 2020.
 def CalculateTableForMLOSurveys(slo_id, start_year,end_year):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     mlo_survey_measures = []
-    for survey in Survey.objects.filter(opening_date__gte=datetime.date(start_year, 1, 1)).filter(opening_date__lte=datetime.date(end_year, 12, 31)):
+    for survey in Survey.objects.filter(cohort_targeted__start_year__gte=start_year).filter(cohort_targeted__start_year__lte=end_year):
         #Look, within this survey for all responses associated with relevant MLO. 
         #First determine the relevant MLOs by looking at the mapping
         for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
             mod_code = mlo_mapping.mlo.module_code
-            single_survey_mlo_measure = {
-                'year' : survey.opening_date.year,
-                'module_code' : mod_code,
-                'percentage_positive' : 0,
-                'strength' : mlo_mapping.strength,
-                'n_questions' : 0
-            }
-            n_questions = 0
-            positive_for_survey  = 0
-            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_mlo = mlo_mapping.mlo):
-                positive_for_survey += CalulatePositiveResponsesFractionForQuestion(response.id)
-                n_questions +=1
-            if (n_questions > 0):
-                single_survey_mlo_measure['n_questions'] = n_questions
-                single_survey_mlo_measure['percentage_positive'] = 100*positive_for_survey/n_questions
-                mlo_survey_measures.append(single_survey_mlo_measure)
+            year_of_mod_delivery = survey.opening_date.year#the start of the academic year when the mod was delivered
+            if (survey.opening_date.month < 6): year_of_mod_delivery -= 1
+
+            year_of_cohort_targeted = survey.opening_date.year
+            if survey.cohort_targeted is not None: year_of_cohort_targeted = survey.cohort_targeted.start_year
+
+            if (IsOutcomeValidForYear(mlo_mapping.mlo.id, accreditation_outcome_type.MLO,year_of_mod_delivery) and\
+                IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO, year_of_cohort_targeted)):
+
+                single_survey_mlo_measure = {
+                    'year' : year_of_cohort_targeted,
+                    'module_code' : mod_code,
+                    'percentage_positive' : 0,
+                    'strength' : mlo_mapping.strength,
+                    'n_questions' : 0
+                }
+                n_questions = 0
+                positive_for_survey  = 0
+                for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_mlo = mlo_mapping.mlo):
+                    positive_for_survey += CalulatePositiveResponsesFractionForQuestion(response.id)
+                    n_questions +=1
+                if (n_questions > 0):
+                    single_survey_mlo_measure['n_questions'] = n_questions
+                    single_survey_mlo_measure['percentage_positive'] = 100*positive_for_survey/n_questions
+                    mlo_survey_measures.append(single_survey_mlo_measure)
     
     #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
     mlo_slo_survey_table_rows = []
@@ -325,20 +340,25 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
                 'module_code' : mod_code,
                 'numerical_mappings' : [],#A list as long as the number of years under consideration
                 'icons' : [],#Same as above, but icons instead
-                'n_mlo_mapped' : [],#Same as above. For each SLO, how many MLO opf this mod were mapped for that year?
+                'n_mlo_mapped' : [],#Same as above. For each SLO, how many MLO of this mod were mapped for that year?
         }
-        for year in range(start_year, end_year+1):
+        for cohort_year in range(start_year, end_year+1):
             numerical_mapping_for_year = 0
             total_mapping_for_year = 0
             n_mlo_mapped_for_year = 0
-            #check if the module with this code was offered this year
-            if (Module.objects.filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year = year)):
-                for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
-                    for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
-                        total_mapping_for_year += mapping.strength
-                        if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
-                            numerical_mapping_for_year = mapping.strength
-                        n_mlo_mapped_for_year += 1
+            for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
+                for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
+                    #Loop over the module with that code
+                    for mod in Module.objects.filter(module_code = mod_code):
+                        year_offered = mod.scenario_ref.academic_year.start_year
+                        year_of_study = mod.students_year_of_study
+                        target_cohort = year_offered - year_of_study + 1#Figure out targeted cohort
+                        if (cohort_year == target_cohort and IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,year_offered) \
+                            and IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,target_cohort)):
+                            total_mapping_for_year += mapping.strength
+                            if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
+                                numerical_mapping_for_year = mapping.strength
+                            n_mlo_mapped_for_year += 1
             table_row_item['numerical_mappings'].append(numerical_mapping_for_year)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(numerical_mapping_for_year))
             table_row_item['n_mlo_mapped'].append(n_mlo_mapped_for_year)

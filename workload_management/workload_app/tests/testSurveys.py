@@ -58,6 +58,7 @@ class TestSurveys(TestCase):
             'end_date_month' : 1,
             'end_date_day' : 15,
             'end_date_year' : 2023,
+            'cohort_targeted' : acad_year.id,
             'totoal_N_recipients' : "150",
             'comments' : survey_comment,
             'mlo_descr' + str(mlo_1.id) : mlo_1.mlo_description,
@@ -80,6 +81,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         survey_label = "MLO survey for module " + module_code
         self.assertEqual(Survey.objects.filter(survey_title = survey_label).count(),1) #check name
+        self.assertEqual(Survey.objects.filter(cohort_targeted__id = acad_year.id).count(),1) #check cohort targeted
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_1).count(),1)

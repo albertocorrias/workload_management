@@ -1131,6 +1131,7 @@ def module(request, module_code):
             start_date = mlo_survey_form.cleaned_data['start_date']
             end_date = mlo_survey_form.cleaned_data['end_date']
             n_invited = mlo_survey_form.cleaned_data['totoal_N_recipients']
+            supplied_cohort_targeted = mlo_survey_form.cleaned_data['cohort_targeted']
             comments = mlo_survey_form.cleaned_data['comments']
             survey_name = "MLO survey for module " + module_code
             
@@ -1140,6 +1141,7 @@ def module(request, module_code):
 
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\
+                                               cohort_targeted = supplied_cohort_targeted,\
                                                 max_respondents = n_invited, comments = comments,\
                                                 original_file = file_obj)
             new_survey.save()

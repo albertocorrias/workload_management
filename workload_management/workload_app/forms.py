@@ -535,6 +535,7 @@ class MLOSLOMappingForm(forms.Form):
 
 class AddMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
+        year_now = datetime.datetime.now().year
         years_to_show = []
         for gap in range(-6,3):
             years_to_show.append(datetime.datetime.now().year + gap)
@@ -542,6 +543,8 @@ class AddMLOSurveyForm(forms.Form):
         super(AddMLOSurveyForm, self).__init__(*args, **kwargs)
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
+        self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Cohort targeted', required=False,\
+                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)

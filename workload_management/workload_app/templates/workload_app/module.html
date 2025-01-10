@@ -320,7 +320,7 @@
                               {% csrf_token %}
                               <div class="modal-body">
                                     <h2>Overall survey data</h2>
-                                    {% for field in mlo_survey_form.visible_fields|slice:":5" %}
+                                    {% for field in mlo_survey_form.visible_fields|slice:":6" %}
                                       <div>
                                         <p>{{ field.label }}  {{ field }}</p>
                                       </div>
@@ -330,7 +330,7 @@
                                     Fill in, for each MLO the number of respondents choosing each choice.
                                     <hr>
                                     {% for field in mlo_survey_form %}
-                                      {% if forloop.counter > 5 %}
+                                      {% if forloop.counter > 6 %}
                                         <div>
                                           <p class="individual_mlo_item">
                                             {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
