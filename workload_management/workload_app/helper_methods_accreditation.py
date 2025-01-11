@@ -539,9 +539,10 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                     if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year)):
                         for measure in MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id):
                             mod_code = measure.associated_mlo.module_code
-                            
-                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True):#Only compulsory courses
-                                year_delivered = measure.academic_year.start_year
+                            year_delivered = measure.academic_year.start_year
+                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
+                                .filter(scenario_ref__academic_year__start_year = year_delivered):#Only compulsory courses
+                                
                                 student_year_of_study = module.students_year_of_study
                                 
                                 if ((year_delivered - student_year_of_study + 1) == matric_year) and\

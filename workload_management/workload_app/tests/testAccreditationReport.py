@@ -1270,7 +1270,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(len(att_score_table[3]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
 
         self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],2/3)#SLO a, direct measures, 2012 -> There is one mapping, strenth 2
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],1+2/3)#SLO a, direct measures, 2013 -> 2 measures (3 and 2) -> 1+2/3
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],1+2/3+2/3)#SLO a, direct measures, 2013 -> 3 measures (3 and 2 and 2) -> 1+2/3 +2/3
 
 
         #Test the big slo mlo table
