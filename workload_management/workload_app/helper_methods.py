@@ -447,6 +447,10 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
         #if both semesters, we assume an equal split among the two semesters
         if (mod.semester_offered == Module.BOTH_SEMESTERS) : hours_assigned /= 2
 
+        #Avoid problems if the year of study is None...
+        student_year_of_study=0
+        if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
+        
         mods_row_item = {"mod_code" : mod.module_code,
             "module_title" : mod.module_title,
             "mod_hours" : hours_assigned,
@@ -456,6 +460,8 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
                                           'semester_offered' : mod.semester_offered,\
                                           'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
                                           'primary_programme' : mod.primary_programme,\
+                                          'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
+                                          'students_year_of_study' : student_year_of_study,\
                                           'secondary_programme' : mod.secondary_programme,\
                                           'sub_programme' : mod.sub_programme,\
                                           'secondary_sub_programme' : mod.secondary_sub_programme,\

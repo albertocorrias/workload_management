@@ -842,13 +842,15 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure just added 
 
+        table_slo_wrong_range = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year-50, end_year = acad_year_4.start_year-50)
+        self.assertEqual(len(table_slo_wrong_range), 1)#totals only
+
         # #####################################################################
         # # Test the MLO survey table
         # #####################################################################
-        acad_year_2020 = Academicyear.objects.create(start_year=2020)
-        mlo_survey_1 = Survey.objects.create(survey_title = "first mlo survey", opening_date = datetime.datetime(2020, 5, 17),\
-                                                                                closing_date = datetime.datetime(2021, 5, 17),\
-                                                                                cohort_targeted = acad_year_2020,\
+        mlo_survey_1 = Survey.objects.create(survey_title = "first mlo survey", opening_date = datetime.datetime(2012, 9, 17),\
+                                                                                closing_date = datetime.datetime(2012, 9, 27),\
+                                                                                cohort_targeted = acad_year_1,\
                                                                                 max_respondents = 100)
         #Create the responses
         response_1 = SurveyQuestionResponse.objects.create(question_text = mlo_1_1.mlo_description,\
@@ -860,35 +862,35 @@ class TestAccreditationReport(TestCase):
                                                            parent_survey = mlo_survey_1 )
                                                                                 
         # #Generate the table for SLO 1
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
         self.assertAlmostEqual(mlo_table_slo_1[0][1],100*CalulatePositiveResponsesFractionForQuestion(response_1.id))#MLO 1of module 1 mapped to slo 1
-        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2021
+        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2013
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
         self.assertAlmostEqual(mlo_table_slo_1[1][1],100*CalulatePositiveResponsesFractionForQuestion(response_1.id))#MLO 1of module 1 mapped to slo 1
-        self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2021
+        self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2013
         
-        # #call the collective method - test the structures for plotting
-        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        #call the collective method - test the structures for plotting
+        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),2)#years
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),2)#direct measures
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][2]),2)#mlo surveys
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][3]),2)#slo surveys
-        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][0],2020)
-        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][1],2021)
-        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][0],0)
-        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][1],0)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][0],2012)#index 0, years
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][0][1],2013)#index 0, years
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][1][0],15)#index 0,direct measures, year 2012 ->15 (See above)
+        self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][1][1],Decimal((75*3+45*2+65*2)/(3+2+2)))#index 0, direct meausres for year 2013 (see above)
         self.assertAlmostEqual(all_info_slo_1["slo_measures_plot_data"][2][0],100*CalulatePositiveResponsesFractionForQuestion(response_1.id))#
-        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][1],0)#NO mlo survey in 2021
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][2][1],0)#NO mlo survey in 2013
         self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][0],0)#NO slo surveys
-        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO mlo surveys 
+        self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO slo surveys 
 
         #Generate the table for SLO 2 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -900,7 +902,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[1][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -920,7 +922,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_1_2,\
                                                            parent_survey = mlo_survey_1 )
         #Generate the table for SLO 1 - CHANGED
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -934,7 +936,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2021
 
         #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -946,7 +948,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[1][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -959,9 +961,9 @@ class TestAccreditationReport(TestCase):
 
         #Now create another survey
         #As we are tesing the weighted average calculations, we target the  same cohort
-        mlo_survey_2 = Survey.objects.create(survey_title = "second mlo survey", opening_date = datetime.datetime(2020, 5, 17),\
-                                                                                closing_date = datetime.datetime(2021, 5, 17),\
-                                                                                cohort_targeted = acad_year_2020,\
+        mlo_survey_2 = Survey.objects.create(survey_title = "second mlo survey", opening_date = datetime.datetime(2012, 5, 17),\
+                                                                                closing_date = datetime.datetime(2012, 5, 27),\
+                                                                                cohort_targeted = acad_year_2,\
                                                                                 max_respondents = 100)
         #Create another response for MLO 1 of module 2
         response_3 = SurveyQuestionResponse.objects.create(question_text = mlo_1_1.mlo_description,\
@@ -971,7 +973,7 @@ class TestAccreditationReport(TestCase):
                                                            n_fourth_highest_score = 55,\
                                                            associated_mlo = mlo_2_1,\
                                                            parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3)
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_1), 3)#Two meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -992,7 +994,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in 2021
 
         # #Generate the table for SLO 2 
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1010,7 +1012,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[2][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1022,16 +1024,16 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
 
         #Cover the empty table because of dates out of range
-        empty_mlo_table_slo = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2010, end_year = 2011)
+        empty_mlo_table_slo = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994)
         self.assertEqual(len(empty_mlo_table_slo), 1)#Only the totals
 
         # #####################################################################
         # # Test the SLO survey table
         # #####################################################################
 
-        slo_survey_1 = Survey.objects.create(survey_title = "first slo survey", opening_date = datetime.datetime(2020, 5, 17),\
-                                                                                closing_date = datetime.datetime(2021, 5, 17),\
-                                                                                cohort_targeted = acad_year_2020,\
+        slo_survey_1 = Survey.objects.create(survey_title = "first slo survey", opening_date = datetime.datetime(2012, 5, 17),\
+                                                                                closing_date = datetime.datetime(2013, 5, 17),\
+                                                                                cohort_targeted = acad_year_1,\
                                                                                 max_respondents = 100)
         slo_response_1 = SurveyQuestionResponse.objects.create(question_text = slo_1.slo_description,\
                                                            n_highest_score = 15,\
@@ -1048,13 +1050,13 @@ class TestAccreditationReport(TestCase):
                                                            associated_slo = slo_2,\
                                                            parent_survey = slo_survey_1)
         # #Generate table for SLO 1
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description)
         self.assertAlmostEqual(slo_1_survey_table[0]['percent_positive'],100*CalulatePositiveResponsesFractionForQuestion(slo_response_1.id))
         self.assertEqual(slo_1_survey_table[0]['n_questions'],1)
 
-        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][0]),2)#years
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"][1]),2)#direct measures
@@ -1064,14 +1066,14 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO slo surveys 
 
         #Generate table for SLO 2
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_2_survey_table),1)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],100*CalulatePositiveResponsesFractionForQuestion(slo_response_2.id))
         self.assertEqual(slo_2_survey_table[0]['n_questions'],1)
 
         #Generate table for SLO 3 (this one is empty)
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_3_survey_table),0)
 
         #Add another response linked to slo 1 in the same survey (test concatenation and averaging of two questions with same target)
@@ -1084,7 +1086,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_slo = slo_1,\
                                                            parent_survey = slo_survey_1)
         #Generate table for SLO 1
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
         expected_fraction = 0.5*(CalulatePositiveResponsesFractionForQuestion(slo_response_1.id) + CalulatePositiveResponsesFractionForQuestion(slo_response_1_alternate.id))
@@ -1092,20 +1094,20 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now
 
         #Generate table for SLO 2 - UNCHANGED
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_2_survey_table),1)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],100*CalulatePositiveResponsesFractionForQuestion(slo_response_2.id))
         self.assertEqual(slo_2_survey_table[0]['n_questions'],1)
 
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_3_survey_table),0)
 
         #Do another survey. Test ability to create new lines in the table
-        slo_survey_2 = Survey.objects.create(survey_title = "second slo survey", opening_date = datetime.datetime(2020, 7, 17),\
-                                                                                closing_date = datetime.datetime(2021, 9, 17),\
-                                                                                cohort_targeted = acad_year_2020,\
+        slo_survey_2 = Survey.objects.create(survey_title = "second slo survey", opening_date = datetime.datetime(2012, 7, 17),\
+                                                                                closing_date = datetime.datetime(2012, 9, 17),\
+                                                                                cohort_targeted = acad_year_1,\
                                                                                 max_respondents = 100)
         slo_response_2_srv2 = SurveyQuestionResponse.objects.create(question_text = slo_2.slo_description,\
                                                            n_highest_score = 15,\
@@ -1115,7 +1117,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_slo = slo_2,\
                                                            parent_survey = slo_survey_2)
         #Generate table for SLO 1 - UNCHANGED
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2020, end_year = 2021)
+        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
         expected_fraction = 0.5*(CalulatePositiveResponsesFractionForQuestion(slo_response_1.id) + CalulatePositiveResponsesFractionForQuestion(slo_response_1_alternate.id))
@@ -1123,7 +1125,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now
 
         #Generate table for SLO 2 - new line added here
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2020, end_year = 2021)
+        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_2_survey_table),2)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],100*CalulatePositiveResponsesFractionForQuestion(slo_response_2.id))
@@ -1133,7 +1135,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_2_survey_table[1]['n_questions'],1)
 
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2020, end_year = 2021)
+        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013)
         self.assertEqual(len(slo_3_survey_table),0)
 
         # #Test the MLO-SLO mapping table for a single SLO
@@ -1247,8 +1249,29 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_3_table[2]["n_mlo_mapped"][3], 0)#SLO 3 - MOD 3 - 2015
 
         #Test the attention score tables
-        att_score_table = CalculateAttentionScoresSummaryTable(prog_to_accredit.id,acad_year_1.start_year,acad_year_4.start_year)
+        att_score_table = CalculateAttentionScoresSummaryTable(prog_to_accredit.id,acad_year_1.start_year,acad_year_4.start_year)        
         #print(att_score_table)
+        self.assertEqual(len(att_score_table),4)#There are 4 SLOs
+        self.assertEqual(att_score_table[0]["letter"],'a')#first SLO, letter
+        self.assertEqual(att_score_table[1]["letter"],'b')#second SLO, letter
+        self.assertEqual(att_score_table[2]["letter"],'c')#third SLO, letter
+        self.assertEqual(att_score_table[3]["letter"],'c1')#fourth SLO, letter
+        self.assertEqual(len(att_score_table[0]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[0]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[0]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[1]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[1]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[1]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[2]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[2]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[2]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[3]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[3]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
+        self.assertEqual(len(att_score_table[3]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
+
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],2/3)#SLO a, direct measures, 2012 -> There is one mapping, strenth 2
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],1+2/3)#SLO a, direct measures, 2013 -> 2 measures (3 and 2) -> 1+2/3
+
 
         #Test the big slo mlo table
         # main_body_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021)['main_body_table']

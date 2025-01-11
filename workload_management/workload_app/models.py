@@ -368,7 +368,7 @@ class Survey(models.Model):
     opening_date = models.DateField()
     #The closing date when the survey stopped accepting answers
     closing_date = models.DateField()
-    #cohort targeted, NULL if not available
+    #cohort targeted, NULL if not available. Note that this might mean different things for MLO and SLO and PEO
     cohort_targeted = models.ForeignKey(Academicyear,on_delete=models.SET_NULL,null=True)
     #Maximum number of respondents (used to calculate response rate). Defaults to -1 if unknown.
     max_respondents = models.IntegerField(default=-1)
