@@ -410,7 +410,7 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
 
     scenario_qs = WorkloadScenario.objects.filter(id = scenario_id)
     programme_qs = ProgrammeOffered.objects.filter(id = programme_id)
-    department = scenario_qs.get().dept
+    if (scenario_qs.count()==1) : department = scenario_qs.get().dept
     
     if (request_type == requested_table_type.SUB_PROGRAMME): programme_qs = SubProgrammeOffered.objects.filter(id = programme_id)
 

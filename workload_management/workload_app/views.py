@@ -501,8 +501,9 @@ def remove_professor(request,workloadscenario_id):
 
 def add_module(request,workloadscenario_id):
     department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
+    
     if request.method =='POST':
-        form = ModuleForm(request.POST, dept_id = department.id)        
+        form = ModuleForm(request.POST, dept_id = department.id)      
         if form.is_valid():
             supplied_module_code = form.cleaned_data['module_code'];
             supplied_module_title = form.cleaned_data['module_title'];

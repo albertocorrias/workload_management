@@ -272,8 +272,12 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+        #Create a programme
+        prog_1 = ProgrammeOffered.objects.create(programme_name = "new_prog", primary_dept = first_dept)
+
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept);
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -284,13 +288,11 @@ class TestModule(TestCase):
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")        
-        
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        #Create a programme
-        prog_1 = ProgrammeOffered.objects.create(programme_name = "new_prog", primary_dept = first_dept)
         mod_code = 'XXX1'
         #Add a new module
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {
+            'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 
+            'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(Module.objects.all().count(),1)# mods now after this addition
@@ -336,8 +338,6 @@ class TestModule(TestCase):
         #One only with this code
         self.assertEqual(Module.objects.filter(module_code=mod_code).count(),1)
         
-
-        
         #Now edit the existing module. KEY CHANGHE: module title from testing to hello
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, 'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : False})    
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
@@ -350,7 +350,9 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.filter(module_title='testing').exists(),False)
 
         #Now edit. Assign prog_1 as primary programme
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, 'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2', 'primary_programme' : prog_1.id, 'fresh_record' : False})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code,\
+        'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 
+        'number_of_tutorial_groups' : '2', 'primary_programme' : prog_1.id, 'fresh_record' : False})    
         self.assertEqual(all_mods.filter(primary_programme__isnull=True).count(),0)
         self.assertEqual(all_mods.filter(primary_programme__programme_name="new_prog").count(),1)
         self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),1)
