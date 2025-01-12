@@ -101,10 +101,16 @@ class ModuleForm(ModelForm):
 
         widgets = {'module_type' : forms.Select(choices=ModuleType.objects.all()),
                    'semester_offered' : forms.Select(choices=Module.SEMESTER_OFFERED),
-                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE)}
+                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE)
+                   }
         
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
+        dept_id = kwargs.pop('dept_id')
         super(ModuleForm, self).__init__(*args, **kwargs)
+        self.fields['primary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
+        self.fields['secondary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
+        self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
+        self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
         self.fields['compulsory_in_primary_programme'].required=False

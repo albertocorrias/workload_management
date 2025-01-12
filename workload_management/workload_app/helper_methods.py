@@ -225,6 +225,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
 # "num_assigns_for_module" : The total number of teachinga ssignments for this module (includes counted and not counted)
 def CalculateModuleWorkloadTable(workloadscenario_id):
     ret = [];
+    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
 
     for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
 
@@ -261,7 +262,7 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
             "num_tut_groups" : mod.number_of_tutorial_groups,
             "module_hours_needed" : mod.total_hours,
             "module_id" : mod.id,
-            "mod_form" : ModuleForm(initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
+            "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
                                           'semester_offered' : mod.semester_offered,\
                                           'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
@@ -409,6 +410,8 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
 
     scenario_qs = WorkloadScenario.objects.filter(id = scenario_id)
     programme_qs = ProgrammeOffered.objects.filter(id = programme_id)
+    department = scenario_qs.get().dept
+    
     if (request_type == requested_table_type.SUB_PROGRAMME): programme_qs = SubProgrammeOffered.objects.filter(id = programme_id)
 
     if ((scenario_qs.count() != 1) or (programme_qs.count() != 1)): #wrong ids for scenario or programme
@@ -455,7 +458,7 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
             "module_title" : mod.module_title,
             "mod_hours" : hours_assigned,
             "regularized_module_code" : RegularizeName(mod.module_code),
-            "mod_form" : ModuleForm(initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
+            "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
                                           'semester_offered' : mod.semester_offered,\
                                           'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \

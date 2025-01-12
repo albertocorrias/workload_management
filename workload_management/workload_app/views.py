@@ -38,7 +38,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
 from .helper_methods_survey import CalculateSurveyDetails, CalculateTotalResponsesForQuestion, CalulatePositiveResponsesFractionForQuestion
 from .helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                             DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,CalculateMLOSLOMappingTable,\
-                                            CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
+                                            CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
 from .report_methods import GetLastFiveYears,CalculateProfessorIndividualWorkload, CalculateFacultyReportTable
 
@@ -66,7 +66,7 @@ def scenario_view(request, workloadscenario_id):
     prof_form = ProfessorForm(initial = {'fresh_record' : True});
     remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id);
     #Module forms (the edit forms are added in the helper methods in the table)
-    mod_form  = ModuleForm(initial = {'fresh_record' : True});
+    mod_form  = ModuleForm(dept_id = department.id,initial = {'fresh_record' : True});
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id);
     
     #Teaching Assignment forms
@@ -500,9 +500,9 @@ def remove_professor(request,workloadscenario_id):
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}));
 
 def add_module(request,workloadscenario_id):
-    
+    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
     if request.method =='POST':
-        form = ModuleForm(request.POST)        
+        form = ModuleForm(request.POST, dept_id = department.id)        
         if form.is_valid():
             supplied_module_code = form.cleaned_data['module_code'];
             supplied_module_title = form.cleaned_data['module_title'];
@@ -1667,6 +1667,7 @@ def accreditation(request,programme_id):
 def accreditation_report(request,programme_id, start_year,end_year):
     #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
     big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
+    attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year)
 
     slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
     slo_identifiers = []
@@ -1709,6 +1710,7 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'end_year' : str(end_year)+'/'+str(end_year+1),
         'slo_measures' : slo_measures, 
         'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
+        'attention_scores_table' : attention_scores_table,
         'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
         'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
         'number_of_slo_plus_one' : len(slo_measures)+1,
