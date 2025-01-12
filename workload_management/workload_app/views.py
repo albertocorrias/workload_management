@@ -1703,13 +1703,18 @@ def accreditation_report(request,programme_id, start_year,end_year):
         all_slo_data_for_plot.append(slo_measures_data_plot)
         all_slo_ids.append(slo.id)
     
+    years_to_display = range(start_year,end_year+1)
     template = loader.get_template('workload_app/accreditation_report.html')
+    print(len(years_to_display))
     context = {
         'programme_id' : programme_id,
         'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
         'start_year' : str(start_year)+'/'+str(start_year+1),
         'end_year' : str(end_year)+'/'+str(end_year+1),
         'slo_measures' : slo_measures, 
+        'years_to_display' : years_to_display,
+        'num_years_to_display' : len(years_to_display),
+        'num_years_to_display_plus_one' : len(years_to_display)+1,
         'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
         'attention_scores_table' : attention_scores_table,
         'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],

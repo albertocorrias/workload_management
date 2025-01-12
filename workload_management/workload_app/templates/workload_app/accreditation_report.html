@@ -70,6 +70,27 @@
             <script src="{% static   'workload_app/mlo_slo_mapping_summary.js' %}"></script>
           </div>
       </div><!--end of flex container for overall summary part-->
+      <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
+        <table id="AttentionScores" class="workload_tables table table-striped">
+          <thead class="table-dark">
+          <tr>
+            <th colspan= "{{ num_years_to_display_plus_one }}" class="overall_header">Attentions cores for the period</th>
+          </tr>
+          <tr>
+            <th class="secondary_header"> </th>
+            <th colspan= "{{ num_years_to_display }}" class="secondary_header">Matriculation year</th>
+          </tr>
+          <tr>
+            <th class="secondary_header"> Modules </th>
+            {% for item in years_to_display %}
+            <th> {{ item }}</th>
+            {% endfor %}
+          </tr>
+          </thead>
+          <tbody>
+          </tbody>
+          </table>
+      </div>
       <hr>
       {% for slo_info in slo_measures %}
       <h2>SLO {{slo_info.slo_letter}}. {{ slo_info.slo_full_description }} </h2>
