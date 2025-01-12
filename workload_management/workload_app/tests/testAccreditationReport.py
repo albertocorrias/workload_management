@@ -791,7 +791,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_1[3][1], 15)#Only 15 measure in first academic year -> totals row is 15
         self.assertAlmostEqual(table_slo_1[3][2], Decimal((75*3+45*2+65*2)/(3+2+2)))#75 measure in second academic year, plus 45 measure, plus 65 from mod 2 ->Weighted average
         self.assertAlmostEqual(table_slo_1[3][3], 0)#No measure in third academic year -> total is zero
-        self.assertAlmostEqual(table_slo_1[3][4], Decimal((89.9*2+89.9*1)/(2.0+1.0)))#4th academic year -> totals row is weithed average
+        self.assertAlmostEqual(table_slo_1[3][4], Decimal((89.9*2+89.9*1)/(2.0+1.0)))#4th academic year -> totals row is weighted average
 
         
         table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year)
@@ -837,7 +837,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[1][3], '')#no measure in third academic year
         self.assertEqual(table_slo_3[1][4], '')#no measure in last academic year
         self.assertEqual(table_slo_3[2][0], 'Weighted average')
-        self.assertEqual(table_slo_3[2][1], 15)#15 measure in first academic year -> totals row is zero
+        self.assertEqual(table_slo_3[2][1], 15)#15 measure in first academic year -> 
         self.assertAlmostEqual(table_slo_3[2][2], 75)#75 measure in second academic year (strength 1) ONLY
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure just added 
@@ -966,7 +966,7 @@ class TestAccreditationReport(TestCase):
                                                                                 cohort_targeted = acad_year_2,\
                                                                                 max_respondents = 100)
         #Create another response for MLO 1 of module 2
-        response_3 = SurveyQuestionResponse.objects.create(question_text = mlo_1_1.mlo_description,\
+        response_3 = SurveyQuestionResponse.objects.create(question_text = mlo_2_1.mlo_description,\
                                                            n_highest_score = 15,\
                                                            n_second_highest_score = 28,\
                                                            n_third_highest_score = 2,\
@@ -982,16 +982,16 @@ class TestAccreditationReport(TestCase):
         expected_weigthed_average = (3.0*CalulatePositiveResponsesFractionForQuestion(response_1.id) + \
                                      2.0*CalulatePositiveResponsesFractionForQuestion(response_2.id))/(3.0+2.0)
         self.assertAlmostEqual(mlo_table_slo_1[0][1],100*expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1
-        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2021
+        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in second academic year
         self.assertEqual(mlo_table_slo_1[1][0], mlo_2_1.module_code)
         self.assertAlmostEqual(mlo_table_slo_1[1][1],100*CalulatePositiveResponsesFractionForQuestion(response_3.id) )#MLO 1 of module 2 mapped to slo 1
-        self.assertAlmostEqual(mlo_table_slo_1[1][2],'')#Nothing in 2021
+        self.assertAlmostEqual(mlo_table_slo_1[1][2],'')#Nothing in second academic year
         self.assertEqual(mlo_table_slo_1[2][0], "Weighted average")
         expected_weigthed_average_2 = (3.0*CalulatePositiveResponsesFractionForQuestion(response_1.id) + \
                                       2.0*CalulatePositiveResponsesFractionForQuestion(response_2.id) + \
                                       2.0*CalulatePositiveResponsesFractionForQuestion(response_3.id))/(3.0+2.0+2.0)
         self.assertAlmostEqual(mlo_table_slo_1[2][1],100*expected_weigthed_average_2)#same as above
-        self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in 2021
+        self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in second academic year
 
         # #Generate the table for SLO 2 
         mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013)
@@ -1271,7 +1271,63 @@ class TestAccreditationReport(TestCase):
 
         self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],2/3)#SLO a, direct measures, 2012 -> There is one mapping, strenth 2
         self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],1+2/3+2/3)#SLO a, direct measures, 2013 -> 3 measures (3 and 2 and 2) -> 1+2/3 +2/3
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][2],0)#SLO a, direct measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][3],1/3+2/3)#SLO a, direct measures, 2015 ->Two measures
 
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][0],1/3)#SLO b, direct measures, 2012 -> There is one mapping, strenth 1 (from mod 4 to slo 2)
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][1],3/3 + 3/3)#SLO b, direct measures, 2013 -> 2 measures (3 and 3) -> 3/3 +3/3
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][2],0)#SLO b, direct measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][3],2/3)#SLO b, direct measures, 2015 -> One measure from mod 1, mlo 4 as tertiary associated. Strength 2
+
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][0],3/3)#SLO c, direct measures, 2012 -> There is one mapping, from mlo 3 (mod 1) sterngth 3 
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][1],1/3)#SLO c, direct measures, 2013 -> 1 measure, from mlo 1 (mod 1) strength is 1
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][2],0)#SLO c, direct measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][3],2/3)#SLO c, direct measures, 2015 -> One measure from mod 1, mlo 3 as secondary associated. Strength 2
+
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][0],0)#SLO c1, NO direct measures, 2012
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][1],0)#SLO c1, NO direct measures, 2013 
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][2],0)#SLO c1, NO direct measures, 2014 
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][3],0)#SLO c1, NO direct measures, 2015
+
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],3/3 + 2/3 + 2/3)#SLO a, MLO survey measures, 2012 -> Three questions
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][2],0)#SLO a, MLO  survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][3],0)#SLO a, MLOsurvey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],3/3 + 3/3)#SLO b, MLO  survey measures, 2012 -> Two questions
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][2],0)#SLO b, MLO  survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][3],0)#SLO b, MLO  survey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][0],1/3)#SLO c, MLO  survey measures, 2012 -> One question
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][2],0)#SLO c, MLO survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][3],0)#SLO c, vsurvey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][0],0)#SLO c1, MLO  survey measures, 2012 -> None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][1],0)#SLO c1, MLO survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][2],0)#SLO c1, MLO survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][3],0)#SLO c1, vsurvey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][0],2)#SLO a, MLO survey measures, 2012 -> two questions
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][2],0)#SLO a, MLO  survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][3],0)#SLO a, MLOsurvey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][0],2)#SLO b, MLO  survey measures, 2012 -> Two questions
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][2],0)#SLO b, MLO  survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][3],0)#SLO b, MLO  survey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][0],0)#SLO c, MLO  survey measures, 2012 -> None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][2],0)#SLO c, MLO survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][3],0)#SLO c, vsurvey measures, 2015 -> None
+
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][0],0)#SLO c1, MLO  survey measures, 2012 -> None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][1],0)#SLO c1, MLO survey measures, 2013 -> None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][2],0)#SLO c1, MLO survey measures, 2014 ->None
+        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][3],0)#SLO c1, vsurvey measures, 2015 -> None
 
         #Test the big slo mlo table
         # main_body_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021)['main_body_table']

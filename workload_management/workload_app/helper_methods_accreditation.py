@@ -537,7 +537,9 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                 for mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
                     mlo = mapping.mlo
                     if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year)):
-                        for measure in MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id):
+                        for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id) |
+                                        MLOPerformanceMeasure.objects.filter(secondary_associated_mlo__id = mlo.id) |
+                                        MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo__id = mlo.id)):
                             mod_code = measure.associated_mlo.module_code
                             year_delivered = measure.academic_year.start_year
                             for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
@@ -548,12 +550,15 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                                 if ((year_delivered - student_year_of_study + 1) == matric_year) and\
                                     TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
                                     mlo_direct_attention_score += mapping.strength/3 #3 is the highest possible
-                                    print(year_delivered,'    ', student_year_of_study,'    ', matric_year,'    ',measure.percentage_score)
+                                    
                         for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
                             mod_code = mlo.module_code
-                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True):#Only compulsory courses
-                                year_delivered = module.scenario_ref.academic_year.start_year
+                            year_delivered = srv_resp.parent_survey.cohort_targeted.start_year #The year stored in the survey object
+                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
+                                .filter(scenario_ref__academic_year__start_year = year_delivered):#Only compulsory courses
+
                                 student_year_of_study = module.students_year_of_study
+                                
                                 if ( (year_delivered - student_year_of_study + 1) == matric_year ) and\
                                     TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
                                     mlo_survey_attention_score += mapping.strength/3 #3 is the highest possible
