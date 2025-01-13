@@ -85,8 +85,22 @@ def DetermineColorBasedOnBalance(bal):
         return '#B5F5DC'
     if (bal < -ok_threshold):
         return '#FCCACA'
+    
+#This method returns and HTML-ready rgb string to be used as background colour
+#In RGBA format. Depending on the score that is passed in
+def DetermineColourBasedOnAttentionScore(score):
+    green =     "rgba(144, 238, 82, 0.5)"
+    neutral  = "rgba(255,255,255,0)"
+    yellow = "rgba(223, 181, 41, 0.5)"
+    red = "rgba(255, 99, 71, 0.6)"
+    if score < 1:
+        return red
+    if score >=1 and score < 2:
+        return yellow
+    if score >=2:
+        return green
+    return neutral
 
- 
 #A helper method to shorten a long string.
 #This prevents long module names to ruin table appearance
 #If the string is longer than MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL

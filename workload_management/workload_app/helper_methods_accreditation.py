@@ -4,7 +4,7 @@ from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLO
                     MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective,\
                     TeachingAssignment
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
-from .global_constants import accreditation_outcome_type
+from .global_constants import accreditation_outcome_type, DetermineColourBasedOnAttentionScore
 
 
 #Little short-hand method to figure out the string to display for 
@@ -545,7 +545,10 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
             'description' : slo.slo_short_description,
             'attention_scores_direct' : [0]*(end_year - start_year +1),
             'attention_scores_mlo_surveys' : [0]*(end_year - start_year +1),
-            'attention_scores_slo_surveys' : [0]*(end_year - start_year +1)
+            'attention_scores_slo_surveys' : [0]*(end_year - start_year +1),
+            'colours_direct' : ['']*(end_year - start_year +1),
+            'colours_mlo_surveys' : ['']*(end_year - start_year +1),
+            'colours_slo_surveys' : ['']*(end_year - start_year +1),
         }
         year_index=0
         for matric_year in range(start_year,end_year+1):
@@ -586,8 +589,11 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                     slo_survey_attention_score +=1
 
                 table_row['attention_scores_direct'][year_index] = mlo_direct_attention_score
+                table_row['colours_direct'][year_index] = DetermineColourBasedOnAttentionScore(mlo_direct_attention_score)
                 table_row['attention_scores_mlo_surveys'][year_index] = mlo_survey_attention_score
+                table_row['colours_mlo_surveys'][year_index] = DetermineColourBasedOnAttentionScore(mlo_survey_attention_score)
                 table_row['attention_scores_slo_surveys'][year_index] = slo_survey_attention_score
+                table_row['colours_slo_surveys'][year_index] = DetermineColourBasedOnAttentionScore(slo_survey_attention_score)
                 year_index +=1
 
         table_rows.append(table_row)

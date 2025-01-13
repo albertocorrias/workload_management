@@ -71,23 +71,56 @@
           </div>
       </div><!--end of flex container for overall summary part-->
       <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
-        <table id="AttentionScores" class="workload_tables table table-striped">
+        <table id="AttentionScores" class="workload_tables table">
           <thead class="table-dark">
           <tr>
-            <th colspan= "{{ num_years_to_display_plus_one }}" class="overall_header">Attentions cores for the period</th>
+            <th colspan= "{{ overall_colpsan }}" class="overall_header">Attention scores for the period</th>
           </tr>
           <tr>
-            <th class="secondary_header"> </th>
-            <th colspan= "{{ num_years_to_display }}" class="secondary_header">Matriculation year</th>
+            <th class="secondary_header" colspan="2"> </th>
+            <th colspan= "{{ num_years_colspan }}" class="secondary_header">Matriculation year</th>
           </tr>
           <tr>
-            <th class="secondary_header"> Modules </th>
+            <th class="secondary_header" > SLO </th>
+            <th class="secondary_header" >  </th>
             {% for item in years_to_display %}
             <th> {{ item }}</th>
             {% endfor %}
           </tr>
           </thead>
           <tbody>
+            {% for row in attention_scores_table %}
+            <tr style="border-bottom-color: black;">
+            <td rowspan="4">
+              {{ row.letter }}) {{ row.description }}
+            </td>
+            </tr>
+            
+            <tr>
+              <td>Direct measures</td>
+              {% for direct_att_score, direct_color in row.zipped_direct %}
+              <td style="background-color: {{ direct_color }};">
+                {{ direct_att_score|floatformat }}
+              </td>
+              {% endfor %}
+            </tr>
+            <tr>
+              <td>MLO survey measures</td>
+              {% for mlo_att_score,mlo_att_color in row.zipped_mlo_surveys %}
+              <td style="background-color: {{ mlo_att_color }};">
+                {{ mlo_att_score|floatformat }}
+              </td>
+              {% endfor %}
+            </tr>
+            <tr style="border-bottom-color: black;">
+              <td>SLO survey meausres</td>
+              {% for slo_att_score,slo_att_colour in row.zipped_slo_surveys %}
+              <td style="background-color: {{ slo_att_colour }};">
+                {{ slo_att_score|floatformat }}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
           </tbody>
           </table>
       </div>

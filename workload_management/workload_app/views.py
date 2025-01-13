@@ -1703,9 +1703,15 @@ def accreditation_report(request,programme_id, start_year,end_year):
         all_slo_data_for_plot.append(slo_measures_data_plot)
         all_slo_ids.append(slo.id)
     
+
+    #all_direct_data
+    for row in attention_scores_table:
+        row['zipped_direct'] = zip(row['attention_scores_direct'], row['colours_direct'])
+        row['zipped_mlo_surveys'] = zip(row['attention_scores_mlo_surveys'], row['colours_mlo_surveys'])
+        row['zipped_slo_surveys'] = zip(row['attention_scores_slo_surveys'], row['colours_slo_surveys'])
+                                   
     years_to_display = range(start_year,end_year+1)
     template = loader.get_template('workload_app/accreditation_report.html')
-    print(len(years_to_display))
     context = {
         'programme_id' : programme_id,
         'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
@@ -1713,8 +1719,8 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'end_year' : str(end_year)+'/'+str(end_year+1),
         'slo_measures' : slo_measures, 
         'years_to_display' : years_to_display,
-        'num_years_to_display' : len(years_to_display),
-        'num_years_to_display_plus_one' : len(years_to_display)+1,
+        'num_years_colspan' : len(years_to_display),
+        'overall_colpsan' : len(years_to_display)+2,
         'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
         'attention_scores_table' : attention_scores_table,
         'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
