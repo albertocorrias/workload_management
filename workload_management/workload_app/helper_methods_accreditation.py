@@ -2,7 +2,7 @@ import datetime
 import copy
 from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, \
                     MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective,\
-                    TeachingAssignment
+                    TeachingAssignment, WorkloadScenario
 from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
 from .global_constants import accreditation_outcome_type, DetermineColourBasedOnAttentionScore
 
@@ -176,7 +176,8 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year):
             if survey.cohort_targeted is not None: year_of_mod_delivery = survey.cohort_targeted.start_year
             
             #We look for modules offered 
-            for mod in  Module.objects.filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(compulsory_in_primary_programme=True):
+            for mod in  Module.objects.filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).\
+                filter(compulsory_in_primary_programme=True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):
                 year_of_cohort_targeted = year_of_mod_delivery - mod.students_year_of_study +1                
                 #We add the MLO survey measure IF 
                 # - MLO valid when module delivered
@@ -267,7 +268,7 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year):
             #We loo over all the modules with the correct code, offered the year of measurement AND compulsory
             for mod in Module.objects.filter(module_code = mod_code).\
                             filter(scenario_ref__academic_year__start_year = year_of_measurement).\
-                            filter(compulsory_in_primary_programme = True):
+                            filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):
                 year_of_study = mod.students_year_of_study
                 target_cohort = year_of_measurement - year_of_study + 1#Figure out targeted cohort
                 #Before adding, check validity of the MLO for the year when the class was delivered
@@ -372,7 +373,7 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year):
             for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
                 for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
                     #Loop over the module with that code and compulsory
-                    for mod in Module.objects.filter(module_code = mod_code).filter(compulsory_in_primary_programme = True):
+                    for mod in Module.objects.filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):
                         year_offered = mod.scenario_ref.academic_year.start_year
                         year_of_study = mod.students_year_of_study
                         target_cohort = year_offered - year_of_study + 1  #Figure out targeted cohort
@@ -566,7 +567,7 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                             mod_code = measure.associated_mlo.module_code
                             year_delivered = measure.academic_year.start_year
                             for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
-                                .filter(scenario_ref__academic_year__start_year = year_delivered):#Only compulsory courses
+                                .filter(scenario_ref__academic_year__start_year = year_delivered).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):#Only compulsory courses
                                 
                                 student_year_of_study = module.students_year_of_study
                                 
@@ -578,7 +579,7 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                             mod_code = mlo.module_code
                             year_delivered = srv_resp.parent_survey.cohort_targeted.start_year #The year stored in the survey object
                             for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
-                                .filter(scenario_ref__academic_year__start_year = year_delivered):#Only compulsory courses
+                                .filter(scenario_ref__academic_year__start_year = year_delivered).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):#Only compulsory courses
 
                                 student_year_of_study = module.students_year_of_study
                                 

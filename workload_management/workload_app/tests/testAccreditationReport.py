@@ -227,10 +227,12 @@ class TestAccreditationReport(TestCase):
         out_of_range_aa_2 = Academicyear.objects.create(start_year=start_year-20)
 
         #Create 4 worklaod scenarios
-        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1)
-        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2)
-        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3)
-        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4)
+        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1, status = WorkloadScenario.OFFICIAL)
+        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2, status = WorkloadScenario.OFFICIAL)
+        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3, status = WorkloadScenario.OFFICIAL)
+        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4, status = WorkloadScenario.OFFICIAL)
+        scenario_4_draft = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_1, status = WorkloadScenario.DRAFT)
+
 
         new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
@@ -242,6 +244,7 @@ class TestAccreditationReport(TestCase):
         new_lec_2 = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_2,employment_track = track_1, service_role=service_role_1)
         new_lec_3 = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_3,employment_track = track_1, service_role=service_role_1)
         new_lec_4 = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_4,employment_track = track_1, service_role=service_role_1)
+        new_lec_1_draft = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_4_draft,employment_track = track_1, service_role=service_role_1)
         
         mod_code_1 = 'AA101'
         mod_code_2 = 'AA201'
@@ -252,6 +255,7 @@ class TestAccreditationReport(TestCase):
         mod_1_2 = Module.objects.create(module_code = mod_code_1, module_title = mod_code_1+'-title', scenario_ref=scenario_2,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=1)
         mod_1_3 = Module.objects.create(module_code = mod_code_1, module_title = mod_code_1+'-title', scenario_ref=scenario_3,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=1)
         mod_1_4 = Module.objects.create(module_code = mod_code_1, module_title = mod_code_1+'-title', scenario_ref=scenario_4,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=1)
+        mod_1_1_draft = Module.objects.create(module_code = mod_code_1, module_title = mod_code_1+'-title', scenario_ref=scenario_4_draft,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=1)
         
         #Module two present in 4 scenarios
         mod_2_1 = Module.objects.create(module_code = mod_code_2, module_title = mod_code_2+'-title', scenario_ref=scenario_1,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=2)
@@ -271,12 +275,14 @@ class TestAccreditationReport(TestCase):
         mod_4_3 = Module.objects.create(module_code = mod_code_4, module_title = mod_code_4+'-title', scenario_ref=scenario_3,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=4)
         mod_4_4 = Module.objects.create(module_code = mod_code_4, module_title = mod_code_4+'-title', scenario_ref=scenario_4,primary_programme = prog_to_accredit, compulsory_in_primary_programme = True, students_year_of_study=4)
 
-        self.assertEqual(Module.objects.all().count(),16)
+        self.assertEqual(Module.objects.all().count(),17)#16 OK, plus one in draft wl
         #Have all modules assigned
         assign_1_1 = TeachingAssignment.objects.create(assigned_module = mod_1_1, assigned_lecturer=new_lec_1, workload_scenario = scenario_1, number_of_hours = 15) 
         assign_1_2 = TeachingAssignment.objects.create(assigned_module = mod_1_2, assigned_lecturer=new_lec_2, workload_scenario = scenario_2, number_of_hours = 15)
         assign_1_3 = TeachingAssignment.objects.create(assigned_module = mod_1_3, assigned_lecturer=new_lec_3, workload_scenario = scenario_3, number_of_hours = 15)
         assign_1_4 = TeachingAssignment.objects.create(assigned_module = mod_1_4, assigned_lecturer=new_lec_4, workload_scenario = scenario_4, number_of_hours = 15)
+
+        assign_1_1_draft = TeachingAssignment.objects.create(assigned_module = mod_1_1_draft, assigned_lecturer=new_lec_1_draft, workload_scenario = scenario_4_draft, number_of_hours = 15)
 
         assign_2_1 = TeachingAssignment.objects.create(assigned_module = mod_2_1, assigned_lecturer=new_lec_1, workload_scenario = scenario_1, number_of_hours = 15) 
         assign_2_2 = TeachingAssignment.objects.create(assigned_module = mod_2_2, assigned_lecturer=new_lec_2, workload_scenario = scenario_2, number_of_hours = 15)
@@ -312,7 +318,9 @@ class TestAccreditationReport(TestCase):
         mlo_4_2_out_of_range = ModuleLearningOutcome.objects.create(mlo_description = "MLO_2-mod 4", mlo_short_description="short-MLO_2-mod 4", module_code = mod_code_4,\
                                                                     mlo_valid_from = out_of_range_aa_1, mlo_valid_to = out_of_range_aa_2)
 
-        self.assertEqual(ModuleLearningOutcome.objects.all().count(),12)#11 plus one out of range
+        mlo_1_1_draft = ModuleLearningOutcome.objects.create(mlo_description = "MLO_1-mod-1-DRAFT", mlo_short_description="short-MLO_1-mod 1 draft", module_code = mod_code_1)
+
+        self.assertEqual(ModuleLearningOutcome.objects.all().count(),13)#11 plus one out of range, plus one intended for a draft wl
 
         slo_1 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_1', \
                                                       slo_short_description = 'slo_1', \
