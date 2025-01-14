@@ -124,34 +124,6 @@
     </div>
     <div class = "settings_table_container">
       <div class = "settings_table_item">
-            <!--Module types table-->
-            <table class="settings_tables table table-striped table-sm">
-              <thead class="table-dark table-sm">
-              <tr> 
-                  <th>Module types</th>
-              </tr>
-              <tr>
-                <th>Name</th>
-
-              </tr>
-              </thead>
-              <tbody>
-  
-              {% for entry in module_type_table %}
-              <tr>
-                  <td>{{ entry.type_name }}</td>       
-              </tr>
-              {% endfor %}
-              <tr> 
-                <td> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageModuleTypeModal">
-                  Add/Remove types of modules...
-                  </button>
-                </td>
-              </tr>
-              </tbody>
-        </table>
-      </div>
-      <div class = "settings_table_item">
             <!--Departments table-->
             <table class="settings_tables table table-striped table-sm">
               <thead class="table-dark table-sm">
@@ -220,46 +192,7 @@
             </table>
         </div>
       </div>
-    </div>
-    <!-- Manage module type modal -->
-    <div class="modal fade" id="ManageModuleTypeModal" tabindex="-1" role="dialog" aria-labelledby="ManageModuleTypeModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="ManageModuleTypeModalLabel">Add a new module type</h5>
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
-                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
-                    </button>
-                  </div>
-                 <form action="{% url 'workload_app:manage_module_type' %}" method="post">
-                 {% csrf_token %}
-                      <div class="modal-body">
-                            {{ mod_type_form.as_p }}
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
-                        <button type="submit" class="btn btn-primary">Save changes</button>
-                      </div>
-                </form>
-                
-                <div class="modal-header">
-                    <h5 class="modal-title" id="ManageModuleTypeModalLabel">Remove existing module type</h5>
-                </div>
-                 <form action="{% url 'workload_app:remove_module_type' %}" method="post">
-                 {% csrf_token %}
-                      <div class="modal-body">
-                                {{ remove_mod_type_form }}
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
-                        <button type="submit" class="btn btn-danger">Remove Selected</button>
-                      </div>
-                </form>        
-            </div><!-- Modal content -->
-          </div><!-- Modal dialogue-->
-    </div><!--whole modal--> 
-    
-    
+    </div>    
            <!-- Manage scenario modal -->
         <div class="modal fade" id="ManageScenariosModal" tabindex="-1" role="dialog" aria-labelledby="ManageScenariosModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">

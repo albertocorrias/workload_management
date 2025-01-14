@@ -56,22 +56,23 @@ def scenario_view(request, workloadscenario_id):
                                                          'status' : status,
                                                         'academic_year' : acad_year}).as_p()
 
-    workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id);
-    modules_table = CalculateModuleWorkloadTable(workloadscenario_id);
-    summary_data = CalculateSummaryData(workloadscenario_id);
+    workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id)
+    modules_table = CalculateModuleWorkloadTable(workloadscenario_id)
+    summary_data = CalculateSummaryData(workloadscenario_id)
+    
     #Make sure the empty forms are avilable to the scenario page
     #NOTE: The edit assignments form is created within within wl_table
     
     #Lecturer forms (the edit forms are added in the helper methods in the table)
-    prof_form = ProfessorForm(initial = {'fresh_record' : True});
-    remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id);
+    prof_form = ProfessorForm(initial = {'fresh_record' : True})
+    remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id)
     #Module forms (the edit forms are added in the helper methods in the table)
-    mod_form  = ModuleForm(dept_id = department.id,initial = {'fresh_record' : True});
-    remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id);
+    mod_form  = ModuleForm(dept_id = department.id,initial = {'fresh_record' : True})
+    remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
     #Teaching Assignment forms
-    add_teaching_assignment_form = AddTeachingAssignmentForm(auto_id=False, prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id);
-    remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id);
+    add_teaching_assignment_form = AddTeachingAssignmentForm(auto_id=False, prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id)
+    remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id)
     
     template = loader.get_template('workload_app/workload.html')
     context = {
@@ -79,7 +80,7 @@ def scenario_view(request, workloadscenario_id):
         'name_of_active_scenario' : name_of_active_scenario,
         'edit_active_scenario_form' : edit_active_scenario_form,
         'wl_table': workload_table,
-        'mod_table':modules_table, 
+        'mod_table':modules_table,
         'summary_data' : summary_data,
         'prof_form':prof_form.as_p(),
         'remove_prof_form':remove_prof_form.as_p(),
@@ -94,18 +95,18 @@ def scenario_view(request, workloadscenario_id):
 @login_required
 def workloads_index(request):
 
-
     #If no Faculty, create a default one
     if (Faculty.objects.all().count() == 0):
         Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
-
-    #If no module type, create a default one
-    if (ModuleType.objects.all().count() == 0):
-        ModuleType.objects.create(type_name = DEFAULT_MODULE_TYPE_NAME)
     
     #If no Department, create a default one
     if (Department.objects.all().count() == 0):
         Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
+
+    #If no module type, create a default one
+    if (ModuleType.objects.all().count() == 0):
+        dept = Department.objects.all().first()
+        ModuleType.objects.create(type_name = DEFAULT_MODULE_TYPE_NAME, department = dept.id)
 
     #If no track adjustment, create a default one
     if (EmploymentTrack.objects.all().count() == 0):
@@ -120,35 +121,31 @@ def workloads_index(request):
         for year in range(2000, 2050):
             Academicyear.objects.create(start_year = year)
     
-    overall_table = CalculateWorkloadsIndexTable();
-
-    mod_type_form = ModuleTypeForm();
-    remove_mod_type_form = RemoveModuleTypeForm();
+    overall_table = CalculateWorkloadsIndexTable()
 
     #Scenario forms
-    scenario_form = ScenarioForm(initial = {'fresh_record' : True});
-    remove_scenario_form = RemoveScenarioForm();
+    scenario_form = ScenarioForm(initial = {'fresh_record' : True})
+    remove_scenario_form = RemoveScenarioForm()
     
     #Dept forms
-    dept_form = DepartmentForm(initial = {'fresh_record' : True});
-    remove_dept_form = RemoveDepartmentForm();
+    dept_form = DepartmentForm(initial = {'fresh_record' : True})
+    remove_dept_form = RemoveDepartmentForm()
 
     #Faculty forms
-    fac_form = FacultyForm();
-    remove_fac_form = RemoveFacultyForm();
+    fac_form = FacultyForm()
+    remove_fac_form = RemoveFacultyForm()
 
-    employment_track_form = EmplymentTrackForm(initial = {'fresh_record' : True});
-    remove_employment_track_form = RemoveEmploymentTrackForm();
+    employment_track_form = EmplymentTrackForm(initial = {'fresh_record' : True})
+    remove_employment_track_form = RemoveEmploymentTrackForm()
 
-    service_role_form = ServiceRoleForm(initial = {'fresh_record' : True});
-    remove_service_role_form = RemoveServiceRoleForm();
+    service_role_form = ServiceRoleForm(initial = {'fresh_record' : True})
+    remove_service_role_form = RemoveServiceRoleForm()
 
-    tracks_table = CalculateEmploymentTracksTable();
-    roles_table = CalculateServiceRolesTable();
-
-    module_type_table = CalculateModuleTypeTable();   
-    department_table = CalculateDepartmentTable();
-    faculty_table = CalculateFacultiesTable();
+    tracks_table = CalculateEmploymentTracksTable()
+    roles_table = CalculateServiceRolesTable()
+ 
+    department_table = CalculateDepartmentTable()
+    faculty_table = CalculateFacultiesTable()
 
     template = loader.get_template('workload_app/workloads_index.html')
     context = {'overall_table' : overall_table,
@@ -156,9 +153,6 @@ def workloads_index(request):
                 'roles_table' : roles_table,
                 'department_table' : department_table,
                 'faculty_table' : faculty_table,
-                'module_type_table' : module_type_table,
-                'mod_type_form': mod_type_form,
-                'remove_mod_type_form':remove_mod_type_form.as_p(),
                 'dept_form': dept_form.as_p(),
                 'fac_form' : fac_form.as_p(),
                 'remove_fac_form' : remove_fac_form.as_p(),
@@ -594,14 +588,14 @@ def remove_module(request,workloadscenario_id):
             #Else, module stays there because wipe is false
             
     #Otherwise just go back to workload view
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}));
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
 
-def manage_module_type(request):
+def manage_module_type(request, department_id):
     if request.method =='POST':
         form = ModuleTypeForm(request.POST);
         if form.is_valid():  
             supplied_type_name = form.cleaned_data['type_name']
-            new_type = ModuleType.objects.create(type_name = supplied_type_name)
+            new_type = ModuleType.objects.create(type_name = supplied_type_name, department=Department.objects.filter(id=department_id).get())
             new_type.save()
         else:
             template = loader.get_template('workload_app/errors_page.html')
@@ -610,25 +604,16 @@ def manage_module_type(request):
             }
             return HttpResponse(template.render(context, request))
     #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'));
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
 
-def remove_module_type(request):
+def remove_module_type(request, department_id):
     if request.method =='POST':
-        form = RemoveModuleTypeForm(request.POST);
+        form = RemoveModuleTypeForm(request.POST,department_id=department_id)
         if form.is_valid():  
-            selected_module_type = form.cleaned_data['select_module_type_to_remove'];
-            #Turn all mods of that type to the default module type
-            default_mod_type = ModuleType.objects.filter(type_name = DEFAULT_MODULE_TYPE_NAME)
-            if (default_mod_type.count() == 0):    
-                ModuleType.objects.create(type_name = DEFAULT_MODULE_TYPE_NAME)
-                default_mod_type = ModuleType.objects.filter(type_name = DEFAULT_MODULE_TYPE_NAME)
-                
-            Module.objects.filter(module_type__type_name=selected_module_type).update(module_type = default_mod_type.get().id)
-            ModuleType.objects.filter(type_name=selected_module_type).delete()
+            ModuleType.objects.filter(id=request.POST.get('select_module_type_to_remove')).delete()
             
     #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'));   
-
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
 
 
 def manage_department(request):
@@ -1030,6 +1015,10 @@ def department(request,department_id):
                         item["draft_wl_ids"].append(wl.id)
                 dept_wls.append(item)
 
+            mod_type_form = ModuleTypeForm()
+            remove_mod_type_form = RemoveModuleTypeForm(department_id=department_id)
+            module_type_table = CalculateModuleTypeTable(department_id)  
+
             #Generate the report for the year
             if (start_year == 0 ):
                 acad_year_form = SelectAcademicYearForm()
@@ -1083,12 +1072,16 @@ def department(request,department_id):
                 'dept_name' : dept_name,
                 'acad_year_form' : acad_year_form,
                 'prog_offered' : prog_offered, #This is a list of dictionary items
-                'dept_wls' : dept_wls,#This is the table with workloads from recent yearss
+                'dept_wls' : dept_wls,#This is the table with workloads from recent years
+                'module_type_table' : module_type_table,
+                'mod_type_form': mod_type_form,
+                'remove_mod_type_form':remove_mod_type_form.as_p(),
                 'prog_form' : prog_form,
                 'sub_prog_form' : sub_prog_form,
                 'remove_prog_form' : remove_prog_form,
                 'remove_sub_prog_form' : remove_sub_prog_form,
                 'tables_for_year' : tables_for_year,
+
                 'no_show_message' : no_show_message
             }
             return HttpResponse(template.render(context, request))

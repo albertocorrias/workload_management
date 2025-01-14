@@ -69,10 +69,10 @@ def CalculateServiceRolesTable():
 #Helper method to calculate the table of module types
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as module typess in the database
-#Each item contains name and othe rinfo on the type
-def CalculateModuleTypeTable():    
+#Each item contains name and other info on the type
+def CalculateModuleTypeTable(department_id):    
     ret = [];
-    for mod_tp in ModuleType.objects.all().order_by('type_name'):
+    for mod_tp in ModuleType.objects.filter(department__id=department_id).order_by('type_name'):
 
         item = {"type_name" : mod_tp.type_name}
         ret.append(item)
@@ -544,21 +544,21 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
 
 #This method calculates the table of module types for a given workload scenario and a given programme
 #It returns a stucture (dictionary) containing
-            # "scenario_name": The name of the workload scenario
-            # "programme_name":the name of the programme
-            # "table_rows_with_types_and_numbers": a list of dictionaries, as long as there are module types
-            #                                      with at least some teaching assignments. the dictionary contains
-            #                   "mod_type" : the name of the module type
-            #                   "hours_assigned_sem_1" : the total hours assigned to that module type in sem 1
-            #                   "hours_assigned_sem_2" : the total hours assigned to that module type in sem 2
-            #                   "no_mods_sem_1" : 0: the number of modules offered in sem 1 of that type
-            #                   "no_mods_sem_2" : 0: the number of modules offered in sem 2 of that type
-            # "total_num_mods_sem_1" : the total number of modules in semester 1
-            # "total_num_mods_sem_2" : the total number of modules in semester 1
-            # "total_hours_assigned_sem_1": the total hours assigned in semester 1
-            # "total_hours_assigned_sem_2": the total hours assigned in semester 2
+# "scenario_name": The name of the workload scenario
+# "programme_name":the name of the programme
+# "table_rows_with_types_and_numbers": a list of dictionaries, as long as there are module types
+#                                      with at least some teaching assignments. the dictionary contains
+#                   "mod_type" : the name of the module type
+#                   "hours_assigned_sem_1" : the total hours assigned to that module type in sem 1
+#                   "hours_assigned_sem_2" : the total hours assigned to that module type in sem 2
+#                   "no_mods_sem_1" : 0: the number of modules offered in sem 1 of that type
+#                   "no_mods_sem_2" : 0: the number of modules offered in sem 2 of that type
+# "total_num_mods_sem_1" : the total number of modules in semester 1
+# "total_num_mods_sem_2" : the total number of modules in semester 1
+# "total_hours_assigned_sem_1": the total hours assigned in semester 1
+# "total_hours_assigned_sem_2": the total hours assigned in semester 2
 def CalculateModuleTypesTableForProgramme(scenario_id,programme_id):
-    #TO be filled and returned
+    #To be filled and returned
     main_table_data = {
             "scenario_name":"",
             "programme_name":"",
@@ -575,7 +575,8 @@ def CalculateModuleTypesTableForProgramme(scenario_id,programme_id):
     main_table_data["scenario_name"] = scenario_qs.get().label
     main_table_data["programme_name"] = programme_qs.get().programme_name
 
-    for type in ModuleType.objects.all():
+    department_id = scenario_qs.get().dept.id
+    for mod_type in ModuleType.objects.filter(department__id = department_id):
         mod_type_structure = {
             "mod_type" : "",
             "hours_assigned_sem_1" : 0,
@@ -583,10 +584,10 @@ def CalculateModuleTypesTableForProgramme(scenario_id,programme_id):
             "no_mods_sem_1" : 0,
             "no_mods_sem_2" : 0
         }
-        mod_type_structure["mod_type"] = type.type_name
+        mod_type_structure["mod_type"] = mod_type.type_name
 
-        for mod in (Module.objects.filter(scenario_ref = scenario_id).filter(primary_programme = programme_id).filter(module_type = type) |
-                   Module.objects.filter(scenario_ref = scenario_id).filter(module_type = type).filter(secondary_programme = programme_id) ):
+        for mod in (Module.objects.filter(scenario_ref = scenario_id).filter(primary_programme = programme_id).filter(module_type = mod_type) |
+                   Module.objects.filter(scenario_ref = scenario_id).filter(module_type = mod_type).filter(secondary_programme = programme_id) ):
             #Calculate the hours assigned
             hours_assigned=0
             for assign in TeachingAssignment.objects.filter(assigned_module = mod.id):

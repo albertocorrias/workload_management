@@ -99,7 +99,7 @@ class ModuleForm(ModelForm):
                   'total_hours' : _('Total hours')
                   }
 
-        widgets = {'module_type' : forms.Select(choices=ModuleType.objects.all()),
+        widgets = {
                    'semester_offered' : forms.Select(choices=Module.SEMESTER_OFFERED),
                    'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE)
                    }
@@ -111,6 +111,7 @@ class ModuleForm(ModelForm):
         self.fields['secondary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
+        self.fields['module_type'] = forms.ModelChoiceField(queryset=ModuleType.objects.filter(department__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
         self.fields['compulsory_in_primary_programme'].required=False
@@ -160,9 +161,14 @@ class ModuleTypeForm(forms.ModelForm):
     class Meta:
         model = ModuleType;
         fields = ['type_name']
+        labels = {'type_name' :_('Name of area')}
 
 class RemoveModuleTypeForm(forms.Form):
-    select_module_type_to_remove = forms.ModelChoiceField(label = 'Select the module type to remove', queryset=ModuleType.objects.all())
+    def __init__(self, *args, **kwargs):
+        dept_id = kwargs.pop('department_id')
+        super(RemoveModuleTypeForm, self).__init__(*args, **kwargs)
+        #Make user select type only relevant to this department
+        self.fields['select_module_type_to_remove'] = forms.ModelChoiceField(label = 'Select the module type to remove', queryset=ModuleType.objects.filter(department__id = dept_id))
 
 class DepartmentForm(forms.ModelForm):
     #A flag to establish whether it's a new record or editing an existing one

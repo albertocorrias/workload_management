@@ -262,7 +262,8 @@ class ModuleType(models.Model):
     A simple model to describe the module type
     """
     type_name = models.CharField(max_length=300)
-    
+    department = models.ForeignKey(Department, on_delete=models.CASCADE,default=1)
+
     def __str__(self):
         return self.type_name
     
@@ -303,7 +304,7 @@ class Module(models.Model):
     #Total expected hours to be taught
     total_hours = models.PositiveIntegerField(null=True);
     #The type of module
-    module_type = models.ForeignKey(ModuleType, on_delete=models.PROTECT, null=True)
+    module_type = models.ForeignKey(ModuleType, on_delete=models.SET_NULL, null=True)
     #Whether it is compulsory in primary programme
     compulsory_in_primary_programme = models.BooleanField(default=False)
     #year of study of students, this is intended as the "typical stduent" accoridng to recommended schedule
