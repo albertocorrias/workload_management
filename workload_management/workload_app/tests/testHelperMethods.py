@@ -49,7 +49,7 @@ class testHelperMethods(TestCase):
 
         #Create a module type
         mod_type_name = "TEST_MOD_TYPE"
-        mod_type_1 = ModuleType.objects.create(type_name=mod_type_name)
+        mod_type_1 = ModuleType.objects.create(type_name=mod_type_name, department = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get() )
 
         #create a Programme
         prog_name = "test prog"
@@ -356,7 +356,7 @@ class testHelperMethods(TestCase):
 
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept = first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -390,9 +390,9 @@ class testHelperMethods(TestCase):
         adjunct_lecturer = Lecturer.objects.create(name="adjunct_lecturer", fraction_appointment = 0.5, employment_track=track_2)
     
         #Create module types
-        mod_type_core = ModuleType.objects.create(type_name="Core")
-        mod_type_elective = ModuleType.objects.create(type_name="Elective")
-        mod_type_faculty = ModuleType.objects.create(type_name="Faculty based")
+        mod_type_core = ModuleType.objects.create(type_name="Core", department = first_dept)
+        mod_type_elective = ModuleType.objects.create(type_name="Elective", department = first_dept)
+        mod_type_faculty = ModuleType.objects.create(type_name="Faculty based", department = first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -452,6 +452,7 @@ class testHelperMethods(TestCase):
         self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_7, 'module_title' : 'module 7', 'total_hours' : '30', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SPECIAL_TERM_2, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
         self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_8,  'module_title' : 'module 8', 'total_hours' : '40', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})        
         self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_9,  'module_title' : 'module 9', 'total_hours' : '50', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})        
+        self.assertEqual(Module.objects.all().count(),10)
 
         #Note 6 and 9 have no assignments...        
         module_5 = Module.objects.filter(module_code = mod_code_5).get()

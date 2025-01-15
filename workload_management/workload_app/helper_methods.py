@@ -6,7 +6,7 @@ from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModu
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
                               csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
-                                DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM
+                                DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME
 
 
 #Helper method to calculate the table of workloads
@@ -73,7 +73,6 @@ def CalculateServiceRolesTable():
 def CalculateModuleTypeTable(department_id):    
     ret = [];
     for mod_tp in ModuleType.objects.filter(department__id=department_id).order_by('type_name'):
-
         item = {"type_name" : mod_tp.type_name}
         ret.append(item)
     return ret;  
@@ -94,8 +93,7 @@ def CalculateDepartmentTable():
                                                              'department_acronym' : dept.department_acronym, \
                                                               'faculty' : dept.faculty.id,\
                                                              'fresh_record' : False, 'dept_id' : dept.id})
-                }
-                
+                }    
         ret.append(item)
     return ret;  
 
@@ -112,8 +110,7 @@ def CalculateFacultiesTable():
                 "edit_fac_form" : FacultyForm(initial = {'faculty_name' : fac.faculty_name, \
                                                          'faculty_acronym' : fac.faculty_acronym, \
                                                          'fresh_record' : False, 'fac_id' : fac.id})
-                }
-                
+                }      
         ret.append(item)
     return ret;  
 
@@ -250,6 +247,10 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
         if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
         student_year_of_study=0
         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
+
+        display_mod_type = DEFAULT_MODULE_TYPE_NAME
+        if (mod.module_type is not None): display_mod_type = mod.module_type.type_name
+
         item = {
             "module_code" : mod.module_code,
             "module_title" : ShortenString(mod.module_title),
@@ -258,7 +259,7 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
             "module_lecturers_not_counted" : not_counted_formatted_string[:-2],
             "module_assigned_hours" : total_hours_assigned_for_this_mod,
             "module_assigned_hours_not_counted" : total_hours_assigned_for_this_mod_not_counted,
-            "module_type" : mod.module_type.type_name,
+            "module_type" : display_mod_type,
             "num_tut_groups" : mod.number_of_tutorial_groups,
             "module_hours_needed" : mod.total_hours,
             "module_id" : mod.id,
@@ -301,13 +302,21 @@ def CalculateSummaryData(workload_scenario_id):
         mod_involved = assign.assigned_module;
         prof_involved = assign.assigned_lecturer;
         
-        if (mod_involved.module_type.type_name not in labels):
-            labels.append(mod_involved.module_type.type_name)
-            counts.append(assign.number_of_hours)
-        else:#the type is alreday there, must be in the labels array
-            indx = labels.index(mod_involved.module_type.type_name)
-            counts[indx] = counts[indx] + assign.number_of_hours
-            
+        if (mod_involved.module_type is not None):
+            if (mod_involved.module_type.type_name not in labels):
+                labels.append(mod_involved.module_type.type_name)
+                counts.append(assign.number_of_hours)
+            else:#the type is alreday there, must be in the labels array
+                indx = labels.index(mod_involved.module_type.type_name)
+                counts[indx] = counts[indx] + assign.number_of_hours
+        else:
+            if (DEFAULT_MODULE_TYPE_NAME not in labels):
+                labels.append(DEFAULT_MODULE_TYPE_NAME)
+                counts.append(assign.number_of_hours)
+            else:#already there add up
+                indx = labels.index(DEFAULT_MODULE_TYPE_NAME)
+                counts[indx] = counts[indx] + assign.number_of_hours
+                
         if (assign.counted_towards_workload == True):    
             if (mod_involved.semester_offered == Module.SEM_1):
                 hours_sem_1 = hours_sem_1 + assign.number_of_hours

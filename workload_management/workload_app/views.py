@@ -103,11 +103,6 @@ def workloads_index(request):
     if (Department.objects.all().count() == 0):
         Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
 
-    #If no module type, create a default one
-    if (ModuleType.objects.all().count() == 0):
-        dept = Department.objects.all().first()
-        ModuleType.objects.create(type_name = DEFAULT_MODULE_TYPE_NAME, department = dept.id)
-
     #If no track adjustment, create a default one
     if (EmploymentTrack.objects.all().count() == 0):
         EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, is_adjunct = False, track_adjustment = 1.0)

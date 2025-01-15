@@ -55,14 +55,14 @@ class TestWorkloadScenarios(TestCase):
 
         first_scen = 'test_scen'
         first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        first_scenario = WorkloadScenario.objects.create(label=first_scen, dept = first_dept);
+        first_scenario = WorkloadScenario.objects.create(label=first_scen, dept = first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scenario.id}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertContains(response, "label")
         self.assertEqual(WorkloadScenario.objects.all().count(),1)
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
         new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
 
@@ -152,7 +152,7 @@ class TestWorkloadScenarios(TestCase):
         #Create a programme
         first_prog = ProgrammeOffered.objects.create(programme_name = "test_prog", primary_dept = first_dept)
 
-        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept);
+        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept)
         #Click on it
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scenario.id}))
         
@@ -162,7 +162,7 @@ class TestWorkloadScenarios(TestCase):
         vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5)
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'

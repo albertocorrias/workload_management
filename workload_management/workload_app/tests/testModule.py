@@ -19,8 +19,11 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen',dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -29,7 +32,7 @@ class TestModule(TestCase):
         self.assertEqual(Module.objects.all().count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         #Add a new module
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': 'XXXX1', 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         
@@ -58,27 +61,29 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(ModuleType.objects.all().count(),1)#If none, the view code is supposed to create one
-
+        self.assertEqual(ModuleType.objects.all().count(),0)#
+        
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues    
         
         #Add a new module type
-        self.client.post(reverse('workload_app:manage_module_type'), {'type_name': 'TEST'})
+        self.client.post(reverse('workload_app:manage_module_type', kwargs={'department_id': first_dept.id}), {'type_name': 'TEST'})
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         all_types = ModuleType.objects.all()
-        self.assertEqual(all_types.count(),2)#1
+        self.assertEqual(all_types.count(),1)#1
         self.assertEqual(all_types.filter(type_name='TEST').exists(),True)
         self.assertEqual(all_types.filter(type_name='TEST').count(),1)
     
         #Remove the module type we just added
-        self.client.post(reverse('workload_app:remove_module_type'), {'select_module_type_to_remove': all_types[0].id})
+        self.client.post(reverse('workload_app:remove_module_type',kwargs={'department_id': first_dept.id}), {'select_module_type_to_remove': all_types[0].id})
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(ModuleType.objects.all().count(),1)
+        self.assertEqual(ModuleType.objects.all().count(),0)
 
     def test_add_remove_module_method_wipeout(self):
         self.setup_user()
@@ -86,8 +91,12 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
+
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept);
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -96,7 +105,7 @@ class TestModule(TestCase):
         self.assertEqual(Module.objects.all().count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         #Add a new module
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': 'XXXX1', 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
@@ -135,8 +144,11 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
+
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen',dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -145,7 +157,7 @@ class TestModule(TestCase):
         self.assertEqual(Module.objects.all().count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE",department=first_dept)
         
         #Add a new module
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': 'XXXX1', 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
@@ -174,7 +186,7 @@ class TestModule(TestCase):
         first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
 
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept);
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -183,7 +195,7 @@ class TestModule(TestCase):
         self.assertEqual(Module.objects.all().count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code = 'XXX1'
         #Add a new module
@@ -243,8 +255,12 @@ class TestModule(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
+        
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen',dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -253,7 +269,7 @@ class TestModule(TestCase):
         self.assertEqual(Module.objects.all().count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code = 'XXX1'
         #Add a new module - but do not submit the optional value "total_hours"
@@ -287,7 +303,7 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.count(),0)#0 mods to start with
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")        
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)        
         mod_code = 'XXX1'
         #Add a new module
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {
@@ -377,7 +393,7 @@ class TestModule(TestCase):
         
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label, dept = first_dept);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept = first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -387,7 +403,7 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.count(),0)#0 mods to start with
 
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code = 'XXX1'
         #Add a new module
@@ -460,7 +476,7 @@ class TestModule(TestCase):
         vice_dean = Lecturer.objects.filter(name = 'vice_dean').get()
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -598,14 +614,16 @@ class TestModule(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         
         self.assertEqual(WorkloadScenario.objects.all().count(), 0)
-        self.assertEqual(ModuleType.objects.all().count(), 1)
+        self.assertEqual(ModuleType.objects.all().count(), 0)
         
+        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty= first_fac)
         #create two scenarios, scen 2 is active
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1,dept=first_dept)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2);
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept=first_dept)
         self.assertEqual(WorkloadScenario.objects.all().count(), 2)
         
         new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
@@ -626,9 +644,9 @@ class TestModule(TestCase):
         #Create two module types
         name_type_1 = "MOD_TYPE_1"
         name_type_2 = "MOD_TYPE_2"
-        mod_type_1 = ModuleType.objects.create(type_name=name_type_1)
-        mod_type_2 = ModuleType.objects.create(type_name=name_type_2)
-        self.assertEqual(ModuleType.objects.all().count(), 3)
+        mod_type_1 = ModuleType.objects.create(type_name=name_type_1, department=first_dept)
+        mod_type_2 = ModuleType.objects.create(type_name=name_type_2, department=first_dept)
+        self.assertEqual(ModuleType.objects.all().count(), 2)
         
         #Create 3 mods
         mod_code_1 = 'AS101'
@@ -706,8 +724,8 @@ class TestModule(TestCase):
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = name_type_2).count(),1)
         
         #Now we remove module type 2
-        self.client.post(reverse('workload_app:remove_module_type'), {'select_module_type_to_remove': mod_type_2.id})
-        self.assertEqual(ModuleType.objects.all().count(), 2)#Two left, thed efault and module type 1
+        self.client.post(reverse('workload_app:remove_module_type', kwargs={'department_id': first_dept.id}), {'select_module_type_to_remove': mod_type_2.id})
+        self.assertEqual(ModuleType.objects.all().count(), 1)#module type 1 only left
         #Expected result:
         #Scenario 1 (ACTIVE):3 modules, 3 lecturers, 2 assignments (both for mod 2 - WHICH TURNED TO UNAASIGNED NOW)
         #Scenario 2 (INACTIVE):3 modules, 3 lecturers, 2 assignments (1 for mod 2 (WHICH TURNED TO UNAASIGNED NOW) and one for mod 3 (type 1))
@@ -725,11 +743,9 @@ class TestModule(TestCase):
         self.assertEqual(teaching_assignments_for_active_scen.count(),2)#2 in this scenario
         
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).count(),2)
-        self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).filter(assigned_module__module_type__type_name = DEFAULT_MODULE_TYPE_NAME).count(),2)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).filter(assigned_module__module_type__type_name = name_type_1).count(),0)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).filter(assigned_module__module_type__type_name = name_type_2).count(),0)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).count(),2)
-        self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = DEFAULT_MODULE_TYPE_NAME).count(),1)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = name_type_1).count(),1)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = name_type_2).count(),0)
          

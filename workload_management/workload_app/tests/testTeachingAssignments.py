@@ -18,8 +18,10 @@ class TestTeachingAssignments(TestCase):
         
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen',dept  =first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -28,7 +30,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, workload_scenario=new_scen);
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE",department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -85,13 +87,15 @@ class TestTeachingAssignments(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept=first_dept)
+
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         normal_lecturer = normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, workload_scenario=new_scen);        
         mod_code_1 = 'AS101'
@@ -139,17 +143,17 @@ class TestTeachingAssignments(TestCase):
         first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept);
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept)
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1)
 
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -237,7 +241,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -335,7 +339,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_2);
 
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -408,7 +412,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -509,7 +513,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -593,7 +597,7 @@ class TestTeachingAssignments(TestCase):
         vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_2);
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -678,7 +682,7 @@ class TestTeachingAssignments(TestCase):
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         
@@ -788,9 +792,11 @@ class TestTeachingAssignments(TestCase):
         #check all good at the start        
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -803,7 +809,7 @@ class TestTeachingAssignments(TestCase):
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         
@@ -872,12 +878,14 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
        
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+
         #check all good at the start        
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -893,7 +901,7 @@ class TestTeachingAssignments(TestCase):
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         
@@ -964,9 +972,12 @@ class TestTeachingAssignments(TestCase):
         #check all good at the start        
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept);
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -981,7 +992,7 @@ class TestTeachingAssignments(TestCase):
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         
