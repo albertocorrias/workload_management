@@ -27,7 +27,12 @@ const config = {
   responsive : true,
   maintainAspectRatio: true,
   plugins: {
-      legend: {position: 'top'}
+      legend: {position: 'bottom'},
+      title: {
+        display: true,
+        text: 'Hours by area',
+        position: 'top'
+    }
   }
 }
 };

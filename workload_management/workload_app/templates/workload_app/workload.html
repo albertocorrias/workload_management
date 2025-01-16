@@ -54,15 +54,7 @@
     <hr/>
     
     <div class="summary-container">
-        <div class="chart-container">
-            <canvas id="module_type_chart"></canvas>
-            {{ summary_data.hours_by_type|json_script:"hour_counts" }}
-            {{ summary_data.module_type_labels|json_script:"chart_labels" }}
-            
-            <script src="{% static   'workload_app/module_type_chart.js' %}"></script>
-        </div>
-        <div class="summarytable-container">
-            
+        <div class="summary_item_container">
             <table class="table table-sm">
                     <thead class="table-dark">
                     <tr> 
@@ -119,7 +111,21 @@
                     </tbody>
             </table> 
         </div>
+        <div class="summary_item_container">
+          <canvas id="module_type_chart"></canvas>
+          {{ summary_data.hours_by_type|json_script:"hour_counts" }}
+          {{ summary_data.module_type_labels|json_script:"chart_labels" }}
+          
+          <script src="{% static   'workload_app/module_type_chart.js' %}"></script>
+      </div>
+      <div class="summary_item_container">
+        <canvas id="prog_type_chart"></canvas>
+        {{ summary_data.hours_prog|json_script:"hours_prog" }}
+        {{ summary_data.labels_prog|json_script:"labels_prog" }}
+        
+        <script src="{% static   'workload_app/prog_type_chart.js' %}"></script>
     </div>
+    </div><!--End of summary container-->
     <hr/>
     
     <h2> Workload table by lecturer </h2>

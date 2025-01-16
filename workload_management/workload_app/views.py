@@ -170,17 +170,18 @@ def add_assignment(request,workloadscenario_id):
         selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get();
         form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = selected_scen.id)
         if form.is_valid():
-            selected_prof_name = form.cleaned_data['select_lecturer'];
-            selected_module = form.cleaned_data['select_module'];
-            
-            selected_module = Module.objects.filter(id = id_of_mod_involved).filter(scenario_ref__id = workloadscenario_id).get();
-            selected_prof =  Lecturer.objects.filter(name = selected_prof_name).filter(workload_scenario__id = workloadscenario_id).get();
+            selected_prof_name = form.cleaned_data['select_lecturer']
+            selected_module = form.cleaned_data['select_module']
+
+            selected_module = Module.objects.filter(id = id_of_mod_involved).filter(scenario_ref__id = workloadscenario_id).get()
+            selected_prof =  Lecturer.objects.filter(name = selected_prof_name).filter(workload_scenario__id = workloadscenario_id).get()
             count_in_wl = True
             if (counted_or_not_radio_button_status == 'no'): count_in_wl = False
             #Check if an assignment for the same module and same prof alreday exists (if so, we just add the hours)
             possible_existing_objects = TeachingAssignment.objects.filter(assigned_module = selected_module)\
                                                                   .filter(assigned_lecturer = selected_prof)\
-                                                                  .filter(workload_scenario__id=workloadscenario_id);
+                                                                  .filter(workload_scenario__id=workloadscenario_id)\
+                                                                  .filter(counted_towards_workload = count_in_wl)
             if (possible_existing_objects.count() > 0):
                 num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];#TODO This is bad here, must chack if manual hours were given or not
                 existing_hrs = possible_existing_objects.values().get()

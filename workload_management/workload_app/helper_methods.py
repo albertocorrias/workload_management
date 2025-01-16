@@ -298,9 +298,12 @@ def CalculateSummaryData(workload_scenario_id):
     profs_involved = []
     labels = []
     counts = []
+
+    hours_prog = []
+    labels_prog = []
     for assign in all_teaching_assignments:
-        mod_involved = assign.assigned_module;
-        prof_involved = assign.assigned_lecturer;
+        mod_involved = assign.assigned_module
+        prof_involved = assign.assigned_lecturer
         
         if (mod_involved.module_type is not None):
             if (mod_involved.module_type.type_name not in labels):
@@ -330,7 +333,7 @@ def CalculateSummaryData(workload_scenario_id):
             (mod_involved.semester_offered == Module.SPECIAL_TERM_2):
                 hours_other = hours_other + assign.number_of_hours
             if (prof_involved.name not in profs_involved):
-                profs_involved.append(prof_involved.name);
+                profs_involved.append(prof_involved.name)
                 track_adj = prof_involved.employment_track.track_adjustment
                 empl_adj = prof_involved.service_role.role_adjustment
                 total_FTE_for_workload = total_FTE_for_workload + prof_involved.fraction_appointment*track_adj*empl_adj
@@ -339,10 +342,28 @@ def CalculateSummaryData(workload_scenario_id):
         else:
             total_hours_not_counted = total_hours_not_counted + assign.number_of_hours
 
-    total_dept_fte = 0;
-    total_module_hours = 0;
-    total_adjunct_tFTE = 0;
-    total_number_of_adjuncts = 0;
+        #Calculate hours by programme offered
+        no_programme_string = 'No programme'
+        if (mod_involved.primary_programme is None):
+            if (no_programme_string in labels_prog):
+                index = labels_prog.index(no_programme_string)
+                hours_prog[index] = hours_prog[index] + assign.number_of_hours #Position 0 is for "No programme"
+            else:
+                labels_prog.append(no_programme_string)
+                hours_prog.append(assign.number_of_hours)
+        else:
+            prog_name = mod_involved.primary_programme.programme_name
+            if (prog_name in labels_prog): #alreday there, add up
+                index = labels_prog.index(prog_name)
+                hours_prog[index] = hours_prog[index] + assign.number_of_hours
+            else: #not there, add at the end
+                labels_prog.append(prog_name)
+                hours_prog.append(assign.number_of_hours)
+
+    total_dept_fte = 0
+    total_module_hours = 0
+    total_adjunct_tFTE = 0
+    total_number_of_adjuncts = 0
     for prof in Lecturer.objects.filter(workload_scenario__id = workload_scenario_id):
         track_adj = prof.employment_track.track_adjustment
         empl_adj = prof.service_role.role_adjustment
@@ -355,13 +376,15 @@ def CalculateSummaryData(workload_scenario_id):
     for mods in Module.objects.filter(scenario_ref__id=workload_scenario_id):
         total_module_hours =total_module_hours + mods.total_hours
 
-    expected_hrs = 0;
+    expected_hrs = 0
     if (total_FTE_for_workload>0):
         expected_hrs = total_hrs_for_workload/total_dept_fte
 
     ret = {
             'module_type_labels' : labels, #Used by the chart
             'hours_by_type' : counts, #Used by the chart
+            'labels_prog' : labels_prog, #used by the chart
+            'hours_prog' : hours_prog,#used by chart
             'total_tFTE_for_workload' : total_FTE_for_workload,
             'total_hours_for_workload' : total_hrs_for_workload,
             'expected_hours_per_tFTE' : expected_hrs,

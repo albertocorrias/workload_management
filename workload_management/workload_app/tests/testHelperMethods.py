@@ -353,6 +353,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN",faculty = first_fac)
+        prog_1 = ProgrammeOffered.objects.create(programme_name = 'P1', primary_dept = first_dept)
+        prog_2 = ProgrammeOffered.objects.create(programme_name = 'P2', primary_dept = first_dept)
 
         #Create a new scenario
         first_label = 'test_scen'
@@ -367,6 +369,8 @@ class testHelperMethods(TestCase):
         obtained_summary_data = response.context['summary_data']
         self.assertEqual(len(obtained_summary_data["module_type_labels"]),0)
         self.assertEqual(len(obtained_summary_data["hours_by_type"]),0)
+        self.assertEqual(len(obtained_summary_data["labels_prog"]),0)
+        self.assertEqual(len(obtained_summary_data["hours_prog"]),0)
 
         self.assertAlmostEqual(obtained_summary_data["total_tFTE_for_workload"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_department_tFTE"],Decimal(0))#
@@ -399,11 +403,20 @@ class testHelperMethods(TestCase):
         mod_code_3 = 'AS301'
         mod_code_4 = 'AS401'
         unsued_mod_code = 'UNUSED'#UNUSED
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '152', 'module_type' : mod_type_core.id, 'semester_offered' : Module.SEM_1, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '252', 'module_type' : mod_type_elective.id, 'semester_offered' : Module.SEM_1, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '352', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code_4,  'module_title' : 'module 4', 'total_hours' : '352', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})        
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': unsued_mod_code,  'module_title' : 'unused_mod', 'total_hours' : '1252', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '3',  'fresh_record' : True})        
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), \
+                         {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '152', 'primary_programme' : prog_1.id, \
+                          'module_type' : mod_type_core.id, 'semester_offered' : Module.SEM_1, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), \
+                         {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '252', 'primary_programme' : prog_2.id,\
+                           'module_type' : mod_type_elective.id, 'semester_offered' : Module.SEM_1, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}),\
+                          {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '352',\
+                            'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}),\
+                          {'module_code': mod_code_4,  'module_title' : 'module 4', 'total_hours' : '352',\
+                            'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})        
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}),\
+                          {'module_code': unsued_mod_code,  'module_title' : 'unused_mod', 'total_hours' : '1252', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '3',  'fresh_record' : True})        
         
         self.assertEqual(Module.objects.all().count(),5)
         
@@ -433,6 +446,15 @@ class testHelperMethods(TestCase):
         self.assertEqual(obtained_summary_data["hours_by_type"][1],56)#56 hours to elective mods from 1 assignment
         self.assertEqual(obtained_summary_data["hours_by_type"][2],156+356)#156+356 hours to faculty mods from 2 assignments
         
+        self.assertEqual(len(obtained_summary_data["labels_prog"]),3)
+        self.assertEqual(len(obtained_summary_data["hours_prog"]),3)
+        self.assertEqual(obtained_summary_data['labels_prog'][0], prog_1.programme_name)
+        self.assertEqual(obtained_summary_data['labels_prog'][1], prog_2.programme_name)
+        self.assertEqual(obtained_summary_data['labels_prog'][2], 'No programme')
+        self.assertEqual(obtained_summary_data["hours_prog"][0],36+6)#36+6 hours to core mods from 2 assignments of mod 1
+        self.assertEqual(obtained_summary_data["hours_prog"][1],56)#56 from mod 2
+        self.assertEqual(obtained_summary_data["hours_prog"][2],356+156)#From mod 3 and mod 4
+
         self.assertAlmostEqual(obtained_summary_data["total_tFTE_for_workload"],Decimal(0.7*1.0+1.0*2.0+0.5*1.0))#From 3 profs above
         self.assertAlmostEqual(obtained_summary_data["total_department_tFTE"],Decimal(0.7*1.0+1.0*2.0+0.5*1.0+0.5*3))#From 4 profs above
         self.assertAlmostEqual(obtained_summary_data["total_hours_for_workload"],Decimal(36+6+56+156+356))#From 4 assignments above
@@ -499,6 +521,8 @@ class testHelperMethods(TestCase):
         obtained_summary_data = response.context['summary_data']
         self.assertEqual(len(obtained_summary_data["module_type_labels"]),0)#No teaching assignments in the new scenario, so no labels and no counts
         self.assertEqual(len(obtained_summary_data["hours_by_type"]),0)#No teaching assignments in the new scenario, so no labels and no counts
+        self.assertEqual(len(obtained_summary_data["labels_prog"]),0)#No teaching assignments in the new scenario, so no labels and no counts
+        self.assertEqual(len(obtained_summary_data["hours_prog"]),0)#No teaching assignments in the new scenario, so no labels and no counts
         
         self.assertAlmostEqual(obtained_summary_data["total_tFTE_for_workload"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_department_tFTE"],Decimal(0))#
