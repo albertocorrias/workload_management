@@ -659,10 +659,12 @@ def CalculateSingleModuleInformationTable(module_code):
                 else:
                     display_year_of_study = str(module.students_year_of_study)
 
+                display_mod_type = DEFAULT_MODULE_TYPE_NAME
+                if (module.module_type is not None): display_mod_type = module.module_type.type_name
 
                 table_row_item = {
                     "academic_year": acad_year.__str__(),
-                    "module_type" : module.module_type.type_name,
+                    "module_type" : display_mod_type,
                     "semester_offered" : module.semester_offered,
                     "year_of_study" :  display_year_of_study,
                     "compulsory_in_primary_programme" : text_for_compulsory,
