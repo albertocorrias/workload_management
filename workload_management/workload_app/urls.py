@@ -1,5 +1,5 @@
 from django.urls import path, include
-
+from django.contrib import admin
 from . import views
 
 app_name = 'workload_app'
@@ -39,6 +39,7 @@ urlpatterns = [
     path('manage_subprogramme_offered/<int:dept_id>/', views.manage_subprogramme_offered, name='manage_subprogramme_offered'),
     path('remove_subprogramme_offered/<int:dept_id>/', views.remove_subprogramme_offered, name='remove_subprogramme_offered'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path("admin/", admin.site.urls),
 ]
 
 
