@@ -2,6 +2,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.auth.models import User
 from .global_constants import ShortenString
 import datetime
 
@@ -459,3 +460,7 @@ class CorrectiveAction(models.Model):
     
     def __str__(self):
         return ShortenString(self.description) + ' (' + self.implementation_acad_year.__str__() + ')'
+
+class UniversityStaff(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, null=True, on_delete=models.SET_NULL)
