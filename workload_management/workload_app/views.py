@@ -1148,6 +1148,7 @@ def module(request, module_code):
             end_date = mlo_survey_form.cleaned_data['end_date']
             n_invited = mlo_survey_form.cleaned_data['totoal_N_recipients']
             supplied_cohort_targeted = mlo_survey_form.cleaned_data['cohort_targeted']
+            supplied_num_answers = mlo_survey_form.cleaned_data['num_answers']
             comments = mlo_survey_form.cleaned_data['comments']
             survey_name = "MLO survey for module " + module_code
             
@@ -1158,8 +1159,9 @@ def module(request, module_code):
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\
                                                cohort_targeted = supplied_cohort_targeted,\
-                                                max_respondents = n_invited, comments = comments,\
-                                                original_file = file_obj)
+                                               num_answers = supplied_num_answers,\
+                                               max_respondents = n_invited, comments = comments,\
+                                               original_file = file_obj)
             new_survey.save()
 
             #Now create and store the survey responses
@@ -1474,6 +1476,7 @@ def accreditation(request,programme_id):
             supplied_closing_date = slo_survey_form.cleaned_data["end_date"]
             supplied_targeted_cohort = slo_survey_form.cleaned_data["cohort_targeted"]
             supplied_max_respondents = slo_survey_form.cleaned_data["totoal_N_recipients"]
+            supplied_num_answers = slo_survey_form.cleaned_data['num_answers']
             supplied_comments = slo_survey_form.cleaned_data["comments"]
             file_obj = None
             if ("raw_file" in request.FILES):#raw_file is the field in the form!
@@ -1485,6 +1488,7 @@ def accreditation(request,programme_id):
             new_survey = Survey.objects.create(survey_title = supplied_survey_title,\
                                                opening_date = supplied_opening_date, closing_date = supplied_closing_date,\
                                                cohort_targeted = supplied_targeted_cohort,\
+                                               num_answers = supplied_num_answers,\
                                                max_respondents =  supplied_max_respondents, comments = supplied_comments,\
                                                original_file = file_obj)
             new_survey.save()

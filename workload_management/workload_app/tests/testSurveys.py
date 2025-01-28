@@ -60,6 +60,7 @@ class TestSurveys(TestCase):
             'end_date_year' : 2023,
             'cohort_targeted' : acad_year.id,
             'totoal_N_recipients' : "150",
+            'num_answers' : '4',
             'comments' : survey_comment,
             'mlo_descr' + str(mlo_1.id) : mlo_1.mlo_description,
             'n_highest_score' + str(mlo_1.id): "100",            
@@ -83,6 +84,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_title = survey_label).count(),1) #check name
         self.assertEqual(Survey.objects.filter(cohort_targeted__id = acad_year.id).count(),1) #check cohort targeted
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
+        self.assertEqual(Survey.objects.filter(num_answers= 4).count(),1) #check numbe rof answers
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_1).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_2).count(),1)
@@ -271,6 +273,7 @@ class TestSurveys(TestCase):
             'end_date_day' : 15,
             'end_date_year' : 2023,
             'totoal_N_recipients' : "150",
+            'num_answers' : '5',
             'comments' : survey_comment,
             'slo_descr' + str(slo_1.id) : slo_1.slo_description,
             'n_highest_score' + str(slo_1.id): "100",            
@@ -295,6 +298,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
+        self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check numbe rof answers
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),1)#Default is NULL if not specified
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each SLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_1).count(),1)
@@ -455,6 +459,7 @@ class TestSurveys(TestCase):
             'end_date_day' : 15,
             'end_date_year' : 2023,
             'totoal_N_recipients' : "150",
+            'num_answers' : '5',
             'cohort_targeted' : cohort_year.id,
             'comments' : survey_comment,
             'slo_descr' + str(slo_1.id) : slo_1.slo_description,
@@ -479,6 +484,7 @@ class TestSurveys(TestCase):
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
+        self.assertEqual(Survey.objects.filter(num_answers=5).count(),1)#check numbe rof answers
         self.assertEqual(Survey.objects.filter(cohort_targeted__start_year =2020).count(),1)#should be specified as 2020 (see above)
 
     def test_add_remove_peo_survey(self):
@@ -526,6 +532,7 @@ class TestSurveys(TestCase):
             'end_date_month' : 1,
             'end_date_day' : 15,
             'end_date_year' : 2023,
+            'num_answers' : '5',
             'totoal_N_recipients' : "150",
             'comments' : survey_comment,
             'peo_descr' + str(peo_1.id) : peo_1.peo_description,
@@ -551,6 +558,8 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
+        self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check number of answers
+        
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each PEO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo = peo_1).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo = peo_2).count(),1)

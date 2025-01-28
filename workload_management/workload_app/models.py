@@ -376,6 +376,8 @@ class Survey(models.Model):
     max_respondents = models.IntegerField(default=-1)
     #A storage for some comments about the survey
     comments = models.CharField(max_length=50000, default="")
+    #Number of answers for each question
+    num_answers = models.IntegerField(default=-1)
 
     
     def __str__(self):
@@ -384,7 +386,7 @@ class Survey(models.Model):
 class SurveyQuestionResponse(models.Model):
     """
     A model to capture the results of a survey question.
-    It caters to Likert scale responses (up to 6-scale) as well as open-ended.
+    It caters to Likert scale responses (up to 10-scale) as well as open-ended.
     """
     #The text of the question
     question_text = models.CharField(max_length=3000)
@@ -410,8 +412,25 @@ class SurveyQuestionResponse(models.Model):
     n_fifth_highest_score = models.IntegerField(default=-1)
     #The label of the response considered sixth most favourable 
     label_sixth_highest_score = models.CharField(max_length=350, default = "")
-    #The number of responses with the sixth highest score (used only for rare 6-point scales)
+    #The number of responses with the sixth highest score
     n_sixth_highest_score = models.IntegerField(default=-1)
+    #The label of the response considered seventth most favourable 
+    label_seventh_highest_score = models.CharField(max_length=350, default = "")
+    #The number of responses with the seventh highest score 
+    n_seventh_highest_score = models.IntegerField(default=-1)
+    #The label of the response considered eighth most favourable 
+    label_eighth_highest_score = models.CharField(max_length=350, default = "")
+    #The number of responses with the eighth highest score 
+    n_eighth_highest_score = models.IntegerField(default=-1)
+    #The label of the response considered ninth most favourable 
+    label_ninth_highest_score = models.CharField(max_length=350, default = "")
+    #The number of responses with the ninth highest score 
+    n_ninth_highest_score = models.IntegerField(default=-1)
+    #The label of the response considered tenth most favourable 
+    label_tenth_highest_score = models.CharField(max_length=350, default = "")
+    #The number of responses with the tenth highest score 
+    n_tenth_highest_score = models.IntegerField(default=-1)
+
     #Text response - Used for open-ended survey questions
     text_response = models.CharField(max_length=60000, default="")
     #The survey object this question belongs to

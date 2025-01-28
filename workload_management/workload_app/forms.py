@@ -435,6 +435,7 @@ class AddSLOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Cohort targeted', required=False,\
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
+        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
@@ -460,6 +461,7 @@ class AddPEOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
+        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
 
         for peo in ProgrammeEducationalObjective.objects.filter(programme__id = programme_id):
@@ -557,6 +559,8 @@ class AddMLOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the module surveyed', required=False,\
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
+        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
+
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)
