@@ -459,9 +459,9 @@ class AddPEOSurveyForm(forms.Form):
         self.fields['peo_survey_title'] = forms.CharField(label="Survey title (e.g., alumni survey)")
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
-        self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
-        self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
+        self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
+        self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)        
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
 
         for peo in ProgrammeEducationalObjective.objects.filter(programme__id = programme_id):
