@@ -1,5 +1,6 @@
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
@@ -362,6 +363,12 @@ class Survey(models.Model):
     """
     A model to cpature a whole survey
     """
+    class SurveyType(models.TextChoices):
+        PEO = "PEO", _('PEO Survey')
+        SLO = "SLO", _('SLO Survey')
+        MLO = "MLO", _('MLO Survey')
+        UNDEFINED = "Undefined", _('Other')
+
     #The title of the survey
     survey_title = models.CharField(max_length=3000)
     #To store the original survey file. Note: file will be uploaded to MEDIA_ROOT/surveys/
@@ -378,7 +385,10 @@ class Survey(models.Model):
     comments = models.CharField(max_length=50000, default="")
     #Number of answers for each question
     num_answers = models.IntegerField(default=-1)
-
+    #The type of survey
+    survey_type = models.CharField(max_length = 10, choices = SurveyType, default = SurveyType.UNDEFINED)
+    #Prgramme associated
+    programme_associated = models.ForeignKey(ProgrammeOffered, on_delete=models.CASCADE)
     
     def __str__(self):
         return self.survey_title

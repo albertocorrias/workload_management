@@ -10,6 +10,7 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
                     ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure,\
                     CorrectiveAction
 from .global_constants import NUS_SLO_SURVEY_LABELS
+from .helper_methods_survey import DetermineDefaultLabels
 
 class ProfessorForm(ModelForm):
     """
@@ -422,13 +423,12 @@ class RemoveSLOForm(forms.Form):
         self.fields['select_slo_to_remove'] = forms.ModelChoiceField(label = 'Select the SLO to remove', queryset=StudentLearningOutcome.objects.filter(programme__id = prog_id))
 
 class AddSLOSurveyForm(forms.Form):
-
     def __init__(self, *args, **kwargs):
         years_to_show = []
         year_now = datetime.datetime.now().year
         for gap in range(-6,3):
             years_to_show.append(year_now + gap)
-        programme_id = kwargs.pop('programme_id')
+
         super(AddSLOSurveyForm, self).__init__(*args, **kwargs)
         self.fields['slo_survey_title'] = forms.CharField(label="Survey title (e.g., graduiate exit survey)")
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
@@ -440,21 +440,27 @@ class AddSLOSurveyForm(forms.Form):
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
 
+class InputSLOSurveyDataForm(forms.Form):
+    def __init__(self,*args,**kwargs):
+        programme_id = kwargs.pop('programme_id')
+        survey_id = kwargs.pop('survey_id')
+        super(InputSLOSurveyDataForm, self).__init__(*args, **kwargs)
+
+        parent_survey = Survey.objects.filter(id = survey_id).get()
+        labels = DetermineDefaultLabels(parent_survey.num_answers)
         for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id):
             slo_id = str(slo.id)
             self.fields['slo_descr'+slo_id] = forms.CharField(label="SLO: " + slo.slo_description, required=False, widget=forms.HiddenInput)
-            self.fields['n_highest_score'+slo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[0])
-            self.fields['n_second_highest_score'+slo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[1])
-            self.fields['n_third_highest_score'+slo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[2])
-            self.fields['n_fourth_highest_score'+slo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[3])
-            self.fields['n_fifth_highest_score'+slo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[4])
+            for opt_idx in range(0,len(labels)):
+                #Note concatenation between option index and slo-id (used in the view)
+                self.fields[str(opt_idx)+slo_id] = forms.IntegerField(label = labels[opt_idx])
 
 class AddPEOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         years_to_show = []
         for gap in range(-6,3):
             years_to_show.append(datetime.datetime.now().year + gap)
-        programme_id = kwargs.pop('programme_id')
+
         super(AddPEOSurveyForm, self).__init__(*args, **kwargs)
         self.fields['peo_survey_title'] = forms.CharField(label="Survey title (e.g., alumni survey)")
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
@@ -464,42 +470,34 @@ class AddPEOSurveyForm(forms.Form):
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)        
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
 
+class InputPEOSurveyDataForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        programme_id = kwargs.pop('programme_id')
+        survey_id = kwargs.pop('survey_id')
+        super(InputPEOSurveyDataForm, self).__init__(*args, **kwargs)
+
+        parent_survey = Survey.objects.filter(id = survey_id).get()
+        labels = DetermineDefaultLabels(parent_survey.num_answers)
         for peo in ProgrammeEducationalObjective.objects.filter(programme__id = programme_id):
             peo_id = str(peo.id)
             self.fields['peo_descr'+peo_id] = forms.CharField(label="PEO: " + peo.peo_description, required=False, widget=forms.HiddenInput)
-            self.fields['n_highest_score'+peo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[0])
-            self.fields['n_second_highest_score'+peo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[1])
-            self.fields['n_third_highest_score'+peo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[2])
-            self.fields['n_fourth_highest_score'+peo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[3])
-            self.fields['n_fifth_highest_score'+peo_id] = forms.IntegerField(label = NUS_SLO_SURVEY_LABELS[4])
+            for opt_idx in range(0,len(labels)):
+                #Note concatenation between option index and peo-id (used in the view)
+                self.fields[str(opt_idx)+peo_id] = forms.IntegerField(label = labels[opt_idx])
               
 class RemoveSLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         programme_id = kwargs.pop('programme_id')
         super(RemoveSLOSurveyForm, self).__init__(*args, **kwargs)
-        #Figure out the surveys associated with this module code
-        my_ids = []
-        for srv_resp in SurveyQuestionResponse.objects.filter(associated_slo__programme__id = programme_id):
-            my_ids.append(srv_resp.parent_survey.id)
-        #Remove duplicates
-        my_ids = list(dict.fromkeys(my_ids))
-
-        #Make user select surveys for this module only
-        self.fields['select_SLO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(pk__in=my_ids))
+        #Make user select surveys for this programme only
+        self.fields['select_SLO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type=Survey.SurveyType.SLO))
 
 class RemovePEOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         programme_id = kwargs.pop('programme_id')
         super(RemovePEOSurveyForm, self).__init__(*args, **kwargs)
-        #Figure out the surveys associated with this module code
-        my_ids = []
-        for srv_resp in SurveyQuestionResponse.objects.filter(associated_peo__programme__id = programme_id):
-            my_ids.append(srv_resp.parent_survey.id)
-        #Remove duplicates
-        my_ids = list(dict.fromkeys(my_ids))
-
-        #Make user select surveys for this module only
-        self.fields['select_PEO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(pk__in=my_ids))
+        #Make user select surveys for this programme only
+        self.fields['select_SLO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type=Survey.SurveyType.PEO))
         
 class PEOForm(forms.ModelForm):
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
@@ -564,7 +562,7 @@ class AddMLOSurveyForm(forms.Form):
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)
-        
+
         for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
             mlo_id = str(mlo.id)
             self.fields['mlo_descr'+mlo_id] = forms.CharField(label="MLO: " + mlo.mlo_description, required=False, widget=forms.HiddenInput)
@@ -572,6 +570,19 @@ class AddMLOSurveyForm(forms.Form):
             self.fields['n_second_highest_score'+mlo_id] = forms.IntegerField()
             self.fields['n_third_highest_score'+mlo_id] = forms.IntegerField()
             self.fields['n_fourth_highest_score'+mlo_id] = forms.IntegerField()
+
+class InputMLOSurveyForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        module_code = kwargs.pop('module_code')
+        super(InputMLOSurveyForm, self).__init__(*args, **kwargs)
+        for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
+            mlo_id = str(mlo.id)
+            self.fields['mlo_descr'+mlo_id] = forms.CharField(label="MLO: " + mlo.mlo_description, required=False, widget=forms.HiddenInput)
+            self.fields['n_highest_score'+mlo_id] = forms.IntegerField()
+            self.fields['n_second_highest_score'+mlo_id] = forms.IntegerField()
+            self.fields['n_third_highest_score'+mlo_id] = forms.IntegerField()
+            self.fields['n_fourth_highest_score'+mlo_id] = forms.IntegerField()
+
 
 class RemoveMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):

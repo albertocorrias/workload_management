@@ -31,6 +31,7 @@ urlpatterns = [
     path('faculty_report/', views.faculty_report, name='faculty_report'),
     path('accreditation/<int:programme_id>/', views.accreditation, name='accreditation'),
     path('accreditation_report/<int:programme_id>/<int:start_year>-<int:end_year>/', views.accreditation_report, name='accreditation_report'),
+    path('input_programme_survey_results/<int:programme_id>/<int:survey_id>/', views.input_programme_survey_results, name='input_programme_survey_results'),
     path('survey_results/<int:survey_id>/', views.survey_results, name='survey_results'),
     path('department/<int:department_id>/', views.department, name='department'),
     path('module/<slug:module_code>/', views.module, name='module'),

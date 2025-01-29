@@ -84,6 +84,8 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_title = survey_label).count(),1) #check name
         self.assertEqual(Survey.objects.filter(cohort_targeted__id = acad_year.id).count(),1) #check cohort targeted
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.MLO).count(),1) #check survey type
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         self.assertEqual(Survey.objects.filter(num_answers= 4).count(),1) #check numbe rof answers
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_1).count(),1)
@@ -299,6 +301,9 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
         self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check numbe rof answers
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
+
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),1)#Default is NULL if not specified
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each SLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_1).count(),1)
@@ -485,6 +490,8 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
         self.assertEqual(Survey.objects.filter(num_answers=5).count(),1)#check numbe rof answers
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(cohort_targeted__start_year =2020).count(),1)#should be specified as 2020 (see above)
 
     def test_add_remove_peo_survey(self):
@@ -559,6 +566,8 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
         self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check number of answers
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.PEO).count(),1) #check survey type
+        self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each PEO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo = peo_1).count(),1)

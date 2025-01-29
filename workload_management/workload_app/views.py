@@ -23,7 +23,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
-                   CorrectiveActionForm, RemoveCorrectiveActionForm
+                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
@@ -34,7 +34,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable
-from .helper_methods_survey import CalculateSurveyDetails
+from .helper_methods_survey import CalculateSurveyDetails,DetermineDefaultLabels
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
@@ -1161,6 +1161,7 @@ def module(request, module_code):
                                                cohort_targeted = supplied_cohort_targeted,\
                                                num_answers = supplied_num_answers,\
                                                max_respondents = n_invited, comments = comments,\
+                                               survey_type = Survey.SurveyType.MLO,\
                                                original_file = file_obj)
             new_survey.save()
 
@@ -1463,8 +1464,8 @@ def accreditation(request,programme_id):
         if (remove_slo_form.is_valid()):
             StudentLearningOutcome.objects.filter(id=request.POST.get('select_slo_to_remove')).delete()
         
-        slo_survey_form = AddSLOSurveyForm(request.POST,request.FILES,programme_id = programme_id)
-        peo_survey_form = AddPEOSurveyForm(request.POST,request.FILES,programme_id = programme_id)
+        slo_survey_form = AddSLOSurveyForm(request.POST,request.FILES)
+        peo_survey_form = AddPEOSurveyForm(request.POST,request.FILES)
 
         is_slo_survey = False
         is_peo_survey=False
@@ -1482,47 +1483,24 @@ def accreditation(request,programme_id):
             if ("raw_file" in request.FILES):#raw_file is the field in the form!
                 file_obj = request.FILES["raw_file"]
             
-            if (is_slo_survey): supplied_survey_title = slo_survey_form.cleaned_data["slo_survey_title"]
-            if (is_peo_survey): supplied_survey_title = peo_survey_form.cleaned_data["peo_survey_title"]
+            survey_type = Survey.SurveyType.UNDEFINED
+            if (is_slo_survey): 
+                supplied_survey_title = slo_survey_form.cleaned_data["slo_survey_title"]
+                survey_type = Survey.SurveyType.SLO
+            if (is_peo_survey): 
+                supplied_survey_title = peo_survey_form.cleaned_data["peo_survey_title"]
+                survey_type = Survey.SurveyType.PEO
             #Crate the survey object
             new_survey = Survey.objects.create(survey_title = supplied_survey_title,\
                                                opening_date = supplied_opening_date, closing_date = supplied_closing_date,\
                                                cohort_targeted = supplied_targeted_cohort,\
                                                num_answers = supplied_num_answers,\
+                                               survey_type = survey_type,\
                                                max_respondents =  supplied_max_respondents, comments = supplied_comments,\
+                                               programme_associated = programme,\
                                                original_file = file_obj)
             new_survey.save()
-            #Now create and store the survey responses
-            if (is_slo_survey):
-                for slo in StudentLearningOutcome.objects.filter(programme_id=programme_id):
-                    new_response = SurveyQuestionResponse.objects.create(question_text = slo.slo_description,\
-                    label_highest_score = NUS_SLO_SURVEY_LABELS[0],\
-                    n_highest_score = int(slo_survey_form.cleaned_data['n_highest_score'+str(slo.id)]),
-                    label_second_highest_score = NUS_SLO_SURVEY_LABELS[1],\
-                    n_second_highest_score = int(slo_survey_form.cleaned_data['n_second_highest_score'+str(slo.id)]),
-                    label_third_highest_score = NUS_SLO_SURVEY_LABELS[2],\
-                    n_third_highest_score = int(slo_survey_form.cleaned_data['n_third_highest_score'+str(slo.id)]),
-                    label_fourth_highest_score = NUS_SLO_SURVEY_LABELS[3],\
-                    n_fourth_highest_score = int(slo_survey_form.cleaned_data['n_fourth_highest_score'+str(slo.id)]),\
-                    label_fifth_highest_score = NUS_SLO_SURVEY_LABELS[4],\
-                    n_fifth_highest_score = int(slo_survey_form.cleaned_data['n_fifth_highest_score'+str(slo.id)]),\
-                    associated_slo = slo, parent_survey = new_survey)
-                    new_response.save()
-            if (is_peo_survey):
-                for peo in ProgrammeEducationalObjective.objects.filter(programme_id=programme_id):
-                    new_response = SurveyQuestionResponse.objects.create(question_text = peo.peo_description,\
-                    label_highest_score = NUS_SLO_SURVEY_LABELS[0],\
-                    n_highest_score = int(peo_survey_form.cleaned_data['n_highest_score'+str(peo.id)]),
-                    label_second_highest_score = NUS_SLO_SURVEY_LABELS[1],\
-                    n_second_highest_score = int(peo_survey_form.cleaned_data['n_second_highest_score'+str(peo.id)]),
-                    label_third_highest_score = NUS_SLO_SURVEY_LABELS[2],\
-                    n_third_highest_score = int(peo_survey_form.cleaned_data['n_third_highest_score'+str(peo.id)]),
-                    label_fourth_highest_score = NUS_SLO_SURVEY_LABELS[3],\
-                    n_fourth_highest_score = int(peo_survey_form.cleaned_data['n_fourth_highest_score'+str(peo.id)]),\
-                    label_fifth_highest_score = NUS_SLO_SURVEY_LABELS[4],\
-                    n_fifth_highest_score = int(peo_survey_form.cleaned_data['n_fifth_highest_score'+str(peo.id)]),\
-                    associated_peo = peo, parent_survey = new_survey)
-                    new_response.save()
+
             
         remove_SLO_survey_form = RemoveSLOSurveyForm(request.POST,  programme_id = programme_id)
         if (remove_SLO_survey_form.is_valid()):
@@ -1585,8 +1563,8 @@ def accreditation(request,programme_id):
         remove_slo_form = RemoveSLOForm(programme_id = programme_id)
         remove_peo_form = RemovePEOForm(programme_id = programme_id)
         
-        new_slo_survey_form = AddSLOSurveyForm(programme_id = programme_id)
-        new_peo_survey_form = AddPEOSurveyForm(programme_id = programme_id)
+        new_slo_survey_form = AddSLOSurveyForm()
+        new_peo_survey_form = AddPEOSurveyForm()
 
         remove_slo_survey_form  = RemoveSLOSurveyForm(programme_id = programme_id)
         remove_peo_survey_form  = RemovePEOSurveyForm(programme_id = programme_id)
@@ -1655,18 +1633,10 @@ def accreditation(request,programme_id):
             slo_list.append(slo_item)
 
         #Table of slo and peo surveys
-        slo_peo_surveys = []
-        for srv_response in SurveyQuestionResponse.objects.filter(associated_slo__programme__id = programme_id):
-            slo_peo_surveys.append(srv_response.parent_survey.id)
-        for peo_srv_response in SurveyQuestionResponse.objects.filter(associated_peo__programme__id = programme_id):
-            slo_peo_surveys.append(peo_srv_response.parent_survey.id)
-            
-        #Make it unique
-        slo_peo_surveys = list(dict.fromkeys(slo_peo_surveys))
-
-        slo_survey_table = []
-        for survey_id in slo_peo_surveys:
-            slo_survey_table.append(CalculateSurveyDetails(survey_id))
+        slo_peo_survey_table = []
+        for srv in Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.SLO) | \
+                   Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.PEO):
+            slo_peo_survey_table.append(CalculateSurveyDetails(srv.id))
         
         template = loader.get_template('workload_app/accreditation.html')
         context = {
@@ -1683,7 +1653,7 @@ def accreditation(request,programme_id):
                 'peo_list' : peo_list,
                 'new_peo_form' : new_peo_form,
                 'remove_peo_form' : remove_peo_form,
-                'slo_survey_table' : slo_survey_table,
+                'slo_survey_table' : slo_peo_survey_table,
                 'select_report_years_form' : select_report_years_form
         }
         return HttpResponse(template.render(context, request))
@@ -1755,27 +1725,134 @@ def accreditation_report(request,programme_id, start_year,end_year):
         'all_slo_ids' : all_slo_ids
     }
     return HttpResponse(template.render(context, request))
+
+def input_programme_survey_results(request,programme_id,survey_id):
+    survey_qs  =Survey.objects.filter(id = survey_id)
+    if (survey_qs.count() != 1):
+        #This should really never happen, but just in case the user enters some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+            'form_errors': 'No such survey exists in the database',
+            'return_label': 'Back to accreditation page',
+            'return_page' : 'workloads_index/',
+        }
+        return HttpResponse(template.render(context, request))
+    survey_obj = survey_qs.get()#Should be safe after the if above
+    
+    labels = DetermineDefaultLabels(survey_obj.num_answers)
+    #Pad to 10, max allowed number of options
+    for i in range(len(labels),10):
+        labels.append('')
+
+    survey_scores = [-1]*10 #10 is max allowed number of options
+    if request.method =='POST':
+        if survey_obj.survey_type == Survey.SurveyType.SLO:
+            slo_survey_form = InputSLOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
+            if slo_survey_form.is_valid():
+                for slo in StudentLearningOutcome.objects.filter(programme_id=programme_id):
+                    for i in range(0,survey_obj.num_answers):
+                        #Concatenation of index and slo id - see form
+                        survey_scores[i] = int(slo_survey_form.cleaned_data[str(i)+str(slo.id)])
+
+                    new_response = SurveyQuestionResponse.objects.create(question_text = slo.slo_description,\
+                    label_highest_score = labels[0],\
+                    n_highest_score = survey_scores[0],
+                    label_second_highest_score = labels[1],\
+                    n_second_highest_score = survey_scores[1],
+                    label_third_highest_score = labels[2],\
+                    n_third_highest_score = survey_scores[2],
+                    label_fourth_highest_score = labels[3],\
+                    n_fourth_highest_score = survey_scores[3],\
+                    label_fifth_highest_score = labels[4],\
+                    n_fifth_highest_score = survey_scores[4],\
+                    label_sixth_highest_score = labels[5],\
+                    n_sixth_highest_score = survey_scores[5],\
+                    label_seventh_highest_score = labels[6],\
+                    n_seventh_highest_score = survey_scores[6],\
+                    label_eighth_highest_score = labels[7],\
+                    n_eighth_highest_score = survey_scores[7],\
+                    label_ninth_highest_score = labels[8],\
+                    n_ninth_highest_score = survey_scores[8],\
+                    label_tenth_highest_score = labels[9],\
+                    n_tenth_highest_score = survey_scores[9],\
+                    associated_slo = slo, parent_survey = survey_obj)
+                    new_response.save()
+        if survey_obj.survey_type == Survey.SurveyType.PEO:
+            peo_survey_form = InputPEOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
+            if peo_survey_form.is_valid():
+                for peo in ProgrammeEducationalObjective.objects.filter(programme_id=programme_id):
+                    for i in range(0,survey_obj.num_answers):
+                        #Concatenation of index and slo id - see form
+                        survey_scores[i] = int(peo_survey_form.cleaned_data[str(i)+str(peo.id)])
+
+                    new_response = SurveyQuestionResponse.objects.create(question_text = peo.peo_description,\
+                    label_highest_score = labels[0],\
+                    n_highest_score = survey_scores[0],
+                    label_second_highest_score = labels[1],\
+                    n_second_highest_score = survey_scores[1],
+                    label_third_highest_score = labels[2],\
+                    n_third_highest_score = survey_scores[2],
+                    label_fourth_highest_score = labels[3],\
+                    n_fourth_highest_score = survey_scores[3],\
+                    label_fifth_highest_score = labels[4],\
+                    n_fifth_highest_score = survey_scores[4],\
+                    label_sixth_highest_score = labels[5],\
+                    n_sixth_highest_score = survey_scores[5],\
+                    label_seventh_highest_score = labels[6],\
+                    n_seventh_highest_score = survey_scores[6],\
+                    label_eighth_highest_score = labels[7],\
+                    n_eighth_highest_score = survey_scores[7],\
+                    label_ninth_highest_score = labels[8],\
+                    n_ninth_highest_score = survey_scores[8],\
+                    label_tenth_highest_score = labels[9],\
+                    n_tenth_highest_score = survey_scores[9],\
+                    associated_peo = peo, parent_survey = survey_obj)
+                    new_response.save()
+        #Re-load accreditation (trigger a get there)
+        return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))
+
+
+    else:#this is a GET
+        
+        back_address = '/workload_app/accreditation/'+str(programme_id)
+        back_text = 'Back to accreditation page'
+
+        form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
+        if survey_obj.survey_type == Survey.SurveyType.PEO:
+            form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
+
+        template = loader.get_template('workload_app/survey_input.html')
+        context = {
+            'back_address' : back_address,
+            'back_text' : back_text,
+            'form_to_show' : form_to_show,
+            'programme_id' : programme_id,
+            'survey_id' :survey_id
+        }
+        return HttpResponse(template.render(context, request))
+
 def survey_results(request,survey_id):
 
     survey_labels = []
     back_address = '/workload_app/'
     back_text = 'Back to '
-    if SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).filter(associated_mlo__isnull = False).count() > 0 :
+    survey_obj = Survey.objects.filter(id = survey_id).get()
+    if survey_obj.survey_type == Survey.SurveyType.MLO:
         #This is an MLO Survey
         survey_labels = NUS_MLO_SURVEY_LABELS
         back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
         back_address += 'module/'+ str(back_id)
         back_text += 'module page'
-    if SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).filter(associated_slo__isnull = False).count() > 0 :
+    if survey_obj.survey_type == Survey.SurveyType.SLO :
         #this is a SLO survey
         survey_labels = NUS_SLO_SURVEY_LABELS
-        back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_slo.programme.id
+        back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page'
-    if SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).filter(associated_peo__isnull = False).count() > 0 :
+    if survey_obj.survey_type == Survey.SurveyType.PEO :
         #this is a PEO survey
         survey_labels = NUS_SLO_SURVEY_LABELS #using same labels
-        back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_peo.programme.id
+        back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page' 
 

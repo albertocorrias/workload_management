@@ -30,17 +30,7 @@ def CalculateSurveyDetails(survey_id):
         av_response_rate = 0
         how_many_questions = 0
         n_recipients = survey.max_respondents
-        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
-            av_response_rate += CalculateTotalResponsesForQuestion(response.id)/n_recipients
-            how_many_questions = how_many_questions + 1
-        av_response_rate = 100*av_response_rate/how_many_questions
-
-        survey_type = ''
-        #take one response 
-        resp = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first()
-        if (resp.associated_peo is not None): survey_type = 'PEO'
-        if (resp.associated_slo is not None): survey_type = 'SLO'
-        if (resp.associated_mlo is not None): survey_type = 'MLO'
+        survey_type = survey.survey_type
         cohort_targeted = 'N/A'
         if (survey.cohort_targeted is not None):
             cohort_targeted = survey.cohort_targeted.__str__()
@@ -58,4 +48,25 @@ def CalculateSurveyDetails(survey_id):
         }
     return ret
 
-    
+#Given a number of options "num_options", this method
+#will return a list of labels considered "default" labels
+def DetermineDefaultLabels(num_options):
+    if (num_options == 2):
+        return ["Yes", "No"]
+    if (num_options == 3):
+        return ["Agree", "Neutral", "Disagree"]
+    if (num_options == 4):
+        return ["Stronly agree", "Agree", "Disagree", "Strongly disagree"]
+    if (num_options ==5):
+        return ["Stronly agree", "Agree", "Neutral", "Disagree", "Strongly disagree"]
+    if (num_options ==6):
+        return ["Stronly agree", "Agree", "Somewhat agree", "Somewhat disagree", "Disagree", "Strongly disagree"]
+    if (num_options ==7):
+        return ["Stronly agree", "Agree", "Somewhat agree", "Neither agree nor disagree", "Somewhat disagree", "Disagree", "Strongly disagree"]
+    if (num_options >7):
+        ret = []
+        for i in range(0,num_options):
+            ret.append(str(i))
+        return ret
+    return []#Should really never be here
+

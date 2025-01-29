@@ -162,7 +162,7 @@
                   <th> Total recipients </th>
                   <th> Notes </th>
                   <th> Original file </th>
-                  <th> Results </th>
+                  <th colspan="2"> Results </th>
                 </tr>
             </thead>
             <tbody style="border: solid thin lightslategray;">
@@ -182,8 +182,13 @@
                   {% endif %}
                 </td>
                 <td> 
+                  <a href="/workload_app/input_programme_survey_results/{{programme_id}}/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">
+                    Input results</a>
+                </td>
+                <td> 
                   <a href="/workload_app/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">
-                    View results</a> </td>
+                    View results</a>
+                </td>
               </tr>
               {% endfor %}
               </tbody>
@@ -285,32 +290,11 @@
                   {% csrf_token %}
                       <div class="modal-body">
                         <h4>Overall survey data</h4>
-                            {% for field in new_peo_survey_form.visible_fields|slice:":6" %}
+                            {% for field in new_peo_survey_form.visible_fields%}
                               <div>
                                 <p>{{ field.label }}  {{ field }}</p>
                               </div>
                             {% endfor %}
-                  
-                            <h4>Responses for each PEO</h4>
-                            Fill in, for each PEO the number of respondents choosing each choice.
-                            <hr>
-                            {% for field in new_peo_survey_form %}
-                              {% if forloop.counter > 6 %}
-                                <div class="individual_mlo_item">
-                                  
-                                    {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
-                                  
-                                    {% if field.is_hidden %}
-                                  <br>
-                                  {% endif %} 
-
-                                  {% if field.label == "Strongly disagree" %}
-                                    <hr>
-                                  {% endif %}
-                                </div>
-                              {% endif %}
-              
-                        {% endfor %}
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
@@ -349,32 +333,11 @@
                   {% csrf_token %}
                       <div class="modal-body">
                         <h4>Overall survey data</h4>
-                            {% for field in new_slo_survey_form.visible_fields|slice:":6" %}
+                            {% for field in new_slo_survey_form.visible_fields %}
                               <div>
                                 <p>{{ field.label }}  {{ field }}</p>
                               </div>
                             {% endfor %}
-                  
-                            <h4>Responses for each SLO</h4>
-                            Fill in, for each SLO the number of respondents choosing each choice.
-                            <hr>
-                            {% for field in new_slo_survey_form %}
-                              {% if forloop.counter > 7 %}
-                                <div class="individual_mlo_item">
-                                  
-                                    {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
-                                  
-                                    {% if field.is_hidden %}
-                                  <br>
-                                  {% endif %} 
-
-                                  {% if field.label == "Strongly disagree" %}
-                                    <hr>
-                                  {% endif %}
-                                </div>
-                              {% endif %}
-              
-                        {% endfor %}
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
