@@ -1388,6 +1388,9 @@ def module(request, module_code):
             dept_name  = mod.scenario_ref.dept.department_acronym
             break
         
+        #Store info module code the session
+        request.session['module_code'] =  module_code
+
         template = loader.get_template('workload_app/module.html')
         context = {
                     'module_title' : module_name,
@@ -1746,6 +1749,8 @@ def input_module_survey_results(request,module_code,survey_id):
             mlo_survey_form = InputMLOSurveyForm(request.POST, module_code=module_code, survey_id = survey_id)
             if mlo_survey_form.is_valid():
                 for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+                    #If there are alreday responses, we delte them first (i.e., editing)
+                    existing_response = SurveyQuestionResponse.objects.filter(associated_mlo = mlo).filter(parent_survey = survey_obj).delete()
                     for i in range(0,survey_obj.num_answers):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(mlo_survey_form.cleaned_data[str(i)+str(mlo.id)])
@@ -1820,6 +1825,9 @@ def input_programme_survey_results(request,programme_id,survey_id):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(slo_survey_form.cleaned_data[str(i)+str(slo.id)])
 
+                    #If there are alreday responses, we delte them first (i.e., editing)
+                    existing_response = SurveyQuestionResponse.objects.filter(associated_slo = slo).filter(parent_survey = survey_obj).delete()
+
                     new_response = SurveyQuestionResponse.objects.create(question_text = slo.slo_description,\
                     label_highest_score = labels[0],\
                     n_highest_score = survey_scores[0],
@@ -1850,7 +1858,10 @@ def input_programme_survey_results(request,programme_id,survey_id):
                     for i in range(0,survey_obj.num_answers):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(peo_survey_form.cleaned_data[str(i)+str(peo.id)])
-
+                    
+                    #If there are alreday responses, we delte them first (i.e., editing)
+                    existing_response = SurveyQuestionResponse.objects.filter(associated_peo = peo).filter(parent_survey = survey_obj).delete()
+                    
                     new_response = SurveyQuestionResponse.objects.create(question_text = peo.peo_description,\
                     label_highest_score = labels[0],\
                     n_highest_score = survey_scores[0],
@@ -1906,9 +1917,21 @@ def survey_results(request,survey_id):
     if survey_obj.survey_type == Survey.SurveyType.MLO:
         #This is an MLO Survey
         survey_labels = NUS_SLO_SURVEY_LABELS
-        back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
-        back_address += 'module/'+ str(back_id)
-        back_text += 'module page'
+
+        existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
+        back_id = ''
+        if (existing_responses_qs.count() > 0):
+            back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
+        elif ('module_code' in request.session.keys()): 
+            back_id = request.session['module_code']
+        if(back_id != ''):
+            back_address += 'module/'+ str(back_id)
+            back_text += 'module page'
+        else:#No responses, not in any session, back to programme page
+            back_id = survey_obj.programme_associated.id
+            back_address += 'accreditation/' + str(back_id)
+            back_text += 'accreditation page'
+    
     if survey_obj.survey_type == Survey.SurveyType.SLO :
         #this is a SLO survey
         survey_labels = NUS_SLO_SURVEY_LABELS
@@ -1956,7 +1979,10 @@ def survey_results(request,survey_id):
         #Calculate the percentages for this question
         cumulative = 0
         for idx in range(0,len(srv_results[-1])):
-            calculated_perc = 100 * srv_results[-1][idx]/total_question_responses
+            if total_question_responses > 0:
+                calculated_perc = 100 * srv_results[-1][idx]/total_question_responses
+            else:
+                calculated_perc = 0
             percentages[-1].append(calculated_perc)
             cumulative+=calculated_perc
             cumulative_percenatges[-1].append(cumulative)
