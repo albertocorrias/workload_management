@@ -30,10 +30,17 @@ def CalculateSurveyDetails(survey_id):
         av_response_rate = 0
         how_many_questions = 0
         n_recipients = survey.max_respondents
+        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
+            av_response_rate += CalculateTotalResponsesForQuestion(response.id)/n_recipients
+            how_many_questions = how_many_questions + 1
+        if (how_many_questions > 0 ):
+            av_response_rate = 100*av_response_rate/how_many_questions
+
         survey_type = survey.survey_type
         cohort_targeted = 'N/A'
         if (survey.cohort_targeted is not None):
             cohort_targeted = survey.cohort_targeted.__str__()
+        
         ret = {
         'survey_id' : survey_id,
         'type_of_survey' : survey_type,

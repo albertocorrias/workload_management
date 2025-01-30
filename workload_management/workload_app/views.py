@@ -23,7 +23,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
-                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm
+                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
@@ -1162,22 +1162,23 @@ def module(request, module_code):
                                                num_answers = supplied_num_answers,\
                                                max_respondents = n_invited, comments = comments,\
                                                survey_type = Survey.SurveyType.MLO,\
+                                               programme_associated = prog,\
                                                original_file = file_obj)
             new_survey.save()
 
             #Now create and store the survey responses
-            for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
-                new_response = SurveyQuestionResponse.objects.create(question_text = mlo.mlo_description,\
-                label_highest_score = NUS_MLO_SURVEY_LABELS[0],\
-                n_highest_score = int(mlo_survey_form.cleaned_data['n_highest_score'+str(mlo.id)]),
-                label_second_highest_score = NUS_MLO_SURVEY_LABELS[1],\
-                n_second_highest_score = int(mlo_survey_form.cleaned_data['n_second_highest_score'+str(mlo.id)]),
-                label_third_highest_score = NUS_MLO_SURVEY_LABELS[2],\
-                n_third_highest_score = int(mlo_survey_form.cleaned_data['n_third_highest_score'+str(mlo.id)]),
-                label_fourth_highest_score = NUS_MLO_SURVEY_LABELS[3],\
-                n_fourth_highest_score = int(mlo_survey_form.cleaned_data['n_fourth_highest_score'+str(mlo.id)]),\
-                associated_mlo = mlo, parent_survey = new_survey)
-                new_response.save()
+            # for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+            #     new_response = SurveyQuestionResponse.objects.create(question_text = mlo.mlo_description,\
+            #     label_highest_score = NUS_MLO_SURVEY_LABELS[0],\
+            #     n_highest_score = int(mlo_survey_form.cleaned_data['n_highest_score'+str(mlo.id)]),
+            #     label_second_highest_score = NUS_MLO_SURVEY_LABELS[1],\
+            #     n_second_highest_score = int(mlo_survey_form.cleaned_data['n_second_highest_score'+str(mlo.id)]),
+            #     label_third_highest_score = NUS_MLO_SURVEY_LABELS[2],\
+            #     n_third_highest_score = int(mlo_survey_form.cleaned_data['n_third_highest_score'+str(mlo.id)]),
+            #     label_fourth_highest_score = NUS_MLO_SURVEY_LABELS[3],\
+            #     n_fourth_highest_score = int(mlo_survey_form.cleaned_data['n_fourth_highest_score'+str(mlo.id)]),\
+            #     associated_mlo = mlo, parent_survey = new_survey)
+            #     new_response.save()
         
         remove_mlo_survey_form = RemoveMLOSurveyForm(request.POST, module_code = module_code)
         if (remove_mlo_survey_form.is_valid()):
@@ -1299,12 +1300,6 @@ def module(request, module_code):
         ####
         # MLO survey forms
         mlo_survey_form = AddMLOSurveyForm(module_code = module_code)
-        for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
-            mlo_survey_form.fields["n_highest_score"+str(mlo.id)].label = NUS_MLO_SURVEY_LABELS[0]
-            mlo_survey_form.fields["n_second_highest_score"+str(mlo.id)].label = NUS_MLO_SURVEY_LABELS[1]
-            mlo_survey_form.fields["n_third_highest_score"+str(mlo.id)].label = NUS_MLO_SURVEY_LABELS[2]
-            mlo_survey_form.fields["n_fourth_highest_score"+str(mlo.id)].label = NUS_MLO_SURVEY_LABELS[3]
-        
         #The one for removing
         remove_mlo_survey_form = RemoveMLOSurveyForm(module_code = module_code)
         ############
@@ -1314,9 +1309,11 @@ def module(request, module_code):
         #########################
         #Find all surveys
         surveys_ids = []
-        for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
-            for response in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
-                surveys_ids.append(response.parent_survey.id)
+        for srv in Survey.objects.filter(survey_type=Survey.SurveyType.MLO):
+            prog = srv.programme_associated
+            for mod in Module.objects.filter(module_code = module_code).filter(primary_programme = prog)|\
+                       Module.objects.filter(module_code = module_code).filter(secondary_programme = prog):        
+                surveys_ids.append(srv.id)
                 
         #Remove duplicates
         surveys_ids = list(dict.fromkeys(surveys_ids))
@@ -1726,6 +1723,75 @@ def accreditation_report(request,programme_id, start_year,end_year):
     }
     return HttpResponse(template.render(context, request))
 
+def input_module_survey_results(request,module_code,survey_id):
+    survey_qs  =Survey.objects.filter(id = survey_id)
+    if (survey_qs.count() != 1):
+        #This should really never happen, but just in case the user enters some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+            'form_errors': 'No such survey exists in the database',
+            'return_label': 'Back to module page',
+            'return_page' : 'module/'+module_code,
+        }
+        return HttpResponse(template.render(context, request))
+    survey_obj = survey_qs.get()#Should be safe after the if above
+    labels = DetermineDefaultLabels(survey_obj.num_answers)
+    #Pad to 10, max allowed number of options
+    for i in range(len(labels),10):
+        labels.append('')
+
+    survey_scores = [-1]*10 #10 is max allowed number of options
+    if request.method =='POST':
+        if survey_obj.survey_type == Survey.SurveyType.MLO:
+            mlo_survey_form = InputMLOSurveyForm(request.POST, module_code=module_code, survey_id = survey_id)
+            if mlo_survey_form.is_valid():
+                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+                    for i in range(0,survey_obj.num_answers):
+                        #Concatenation of index and slo id - see form
+                        survey_scores[i] = int(mlo_survey_form.cleaned_data[str(i)+str(mlo.id)])
+
+                    new_response = SurveyQuestionResponse.objects.create(question_text = mlo.mlo_description,\
+                    label_highest_score = labels[0],\
+                    n_highest_score = survey_scores[0],
+                    label_second_highest_score = labels[1],\
+                    n_second_highest_score = survey_scores[1],
+                    label_third_highest_score = labels[2],\
+                    n_third_highest_score = survey_scores[2],
+                    label_fourth_highest_score = labels[3],\
+                    n_fourth_highest_score = survey_scores[3],\
+                    label_fifth_highest_score = labels[4],\
+                    n_fifth_highest_score = survey_scores[4],\
+                    label_sixth_highest_score = labels[5],\
+                    n_sixth_highest_score = survey_scores[5],\
+                    label_seventh_highest_score = labels[6],\
+                    n_seventh_highest_score = survey_scores[6],\
+                    label_eighth_highest_score = labels[7],\
+                    n_eighth_highest_score = survey_scores[7],\
+                    label_ninth_highest_score = labels[8],\
+                    n_ninth_highest_score = survey_scores[8],\
+                    label_tenth_highest_score = labels[9],\
+                    n_tenth_highest_score = survey_scores[9],\
+                    associated_mlo = mlo, parent_survey = survey_obj)
+                    new_response.save()
+    else: #This is a get
+        back_address = '/workload_app/module/'+str(module_code)
+        back_text = 'Back to module page'
+
+        form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id)
+
+        template = loader.get_template('workload_app/module_survey_input.html')
+        context = {
+            'back_address' : back_address,
+            'back_text' : back_text,
+            'form_to_show' : form_to_show,
+            'survey_id' :survey_id,
+            'module_code' : module_code
+        }
+        return HttpResponse(template.render(context, request))
+
+    #Re-load module page (trigger a get there)
+    return HttpResponseRedirect(reverse('workload_app:module',  kwargs={'module_code': module_code}))
+
 def input_programme_survey_results(request,programme_id,survey_id):
     survey_qs  =Survey.objects.filter(id = survey_id)
     if (survey_qs.count() != 1):
@@ -1839,7 +1905,7 @@ def survey_results(request,survey_id):
     survey_obj = Survey.objects.filter(id = survey_id).get()
     if survey_obj.survey_type == Survey.SurveyType.MLO:
         #This is an MLO Survey
-        survey_labels = NUS_MLO_SURVEY_LABELS
+        survey_labels = NUS_SLO_SURVEY_LABELS
         back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
         back_address += 'module/'+ str(back_id)
         back_text += 'module page'

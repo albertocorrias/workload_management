@@ -127,7 +127,7 @@
                             <th> End date </th>
                             <th> Distributed to </th>
                             <th> Average response rate </th>
-                            <th> View results </th>
+                            <th colspan="2"> Results </th>
                             <th> Original file </th>
                           </tr>
                       </thead>
@@ -139,6 +139,7 @@
                           <td>{{ survey.survey_end_date }}</td>
                           <td>{{ survey.n_respondents }}</td>
                           <td>{{ survey.average_response_rate|floatformat }}%</td>
+                          <td><a href="/workload_app/input_module_survey_results/{{ module_code }}/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">Input results</a></td>
                           <td><a href="/workload_app/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">View results</a></td>
                           <td>
                             {% if survey.original_file_url|length > 0 %}
@@ -320,27 +321,10 @@
                               {% csrf_token %}
                               <div class="modal-body">
                                     <h2>Overall survey data</h2>
-                                    {% for field in mlo_survey_form.visible_fields|slice:":6" %}
+                                    {% for field in mlo_survey_form.visible_fields %}
                                       <div>
                                         <p>{{ field.label }}  {{ field }}</p>
                                       </div>
-                                    {% endfor %}
-                          
-                                    <h2>Responses for each MLO</h2>
-                                    Fill in, for each MLO the number of respondents choosing each choice.
-                                    <hr>
-                                    {% for field in mlo_survey_form %}
-                                      {% if forloop.counter > 6 %}
-                                        <div>
-                                          <p class="individual_mlo_item">
-                                            {{ field.label }}  <div class="individual_mlo_item">{{ field }}</div>
-                                          </p>
-                                          {% if field.label == "Never" %}
-                                            <hr>
-                                          {% endif %}
-                                        </div>
-                                      {% endif %}
-                          
                                     {% endfor %}
                               </div><!--modal body-->
                             <div class="modal-footer">

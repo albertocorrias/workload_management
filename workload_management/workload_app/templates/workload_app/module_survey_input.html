@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+{% load list_index %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}     
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style_accreditation.css' %}">     
+  </head>
+  <body>
+    {% include './top_bar.html' %}
+
+    <div class="overall_container" id="overall_container_dept_page">
+        <div class="buttons_container">
+            <a href="{{ back_address }}" class="btn btn-outline-success" role="button">
+              <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> {{ back_text }}</a>  
+        </div><!-- end of buttons container-->
+        <hr>
+        <h4>Responses for each MLO</h4>
+        Fill in, for each MLO the number of respondents choosing each choice.
+        <form action="{% url 'workload_app:input_module_survey_results' module_code survey_id %}" method="post">
+            {% csrf_token %}
+            {% for field in form_to_show %}
+              {% if field.is_hidden %}
+                <br><hr>
+                <h5> Question for {{ field.label }}</h5>
+              {% else %}
+                {{ field.label }}: {{ field }}
+              {% endif %} 
+              {% if field.is_hidden %}
+              <br>
+              {% endif %}
+            {% endfor %}
+            <hr>
+            <button type="submit" class="btn btn-primary">Submit changes</button>
+        </form>
+    </div><!--overall container-->
+{% include './footer.html' %}
+</body>
+</html>
