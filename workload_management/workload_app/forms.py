@@ -497,7 +497,7 @@ class RemovePEOSurveyForm(forms.Form):
         programme_id = kwargs.pop('programme_id')
         super(RemovePEOSurveyForm, self).__init__(*args, **kwargs)
         #Make user select surveys for this programme only
-        self.fields['select_SLO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type=Survey.SurveyType.PEO))
+        self.fields['select_PEO_survey_to_remove'] = forms.ModelChoiceField(queryset=Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type=Survey.SurveyType.PEO))
         
 class PEOForm(forms.ModelForm):
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
@@ -582,7 +582,7 @@ class RemoveMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         module_code = kwargs.pop('module_code')
         super(RemoveMLOSurveyForm, self).__init__(*args, **kwargs)
-        
+
         #Find all surveys
         surveys_ids = []
         for srv in Survey.objects.filter(survey_type=Survey.SurveyType.MLO):

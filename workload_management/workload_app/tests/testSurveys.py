@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Department, Faculty, Survey, Module, ModuleLearningOutcome,WorkloadScenario,Academicyear, SurveyQuestionResponse, \
                                 ModuleType,StudentLearningOutcome,ProgrammeOffered, ProgrammeEducationalObjective
-from workload_app.helper_methods_survey import CalculateSurveyDetails
+from workload_app.helper_methods_survey import CalculateSurveyDetails, DetermineDefaultLabels
 from workload_app.global_constants import NUS_MLO_SURVEY_LABELS, NUS_SLO_SURVEY_LABELS
 
 class TestSurveys(TestCase):
@@ -32,8 +32,9 @@ class TestSurveys(TestCase):
         acad_year = Academicyear.objects.create(start_year=2023)
         wl_scen = WorkloadScenario.objects.create(label = "test_scen", status = WorkloadScenario.OFFICIAL,\
                                                   dept = new_dept,academic_year = acad_year )
+        prog_off = ProgrammeOffered.objects.create(programme_name="test prog", primary_dept=new_dept)
         module_code = "BN2102"
-        module_1 = Module.objects.create(module_code = module_code, module_title = "test_title", scenario_ref = wl_scen, total_hours = 150, module_type = new_mod_type)
+        module_1 = Module.objects.create(module_code = module_code, module_title = "test_title", scenario_ref = wl_scen, total_hours = 150, module_type = new_mod_type,primary_programme=prog_off)
         self.assertEqual(WorkloadScenario.objects.all().count(),1)
         self.assertEqual(Module.objects.all().count(),1)
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),0)
@@ -61,23 +62,9 @@ class TestSurveys(TestCase):
             'cohort_targeted' : acad_year.id,
             'totoal_N_recipients' : "150",
             'num_answers' : '4',
-            'comments' : survey_comment,
-            'mlo_descr' + str(mlo_1.id) : mlo_1.mlo_description,
-            'n_highest_score' + str(mlo_1.id): "100",            
-            'n_second_highest_score' + str(mlo_1.id) : "10",
-            'n_third_highest_score' + str(mlo_1.id): "10",
-            'n_fourth_highest_score' + str(mlo_1.id): "20",
-            'mlo_descr' + str(mlo_2.id) : mlo_2.mlo_description,
-            'n_highest_score' + str(mlo_2.id): "99",            
-            'n_second_highest_score' + str(mlo_2.id): "10",
-            'n_third_highest_score' + str(mlo_2.id): "10",
-            'n_fourth_highest_score' + str(mlo_2.id) : "20",
-            'mlo_descr' + str(mlo_3.id) : mlo_3.mlo_description,
-            'n_highest_score' + str(mlo_3.id) : "98",            
-            'n_second_highest_score' + str(mlo_3.id) : "1",
-            'n_third_highest_score' + str(mlo_3.id) : "1",
-            'n_fourth_highest_score' + str(mlo_3.id) : "48",
-        })
+            'comments' : survey_comment})
+
+
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         survey_label = "MLO survey for module " + module_code
@@ -87,6 +74,29 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.MLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         self.assertEqual(Survey.objects.filter(num_answers= 4).count(),1) #check numbe rof answers
+
+        survey_id = Survey.objects.first().id
+        #Now test the inputting of responses
+        response = self.client.post(reverse('workload_app:input_module_survey_results',kwargs={'module_code' : module_code,'survey_id' : survey_id}),{
+            'mlo_descr' + str(mlo_1.id) : mlo_1.mlo_description,
+            '0' + str(mlo_1.id): "100",            
+            '1' + str(mlo_1.id) : "10",
+            '2' + str(mlo_1.id): "10",
+            '3' + str(mlo_1.id): "20",
+            'mlo_descr' + str(mlo_2.id) : mlo_2.mlo_description,
+            '0' + str(mlo_2.id): "99",            
+            '1' + str(mlo_2.id): "10",
+            '2' + str(mlo_2.id): "10",
+            '3' + str(mlo_2.id) : "20",
+            'mlo_descr' + str(mlo_3.id) : mlo_3.mlo_description,
+            '0' + str(mlo_3.id) : "98",            
+            '1' + str(mlo_3.id) : "1",
+            '2' + str(mlo_3.id) : "1",
+            '3' + str(mlo_3.id) : "48",
+        })
+
+
+
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_1).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_2).count(),1)
@@ -94,11 +104,12 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo__isnull = True).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo__isnull = True).count(),3)
         survey_created = Survey.objects.all().first()
+        expected_labels = DetermineDefaultLabels(4)
         self.assertEqual(SurveyQuestionResponse.objects.filter(parent_survey = survey_created).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = NUS_MLO_SURVEY_LABELS[0]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = NUS_MLO_SURVEY_LABELS[1]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = NUS_MLO_SURVEY_LABELS[2]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = NUS_MLO_SURVEY_LABELS[3]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = expected_labels[0]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = expected_labels[1]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = expected_labels[2]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = expected_labels[3]).count(),3)
 
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 100).count(),1)#one with 100
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 99).count(),1)#one with 100
@@ -110,7 +121,7 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_fourth_highest_score = 20).count(),2)#only the first two
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_fourth_highest_score = 48).count(),1)#the last
         
-        #Examine MLO 1 in detail
+        # #Examine MLO 1 in detail
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 100).filter(associated_mlo=mlo_1).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_second_highest_score = 10).filter(associated_mlo=mlo_1).count(),1)#
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_third_highest_score = 10).filter(associated_mlo=mlo_1).count(),1)#
@@ -158,10 +169,10 @@ class TestSurveys(TestCase):
         self.assertEqual(len(response.context["percentages"]),3)
         self.assertEqual(len(response.context["cumulative_percentages"]),3)
         self.assertEqual(len(response.context["labels"]),4)
-        self.assertEqual(response.context["labels"][0],NUS_MLO_SURVEY_LABELS[0])
-        self.assertEqual(response.context["labels"][1],NUS_MLO_SURVEY_LABELS[1])
-        self.assertEqual(response.context["labels"][2],NUS_MLO_SURVEY_LABELS[2])
-        self.assertEqual(response.context["labels"][3],NUS_MLO_SURVEY_LABELS[3])
+        self.assertEqual(response.context["labels"][0],expected_labels[0])
+        self.assertEqual(response.context["labels"][1],expected_labels[1])
+        self.assertEqual(response.context["labels"][2],expected_labels[2])
+        self.assertEqual(response.context["labels"][3],expected_labels[3])
         self.assertEqual(response.context["question_texts"][0], mlo_1.mlo_description)
         self.assertEqual(response.context["question_texts"][1], mlo_2.mlo_description)
         self.assertEqual(response.context["question_texts"][2], mlo_3.mlo_description)
@@ -277,24 +288,28 @@ class TestSurveys(TestCase):
             'totoal_N_recipients' : "150",
             'num_answers' : '5',
             'comments' : survey_comment,
+            'survey_type' : Survey.SurveyType.SLO})
+        survey_id = Survey.objects.first().id
+        #Now test the inputting of responses
+        response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
             'slo_descr' + str(slo_1.id) : slo_1.slo_description,
-            'n_highest_score' + str(slo_1.id): "100",            
-            'n_second_highest_score' + str(slo_1.id) : "10",
-            'n_third_highest_score' + str(slo_1.id): "10",
-            'n_fourth_highest_score' + str(slo_1.id): "20",
-            'n_fifth_highest_score' + str(slo_1.id): "20",
+            '0' + str(slo_1.id): "100",            
+            '1' + str(slo_1.id) : "10",
+            '2' + str(slo_1.id): "10",
+            '3' + str(slo_1.id): "20",
+            '4' + str(slo_1.id): "20",
             'slo_descr' + str(slo_2.id) : slo_2.slo_description,
-            'n_highest_score' + str(slo_2.id): "99",            
-            'n_second_highest_score' + str(slo_2.id): "10",
-            'n_third_highest_score' + str(slo_2.id): "10",
-            'n_fourth_highest_score' + str(slo_2.id) : "20",
-            'n_fifth_highest_score' + str(slo_2.id): "120",
+            '0' + str(slo_2.id): "99",            
+            '1' + str(slo_2.id): "10",
+            '2' + str(slo_2.id): "10",
+            '3' + str(slo_2.id) : "20",
+            '4' + str(slo_2.id): "120",
             'slo_descr' + str(slo_3.id) : slo_3.slo_description,
-            'n_highest_score' + str(slo_3.id) : "98",            
-            'n_second_highest_score' + str(slo_3.id) : "1",
-            'n_third_highest_score' + str(slo_3.id) : "1",
-            'n_fourth_highest_score' + str(slo_3.id) : "48",
-            'n_fifth_highest_score' + str(slo_3.id): "20",
+            '0' + str(slo_3.id) : "98",            
+            '1' + str(slo_3.id) : "1",
+            '2' + str(slo_3.id) : "1",
+            '3' + str(slo_3.id) : "48",
+            '4' + str(slo_3.id): "20",
         })
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
@@ -304,6 +319,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
 
+        labels =DetermineDefaultLabels(5)
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),1)#Default is NULL if not specified
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each SLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_1).count(),1)
@@ -313,11 +329,11 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo__isnull = True).count(),3)
         survey_created = Survey.objects.all().first()
         self.assertEqual(SurveyQuestionResponse.objects.filter(parent_survey = survey_created).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = NUS_SLO_SURVEY_LABELS[0]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = NUS_SLO_SURVEY_LABELS[1]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = NUS_SLO_SURVEY_LABELS[2]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = NUS_SLO_SURVEY_LABELS[3]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fifth_highest_score = NUS_SLO_SURVEY_LABELS[4]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = labels[0]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = labels[1]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = labels[2]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = labels[3]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fifth_highest_score = labels[4]).count(),3)
 
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 100).count(),1)#one with 100
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 99).count(),1)#one with 99
@@ -357,11 +373,11 @@ class TestSurveys(TestCase):
         self.assertEqual(len(response.context["percentages"]),3)
         self.assertEqual(len(response.context["cumulative_percentages"]),3)
         self.assertEqual(len(response.context["labels"]),5)
-        self.assertEqual(response.context["labels"][0],NUS_SLO_SURVEY_LABELS[0])
-        self.assertEqual(response.context["labels"][1],NUS_SLO_SURVEY_LABELS[1])
-        self.assertEqual(response.context["labels"][2],NUS_SLO_SURVEY_LABELS[2])
-        self.assertEqual(response.context["labels"][3],NUS_SLO_SURVEY_LABELS[3])
-        self.assertEqual(response.context["labels"][4],NUS_SLO_SURVEY_LABELS[4])
+        self.assertEqual(response.context["labels"][0],labels[0])
+        self.assertEqual(response.context["labels"][1],labels[1])
+        self.assertEqual(response.context["labels"][2],labels[2])
+        self.assertEqual(response.context["labels"][3],labels[3])
+        self.assertEqual(response.context["labels"][4],labels[4])
         self.assertEqual(response.context["question_texts"][0], slo_1.slo_description)
         self.assertEqual(response.context["question_texts"][1], slo_2.slo_description)
         self.assertEqual(response.context["question_texts"][2], slo_3.slo_description)
@@ -467,26 +483,30 @@ class TestSurveys(TestCase):
             'num_answers' : '5',
             'cohort_targeted' : cohort_year.id,
             'comments' : survey_comment,
-            'slo_descr' + str(slo_1.id) : slo_1.slo_description,
-            'n_highest_score' + str(slo_1.id): "100",            
-            'n_second_highest_score' + str(slo_1.id) : "10",
-            'n_third_highest_score' + str(slo_1.id): "10",
-            'n_fourth_highest_score' + str(slo_1.id): "20",
-            'n_fifth_highest_score' + str(slo_1.id): "20",
-            'slo_descr' + str(slo_2.id) : slo_2.slo_description,
-            'n_highest_score' + str(slo_2.id): "99",            
-            'n_second_highest_score' + str(slo_2.id): "10",
-            'n_third_highest_score' + str(slo_2.id): "10",
-            'n_fourth_highest_score' + str(slo_2.id) : "20",
-            'n_fifth_highest_score' + str(slo_2.id): "120",
-            'slo_descr' + str(slo_3.id) : slo_3.slo_description,
-            'n_highest_score' + str(slo_3.id) : "98",            
-            'n_second_highest_score' + str(slo_3.id) : "1",
-            'n_third_highest_score' + str(slo_3.id) : "1",
-            'n_fourth_highest_score' + str(slo_3.id) : "48",
-            'n_fifth_highest_score' + str(slo_3.id): "20",
+            'survey_type' : Survey.SurveyType.SLO
         })
-        self.assertEqual(response.status_code, 302) #post re-directs
+        #Now test the inputting of responses
+        response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
+            'slo_descr' + str(slo_1.id) : slo_1.slo_description,
+            '0' + str(slo_1.id): "100",            
+            '1' + str(slo_1.id) : "10",
+            '2' + str(slo_1.id): "10",
+            '3' + str(slo_1.id): "20",
+            '4' + str(slo_1.id): "20",
+            'slo_descr' + str(slo_2.id) : slo_2.slo_description,
+            '0' + str(slo_2.id): "99",            
+            '1' + str(slo_2.id): "10",
+            '2' + str(slo_2.id): "10",
+            '3' + str(slo_2.id) : "20",
+            '4' + str(slo_2.id): "120",
+            'slo_descr' + str(slo_3.id) : slo_3.slo_description,
+            '0' + str(slo_3.id) : "98",            
+            '1' + str(slo_3.id) : "1",
+            '2' + str(slo_3.id) : "1",
+            '3' + str(slo_3.id) : "48",
+            '4' + str(slo_3.id): "20",
+        })
+        self.assertEqual(response.status_code, 200) #post all good
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
         self.assertEqual(Survey.objects.filter(num_answers=5).count(),1)#check numbe rof answers
@@ -542,27 +562,34 @@ class TestSurveys(TestCase):
             'num_answers' : '5',
             'totoal_N_recipients' : "150",
             'comments' : survey_comment,
-            'peo_descr' + str(peo_1.id) : peo_1.peo_description,
-            'n_highest_score' + str(peo_1.id): "100",            
-            'n_second_highest_score' + str(peo_1.id) : "10",
-            'n_third_highest_score' + str(peo_1.id): "10",
-            'n_fourth_highest_score' + str(peo_1.id): "20",
-            'n_fifth_highest_score' + str(peo_1.id): "20",
-            'peo_descr' + str(peo_2.id) : peo_2.peo_description,
-            'n_highest_score' + str(peo_2.id): "99",            
-            'n_second_highest_score' + str(peo_2.id): "10",
-            'n_third_highest_score' + str(peo_2.id): "10",
-            'n_fourth_highest_score' + str(peo_2.id) : "20",
-            'n_fifth_highest_score' + str(peo_2.id): "120",
-            'peo_descr' + str(peo_3.id) : peo_3.peo_description,
-            'n_highest_score' + str(peo_3.id) : "98",            
-            'n_second_highest_score' + str(peo_3.id) : "1",
-            'n_third_highest_score' + str(peo_3.id) : "1",
-            'n_fourth_highest_score' + str(peo_3.id) : "48",
-            'n_fifth_highest_score' + str(peo_3.id): "20",
-        })
+            'survey_type' : Survey.SurveyType.PEO})
+        
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
+        surv_obj = Survey.objects.filter(survey_title = survey_title).get()
+
+        #Now test the inputting of responses
+        response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : surv_obj.id}),{
+            'peo_descr' + str(peo_1.id) : peo_1.peo_description,
+            '0' + str(peo_1.id): "100",            
+            '1' + str(peo_1.id) : "10",
+            '2' + str(peo_1.id): "10",
+            '3' + str(peo_1.id): "20",
+            '4' + str(peo_1.id): "20",
+            'peo_descr' + str(peo_2.id) : peo_2.peo_description,
+            '0' + str(peo_2.id): "99",            
+            '1' + str(peo_2.id): "10",
+            '2' + str(peo_2.id): "10",
+            '3' + str(peo_2.id) : "20",
+            '4' + str(peo_2.id): "120",
+            'peo_descr' + str(peo_3.id) : peo_3.peo_description,
+            '0' + str(peo_3.id) : "98",            
+            '1' + str(peo_3.id) : "1",
+            '2' + str(peo_3.id) : "1",
+            '3' + str(peo_3.id) : "48",
+            '4' + str(peo_3.id): "20",
+        })
+        labels = DetermineDefaultLabels(5)
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
         self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check number of answers
@@ -577,11 +604,11 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo__isnull = True).count(),3)
         survey_created = Survey.objects.all().first()
         self.assertEqual(SurveyQuestionResponse.objects.filter(parent_survey = survey_created).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = NUS_SLO_SURVEY_LABELS[0]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = NUS_SLO_SURVEY_LABELS[1]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = NUS_SLO_SURVEY_LABELS[2]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = NUS_SLO_SURVEY_LABELS[3]).count(),3)
-        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fifth_highest_score = NUS_SLO_SURVEY_LABELS[4]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = labels[0]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = labels[1]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_third_highest_score = labels[2]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fourth_highest_score = labels[3]).count(),3)
+        self.assertEqual(SurveyQuestionResponse.objects.filter(label_fifth_highest_score = labels[4]).count(),3)
 
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 100).count(),1)#one with 100
         self.assertEqual(SurveyQuestionResponse.objects.filter(n_highest_score = 99).count(),1)#one with 99

@@ -156,12 +156,34 @@ class Lecturer(models.Model):
     def __str__(self):
         return self.name
 
+class SurveyLabelSet(models.Model):
+    """
+    A model to allow programmes to store sets of labels for the surveys
+    """
+    highest_score_label = models.CharField(max_length=150,default = '')
+    second_highest_score_label = models.CharField(max_length=150,default = '')
+    third_highest_score_label = models.CharField(max_length=150,default = '')
+    fourth_highest_score_label = models.CharField(max_length=150,default = '')
+    fifth_highest_score_label = models.CharField(max_length=150,default = '')
+    sixth_highest_score_label = models.CharField(max_length=150,default = '')
+    seventh_highest_score_label = models.CharField(max_length=150,default = '')
+    eighth_highest_score_label = models.CharField(max_length=150,default = '')
+    ninth_highest_score_label = models.CharField(max_length=150,default = '')
+    tenth_score_label = models.CharField(max_length=150,default = '')
+
 class ProgrammeOffered(models.Model):
     #The name of the programme
     programme_name = models.CharField(max_length=300)
     #The primary Department offering the programme
     primary_dept = models.ForeignKey(Department, on_delete=models.CASCADE)
     
+    #Accreditation setting: label set for SLO survey
+    slo_survey_labels = models.ForeignKey(SurveyLabelSet, on_delete=models.SET_NULL, null=True,related_name="slo_survey_labels")
+    #Accreditation setting: label set for PEO survey
+    peo_survey_labels = models.ForeignKey(SurveyLabelSet, on_delete=models.SET_NULL, null=True,related_name="peo_survey_labels")
+    #Accreditation setting: label set for MLO survey
+    mlo_survey_labels = models.ForeignKey(SurveyLabelSet, on_delete=models.SET_NULL, null=True,related_name="mlo_survey_labels")
+
     def __str__(self):
         return self.programme_name
 

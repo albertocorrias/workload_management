@@ -420,7 +420,7 @@ def remove_scenario(request):
             
             if (how_many_scenarios>1):
                 #Remove relevant teaching assignment
-                TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete();
+                TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
                 #Remove the selected scenario.
                 WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
                     
@@ -1915,7 +1915,7 @@ def survey_results(request,survey_id):
     survey_obj = Survey.objects.filter(id = survey_id).get()
     if survey_obj.survey_type == Survey.SurveyType.MLO:
         #This is an MLO Survey
-        survey_labels = NUS_SLO_SURVEY_LABELS
+        survey_labels = DetermineDefaultLabels(4)
 
         existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
         back_id = ''
@@ -1933,13 +1933,13 @@ def survey_results(request,survey_id):
     
     if survey_obj.survey_type == Survey.SurveyType.SLO :
         #this is a SLO survey
-        survey_labels = NUS_SLO_SURVEY_LABELS
+        survey_labels = DetermineDefaultLabels(5)
         back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page'
     if survey_obj.survey_type == Survey.SurveyType.PEO :
         #this is a PEO survey
-        survey_labels = NUS_SLO_SURVEY_LABELS #using same labels
+        survey_labels = DetermineDefaultLabels(5) #using same labels
         back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page' 
@@ -1985,7 +1985,7 @@ def survey_results(request,survey_id):
         if (response.n_tenth_highest_score > -1): 
             srv_results[-1].append(response.n_tenth_highest_score)
             total_question_responses += response.n_tenth_highest_score
-            
+
         total_responses_per_question.append(total_question_responses)
         #Calculate the percentages for this question
         cumulative = 0
