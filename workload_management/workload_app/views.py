@@ -1888,7 +1888,6 @@ def input_programme_survey_results(request,programme_id,survey_id):
         #Re-load accreditation (trigger a get there)
         return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))
 
-
     else:#this is a GET
         
         back_address = '/workload_app/accreditation/'+str(programme_id)
@@ -1974,7 +1973,19 @@ def survey_results(request,survey_id):
         if (response.n_sixth_highest_score > -1): 
             srv_results[-1].append(response.n_sixth_highest_score)
             total_question_responses += response.n_sixth_highest_score
-
+        if (response.n_seventh_highest_score > -1): 
+            srv_results[-1].append(response.n_seventh_highest_score)
+            total_question_responses += response.n_seventh_highest_score
+        if (response.n_eighth_highest_score > -1): 
+            srv_results[-1].append(response.n_eighth_highest_score)
+            total_question_responses += response.n_eighth_highest_score
+        if (response.n_ninth_highest_score > -1): 
+            srv_results[-1].append(response.n_ninth_highest_score)
+            total_question_responses += response.n_ninth_highest_score
+        if (response.n_tenth_highest_score > -1): 
+            srv_results[-1].append(response.n_tenth_highest_score)
+            total_question_responses += response.n_tenth_highest_score
+            
         total_responses_per_question.append(total_question_responses)
         #Calculate the percentages for this question
         cumulative = 0
