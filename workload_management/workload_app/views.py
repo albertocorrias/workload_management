@@ -27,14 +27,13 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              requested_table_type,COLOUR_SCHEMES,NUS_MLO_SURVEY_LABELS, \
-                              NUS_SLO_SURVEY_LABELS, accreditation_outcome_type
+                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable
-from .helper_methods_survey import CalculateSurveyDetails,DetermineDefaultLabels
+from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
@@ -1148,37 +1147,26 @@ def module(request, module_code):
             end_date = mlo_survey_form.cleaned_data['end_date']
             n_invited = mlo_survey_form.cleaned_data['totoal_N_recipients']
             supplied_cohort_targeted = mlo_survey_form.cleaned_data['cohort_targeted']
-            supplied_num_answers = mlo_survey_form.cleaned_data['num_answers']
             comments = mlo_survey_form.cleaned_data['comments']
             survey_name = "MLO survey for module " + module_code
             
             file_obj = None
             if ("raw_file" in request.FILES):#raw_file is the field in the form!
                 file_obj = request.FILES["raw_file"]
-
+            
+            #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
+            #Note: the line below will take care of creatingd efaults, if needed
+            likert_scale = DetermineSurveyLabelsForProgramme(programme_id)["mlo_survey_labels_object"]
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\
                                                cohort_targeted = supplied_cohort_targeted,\
-                                               num_answers = supplied_num_answers,\
+                                               likert_labels = likert_scale,\
                                                max_respondents = n_invited, comments = comments,\
                                                survey_type = Survey.SurveyType.MLO,\
                                                programme_associated = prog,\
                                                original_file = file_obj)
             new_survey.save()
 
-            #Now create and store the survey responses
-            # for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
-            #     new_response = SurveyQuestionResponse.objects.create(question_text = mlo.mlo_description,\
-            #     label_highest_score = NUS_MLO_SURVEY_LABELS[0],\
-            #     n_highest_score = int(mlo_survey_form.cleaned_data['n_highest_score'+str(mlo.id)]),
-            #     label_second_highest_score = NUS_MLO_SURVEY_LABELS[1],\
-            #     n_second_highest_score = int(mlo_survey_form.cleaned_data['n_second_highest_score'+str(mlo.id)]),
-            #     label_third_highest_score = NUS_MLO_SURVEY_LABELS[2],\
-            #     n_third_highest_score = int(mlo_survey_form.cleaned_data['n_third_highest_score'+str(mlo.id)]),
-            #     label_fourth_highest_score = NUS_MLO_SURVEY_LABELS[3],\
-            #     n_fourth_highest_score = int(mlo_survey_form.cleaned_data['n_fourth_highest_score'+str(mlo.id)]),\
-            #     associated_mlo = mlo, parent_survey = new_survey)
-            #     new_response.save()
         
         remove_mlo_survey_form = RemoveMLOSurveyForm(request.POST, module_code = module_code)
         if (remove_mlo_survey_form.is_valid()):
@@ -1477,24 +1465,29 @@ def accreditation(request,programme_id):
             supplied_closing_date = slo_survey_form.cleaned_data["end_date"]
             supplied_targeted_cohort = slo_survey_form.cleaned_data["cohort_targeted"]
             supplied_max_respondents = slo_survey_form.cleaned_data["totoal_N_recipients"]
-            supplied_num_answers = slo_survey_form.cleaned_data['num_answers']
             supplied_comments = slo_survey_form.cleaned_data["comments"]
             file_obj = None
             if ("raw_file" in request.FILES):#raw_file is the field in the form!
                 file_obj = request.FILES["raw_file"]
             
             survey_type = Survey.SurveyType.UNDEFINED
+            #We will set this according the policy stored in the programme because this is point of creation of survey object
+            #The line below also takes care of creating default ones if not present
+            likert_labels_struct = DetermineSurveyLabelsForProgramme(programme_id) 
             if (is_slo_survey): 
                 supplied_survey_title = slo_survey_form.cleaned_data["slo_survey_title"]
                 survey_type = Survey.SurveyType.SLO
+                likert_labels = likert_labels_struct["slo_survey_labels_object"]
             if (is_peo_survey): 
                 supplied_survey_title = peo_survey_form.cleaned_data["peo_survey_title"]
                 survey_type = Survey.SurveyType.PEO
+                likert_labels = likert_labels_struct["peo_survey_labels_object"]
+            
             #Crate the survey object
             new_survey = Survey.objects.create(survey_title = supplied_survey_title,\
                                                opening_date = supplied_opening_date, closing_date = supplied_closing_date,\
                                                cohort_targeted = supplied_targeted_cohort,\
-                                               num_answers = supplied_num_answers,\
+                                               likert_labels = likert_labels,\
                                                survey_type = survey_type,\
                                                max_respondents =  supplied_max_respondents, comments = supplied_comments,\
                                                programme_associated = programme,\
@@ -1738,12 +1731,9 @@ def input_module_survey_results(request,module_code,survey_id):
         }
         return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get()#Should be safe after the if above
-    labels = DetermineDefaultLabels(survey_obj.num_answers)
-    #Pad to 10, max allowed number of options
-    for i in range(len(labels),10):
-        labels.append('')
-
-    survey_scores = [-1]*10 #10 is max allowed number of options
+    labels = survey_obj.likert_labels.GetListOfLabels()#USe the labels stored in the survey upon creation (not the programme ones which may have changed)
+    full_labels = survey_obj.likert_labels.GetFullListOfLabels()
+    survey_scores = [-1]*len(full_labels) #max allowed number of options, see model of label set
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.MLO:
             mlo_survey_form = InputMLOSurveyForm(request.POST, module_code=module_code, survey_id = survey_id)
@@ -1751,30 +1741,30 @@ def input_module_survey_results(request,module_code,survey_id):
                 for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
                     #If there are alreday responses, we delte them first (i.e., editing)
                     existing_response = SurveyQuestionResponse.objects.filter(associated_mlo = mlo).filter(parent_survey = survey_obj).delete()
-                    for i in range(0,survey_obj.num_answers):
+                    for i in range(0,len(labels)):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(mlo_survey_form.cleaned_data[str(i)+str(mlo.id)])
 
                     new_response = SurveyQuestionResponse.objects.create(question_text = mlo.mlo_description,\
-                    label_highest_score = labels[0],\
+                    label_highest_score = full_labels[0],\
                     n_highest_score = survey_scores[0],
-                    label_second_highest_score = labels[1],\
+                    label_second_highest_score = full_labels[1],\
                     n_second_highest_score = survey_scores[1],
-                    label_third_highest_score = labels[2],\
+                    label_third_highest_score = full_labels[2],\
                     n_third_highest_score = survey_scores[2],
-                    label_fourth_highest_score = labels[3],\
+                    label_fourth_highest_score = full_labels[3],\
                     n_fourth_highest_score = survey_scores[3],\
-                    label_fifth_highest_score = labels[4],\
+                    label_fifth_highest_score = full_labels[4],\
                     n_fifth_highest_score = survey_scores[4],\
-                    label_sixth_highest_score = labels[5],\
+                    label_sixth_highest_score = full_labels[5],\
                     n_sixth_highest_score = survey_scores[5],\
-                    label_seventh_highest_score = labels[6],\
+                    label_seventh_highest_score = full_labels[6],\
                     n_seventh_highest_score = survey_scores[6],\
-                    label_eighth_highest_score = labels[7],\
+                    label_eighth_highest_score = full_labels[7],\
                     n_eighth_highest_score = survey_scores[7],\
-                    label_ninth_highest_score = labels[8],\
+                    label_ninth_highest_score = full_labels[8],\
                     n_ninth_highest_score = survey_scores[8],\
-                    label_tenth_highest_score = labels[9],\
+                    label_tenth_highest_score = full_labels[9],\
                     n_tenth_highest_score = survey_scores[9],\
                     associated_mlo = mlo, parent_survey = survey_obj)
                     new_response.save()
@@ -1810,44 +1800,42 @@ def input_programme_survey_results(request,programme_id,survey_id):
         return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get()#Should be safe after the if above
     
-    labels = DetermineDefaultLabels(survey_obj.num_answers)
-    #Pad to 10, max allowed number of options
-    for i in range(len(labels),10):
-        labels.append('')
-
-    survey_scores = [-1]*10 #10 is max allowed number of options
+    #USe the labels stored in the Survey object (the programme ones may have changed)
+    labels = survey_obj.likert_labels.GetListOfLabels()
+    full_labels = survey_obj.likert_labels.GetFullListOfLabels()
+    survey_scores = [-1]*len(full_labels) # max allowed number of options see model of SurveyLabelSet
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.SLO:
             slo_survey_form = InputSLOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
             if slo_survey_form.is_valid():
                 for slo in StudentLearningOutcome.objects.filter(programme_id=programme_id):
-                    for i in range(0,survey_obj.num_answers):
+                    for i in range(0,len(labels)):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(slo_survey_form.cleaned_data[str(i)+str(slo.id)])
 
-                    #If there are alreday responses, we delte them first (i.e., editing)
+                    #If there are alreday responses, we delete them first (i.e., editing)
                     existing_response = SurveyQuestionResponse.objects.filter(associated_slo = slo).filter(parent_survey = survey_obj).delete()
 
                     new_response = SurveyQuestionResponse.objects.create(question_text = slo.slo_description,\
-                    label_highest_score = labels[0],\
+                    label_highest_score = full_labels[0],\
                     n_highest_score = survey_scores[0],
-                    label_second_highest_score = labels[1],\
+                    label_second_highest_score = full_labels[1],\
                     n_second_highest_score = survey_scores[1],
-                    label_third_highest_score = labels[2],\
+                    label_third_highest_score = full_labels[2],\
                     n_third_highest_score = survey_scores[2],
-                    label_fourth_highest_score = labels[3],\
+                    label_fourth_highest_score = full_labels[3],\
                     n_fourth_highest_score = survey_scores[3],\
-                    label_fifth_highest_score = labels[4],\
+                    label_fifth_highest_score = full_labels[4],\
                     n_fifth_highest_score = survey_scores[4],\
-                    label_sixth_highest_score = labels[5],\
+                    label_sixth_highest_score = full_labels[5],\
                     n_sixth_highest_score = survey_scores[5],\
-                    label_seventh_highest_score = labels[6],\
+                    label_seventh_highest_score = full_labels[6],\
                     n_seventh_highest_score = survey_scores[6],\
-                    label_eighth_highest_score = labels[7],\
+                    label_eighth_highest_score = full_labels[7],\
                     n_eighth_highest_score = survey_scores[7],\
-                    label_ninth_highest_score = labels[8],\
+                    label_ninth_highest_score = full_labels[8],\
                     n_ninth_highest_score = survey_scores[8],\
-                    label_tenth_highest_score = labels[9],\
+                    label_tenth_highest_score = full_labels[9],\
                     n_tenth_highest_score = survey_scores[9],\
                     associated_slo = slo, parent_survey = survey_obj)
                     new_response.save()
@@ -1855,7 +1843,7 @@ def input_programme_survey_results(request,programme_id,survey_id):
             peo_survey_form = InputPEOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
             if peo_survey_form.is_valid():
                 for peo in ProgrammeEducationalObjective.objects.filter(programme_id=programme_id):
-                    for i in range(0,survey_obj.num_answers):
+                    for i in range(0,len(labels)):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(peo_survey_form.cleaned_data[str(i)+str(peo.id)])
                     
@@ -1863,25 +1851,25 @@ def input_programme_survey_results(request,programme_id,survey_id):
                     existing_response = SurveyQuestionResponse.objects.filter(associated_peo = peo).filter(parent_survey = survey_obj).delete()
                     
                     new_response = SurveyQuestionResponse.objects.create(question_text = peo.peo_description,\
-                    label_highest_score = labels[0],\
+                    label_highest_score = full_labels[0],\
                     n_highest_score = survey_scores[0],
-                    label_second_highest_score = labels[1],\
+                    label_second_highest_score = full_labels[1],\
                     n_second_highest_score = survey_scores[1],
-                    label_third_highest_score = labels[2],\
+                    label_third_highest_score = full_labels[2],\
                     n_third_highest_score = survey_scores[2],
-                    label_fourth_highest_score = labels[3],\
+                    label_fourth_highest_score = full_labels[3],\
                     n_fourth_highest_score = survey_scores[3],\
-                    label_fifth_highest_score = labels[4],\
+                    label_fifth_highest_score = full_labels[4],\
                     n_fifth_highest_score = survey_scores[4],\
-                    label_sixth_highest_score = labels[5],\
+                    label_sixth_highest_score = full_labels[5],\
                     n_sixth_highest_score = survey_scores[5],\
-                    label_seventh_highest_score = labels[6],\
+                    label_seventh_highest_score = full_labels[6],\
                     n_seventh_highest_score = survey_scores[6],\
-                    label_eighth_highest_score = labels[7],\
+                    label_eighth_highest_score = full_labels[7],\
                     n_eighth_highest_score = survey_scores[7],\
-                    label_ninth_highest_score = labels[8],\
+                    label_ninth_highest_score = full_labels[8],\
                     n_ninth_highest_score = survey_scores[8],\
-                    label_tenth_highest_score = labels[9],\
+                    label_tenth_highest_score = full_labels[9],\
                     n_tenth_highest_score = survey_scores[9],\
                     associated_peo = peo, parent_survey = survey_obj)
                     new_response.save()
@@ -1913,10 +1901,11 @@ def survey_results(request,survey_id):
     back_address = '/workload_app/'
     back_text = 'Back to '
     survey_obj = Survey.objects.filter(id = survey_id).get()
+    #WE are visualizaing here. The labels are taken from the survey object
+    survey_labels = survey_obj.likert_labels.GetListOfLabels()
+
     if survey_obj.survey_type == Survey.SurveyType.MLO:
         #This is an MLO Survey
-        survey_labels = DetermineDefaultLabels(4)
-
         existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
         back_id = ''
         if (existing_responses_qs.count() > 0):
@@ -1933,13 +1922,11 @@ def survey_results(request,survey_id):
     
     if survey_obj.survey_type == Survey.SurveyType.SLO :
         #this is a SLO survey
-        survey_labels = DetermineDefaultLabels(5)
         back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page'
     if survey_obj.survey_type == Survey.SurveyType.PEO :
         #this is a PEO survey
-        survey_labels = DetermineDefaultLabels(5) #using same labels
         back_id = survey_obj.programme_associated.id
         back_address += 'accreditation/' + str(back_id)
         back_text += 'accreditation page' 

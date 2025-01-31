@@ -5,15 +5,139 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Department, Faculty, Survey, Module, ModuleLearningOutcome,WorkloadScenario,Academicyear, SurveyQuestionResponse, \
-                                ModuleType,StudentLearningOutcome,ProgrammeOffered, ProgrammeEducationalObjective
-from workload_app.helper_methods_survey import CalculateSurveyDetails, DetermineDefaultLabels
-from workload_app.global_constants import NUS_MLO_SURVEY_LABELS, NUS_SLO_SURVEY_LABELS
+                                ModuleType,StudentLearningOutcome,ProgrammeOffered, ProgrammeEducationalObjective,SurveyLabelSet
+from workload_app.helper_methods_survey import CalculateSurveyDetails, DetermineSurveyLabelsForProgramme
+
 
 class TestSurveys(TestCase):
     def setup_user(self):
         #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
+
+    def test_helper_method_for_labels(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+
+        self.assertEqual(Faculty.objects.all().count(),0) #0 to start with
+        self.assertEqual(Department.objects.all().count(),0) #0 to start with
+        self.assertEqual(Survey.objects.all().count(),0) #0 to start with
+        self.assertEqual(Module.objects.all().count(),0) #0 to start with
+        self.assertEqual(ModuleLearningOutcome.objects.all().count(),0) #0 to start with
+        self.assertEqual(SurveyQuestionResponse.objects.all().count(),0) #0 to start with
+        
+        new_mod_type = ModuleType.objects.create(type_name="test_type")
+        new_faculty = Faculty.objects.create(faculty_name = "new faculty", faculty_acronym = "NFC")
+        new_dept = Department.objects.create(department_name = "new_dept", department_acronym = "NDPT",faculty=new_faculty)
+        acad_year = Academicyear.objects.create(start_year=2023)
+        wl_scen = WorkloadScenario.objects.create(label = "test_scen", status = WorkloadScenario.OFFICIAL,\
+                                                  dept = new_dept,academic_year = acad_year )
+        #We create the programme with all the foreign keys to the label sets for all survey as NULL
+        prog_off = ProgrammeOffered.objects.create(programme_name="test prog", primary_dept=new_dept)
+        #The method should create and link default lists 
+        default_lists = DetermineSurveyLabelsForProgramme(prog_off.id)
+        
+        updated_prog_off = ProgrammeOffered.objects.filter(id = prog_off.id).get()
+        self.assertEqual(updated_prog_off.slo_survey_labels.highest_score_label, default_lists['slo_survey_labels'][0])
+        self.assertEqual(updated_prog_off.slo_survey_labels.second_highest_score_label, default_lists['slo_survey_labels'][1])
+        self.assertEqual(updated_prog_off.slo_survey_labels.third_highest_score_label, default_lists['slo_survey_labels'][2])
+        self.assertEqual(updated_prog_off.slo_survey_labels.fourth_highest_score_label, default_lists['slo_survey_labels'][3])
+        self.assertEqual(updated_prog_off.slo_survey_labels.fifth_highest_score_label, default_lists['slo_survey_labels'][4])
+        self.assertEqual(updated_prog_off.slo_survey_labels.fifth_highest_score_label, default_lists['slo_survey_labels'][4])
+        self.assertEqual(updated_prog_off.slo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.slo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_prog_off.slo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.slo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.slo_survey_labels.tenth_score_label, '')
+
+        self.assertEqual("Strongly agree", default_lists['slo_survey_labels'][0])
+        self.assertEqual("Agree", default_lists['slo_survey_labels'][1])
+        self.assertEqual("Neutral", default_lists['slo_survey_labels'][2])
+        self.assertEqual("Disagree", default_lists['slo_survey_labels'][3])
+        self.assertEqual("Strongly disagree", default_lists['slo_survey_labels'][4])
+
+        self.assertEqual(updated_prog_off.peo_survey_labels.highest_score_label, default_lists['peo_survey_labels'][0])
+        self.assertEqual(updated_prog_off.peo_survey_labels.second_highest_score_label, default_lists['peo_survey_labels'][1])
+        self.assertEqual(updated_prog_off.peo_survey_labels.third_highest_score_label, default_lists['peo_survey_labels'][2])
+        self.assertEqual(updated_prog_off.peo_survey_labels.fourth_highest_score_label, default_lists['peo_survey_labels'][3])
+        self.assertEqual(updated_prog_off.peo_survey_labels.fifth_highest_score_label, default_lists['peo_survey_labels'][4])
+        self.assertEqual(updated_prog_off.peo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.peo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_prog_off.peo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.peo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.peo_survey_labels.tenth_score_label, '')
+
+        self.assertEqual("Strongly agree", default_lists['peo_survey_labels'][0])
+        self.assertEqual("Agree", default_lists['peo_survey_labels'][1])
+        self.assertEqual("Neutral", default_lists['peo_survey_labels'][2])
+        self.assertEqual("Disagree", default_lists['peo_survey_labels'][3])
+        self.assertEqual("Strongly disagree", default_lists['peo_survey_labels'][4])
+
+        self.assertEqual(updated_prog_off.mlo_survey_labels.highest_score_label, default_lists['mlo_survey_labels'][0])
+        self.assertEqual(updated_prog_off.mlo_survey_labels.second_highest_score_label, default_lists['mlo_survey_labels'][1])
+        self.assertEqual(updated_prog_off.mlo_survey_labels.third_highest_score_label, default_lists['mlo_survey_labels'][2])
+        self.assertEqual(updated_prog_off.mlo_survey_labels.fourth_highest_score_label, default_lists['mlo_survey_labels'][3])
+        self.assertEqual(updated_prog_off.mlo_survey_labels.fifth_highest_score_label, default_lists['mlo_survey_labels'][4])
+        self.assertEqual(updated_prog_off.mlo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.mlo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_prog_off.mlo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.mlo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_prog_off.mlo_survey_labels.tenth_score_label, '')
+
+        self.assertEqual("Strongly agree", default_lists['mlo_survey_labels'][0])
+        self.assertEqual("Agree", default_lists['mlo_survey_labels'][1])
+        self.assertEqual("Neutral", default_lists['mlo_survey_labels'][2])
+        self.assertEqual("Disagree", default_lists['mlo_survey_labels'][3])
+        self.assertEqual("Strongly disagree", default_lists['mlo_survey_labels'][4])
+
+        #Now we create another programme with defined SLO label set (the other two are still NULL)
+        new_slo_label_set =  SurveyLabelSet.objects.create(highest_score_label = "1",\
+                                        second_highest_score_label = "2",\
+                                        third_highest_score_label = "3")#only 3-scale Likerts
+
+        new_prog_off = ProgrammeOffered.objects.create(programme_name="test prog", primary_dept=new_dept, slo_survey_labels = new_slo_label_set )
+        #The method should create and link default lists 
+        new_lists = DetermineSurveyLabelsForProgramme(new_prog_off.id)
+        
+        updated_new_prog_off = ProgrammeOffered.objects.filter(id = new_prog_off.id).get()
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.highest_score_label, new_lists['slo_survey_labels'][0])
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.second_highest_score_label, new_lists['slo_survey_labels'][1])
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.third_highest_score_label, new_lists['slo_survey_labels'][2])
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.highest_score_label, "1")
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.second_highest_score_label, "2")
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.third_highest_score_label, "3")
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.fourth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.fifth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.fifth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.slo_survey_labels.tenth_score_label, '')
+
+        #PEO and MLO unchanged
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.highest_score_label, new_lists['peo_survey_labels'][0])
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.second_highest_score_label, new_lists['peo_survey_labels'][1])
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.third_highest_score_label, new_lists['peo_survey_labels'][2])
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.fourth_highest_score_label, new_lists['peo_survey_labels'][3])
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.fifth_highest_score_label, new_lists['peo_survey_labels'][4])
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.peo_survey_labels.tenth_score_label, '')
+
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.highest_score_label, new_lists['mlo_survey_labels'][0])
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.second_highest_score_label, new_lists['mlo_survey_labels'][1])
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.third_highest_score_label, new_lists['mlo_survey_labels'][2])
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.fourth_highest_score_label, new_lists['mlo_survey_labels'][3])
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.fifth_highest_score_label, new_lists['mlo_survey_labels'][4])
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.sixth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.seventh_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.eighth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.ninth_highest_score_label, '')
+        self.assertEqual(updated_new_prog_off.mlo_survey_labels.tenth_score_label, '')
+
     def test_add_MLO_survey(self):
 
         self.setup_user()
@@ -51,7 +175,7 @@ class TestSurveys(TestCase):
         self.assertContains(response, mlo_2.mlo_description)
         self.assertContains(response, mlo_3.mlo_description)
         survey_comment = "hello, this is a test survey"
-        #Now try the POST witha dding a module survey
+        #Now try the POST with adding a module survey
         response = self.client.post(reverse('workload_app:module',kwargs={'module_code' : module_code}),{
             'start_date_month' : 1,
             'start_date_day' : 15,
@@ -61,7 +185,6 @@ class TestSurveys(TestCase):
             'end_date_year' : 2023,
             'cohort_targeted' : acad_year.id,
             'totoal_N_recipients' : "150",
-            'num_answers' : '4',
             'comments' : survey_comment})
 
 
@@ -73,7 +196,7 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.MLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
-        self.assertEqual(Survey.objects.filter(num_answers= 4).count(),1) #check numbe rof answers
+        self.assertEqual(Survey.objects.filter(num_answers= 5).count(),1) #check numbe rof answers (default one)
 
         survey_id = Survey.objects.first().id
         #Now test the inputting of responses
@@ -83,16 +206,19 @@ class TestSurveys(TestCase):
             '1' + str(mlo_1.id) : "10",
             '2' + str(mlo_1.id): "10",
             '3' + str(mlo_1.id): "20",
+            '4' + str(mlo_1.id): "0",
             'mlo_descr' + str(mlo_2.id) : mlo_2.mlo_description,
             '0' + str(mlo_2.id): "99",            
             '1' + str(mlo_2.id): "10",
             '2' + str(mlo_2.id): "10",
             '3' + str(mlo_2.id) : "20",
+            '4' + str(mlo_2.id) : "0",
             'mlo_descr' + str(mlo_3.id) : mlo_3.mlo_description,
             '0' + str(mlo_3.id) : "98",            
             '1' + str(mlo_3.id) : "1",
             '2' + str(mlo_3.id) : "1",
             '3' + str(mlo_3.id) : "48",
+            '4' + str(mlo_3.id) : "0",
         })
 
 
@@ -104,7 +230,7 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo__isnull = True).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo__isnull = True).count(),3)
         survey_created = Survey.objects.all().first()
-        expected_labels = DetermineDefaultLabels(4)
+        expected_labels = survey_created.likert_labels.GetListOfLabels()
         self.assertEqual(SurveyQuestionResponse.objects.filter(parent_survey = survey_created).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = expected_labels[0]).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = expected_labels[1]).count(),3)
@@ -168,7 +294,7 @@ class TestSurveys(TestCase):
         self.assertEqual(len(response.context["total_responses_per_question"]),3)
         self.assertEqual(len(response.context["percentages"]),3)
         self.assertEqual(len(response.context["cumulative_percentages"]),3)
-        self.assertEqual(len(response.context["labels"]),4)
+        self.assertEqual(len(response.context["labels"]),5)
         self.assertEqual(response.context["labels"][0],expected_labels[0])
         self.assertEqual(response.context["labels"][1],expected_labels[1])
         self.assertEqual(response.context["labels"][2],expected_labels[2])
@@ -319,7 +445,8 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
 
-        labels =DetermineDefaultLabels(5)
+        survey_created = Survey.objects.all().first()
+        labels =survey_created.likert_labels.GetListOfLabels()
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),1)#Default is NULL if not specified
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each SLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_1).count(),1)
@@ -327,7 +454,7 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_slo = slo_3).count(),1)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo__isnull = True).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_peo__isnull = True).count(),3)
-        survey_created = Survey.objects.all().first()
+        
         self.assertEqual(SurveyQuestionResponse.objects.filter(parent_survey = survey_created).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(label_highest_score = labels[0]).count(),3)
         self.assertEqual(SurveyQuestionResponse.objects.filter(label_second_highest_score = labels[1]).count(),3)
@@ -559,7 +686,6 @@ class TestSurveys(TestCase):
             'end_date_month' : 1,
             'end_date_day' : 15,
             'end_date_year' : 2023,
-            'num_answers' : '5',
             'totoal_N_recipients' : "150",
             'comments' : survey_comment,
             'survey_type' : Survey.SurveyType.PEO})
@@ -589,10 +715,9 @@ class TestSurveys(TestCase):
             '3' + str(peo_3.id) : "48",
             '4' + str(peo_3.id): "20",
         })
-        labels = DetermineDefaultLabels(5)
+        labels = surv_obj.likert_labels.GetListOfLabels()
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
-        self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check number of answers
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.PEO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         

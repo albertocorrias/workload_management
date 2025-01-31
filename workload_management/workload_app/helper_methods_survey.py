@@ -1,4 +1,4 @@
-from .models import Survey,SurveyQuestionResponse
+from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet
 
 
 def CalculateTotalResponsesForQuestion(response_id):
@@ -55,25 +55,47 @@ def CalculateSurveyDetails(survey_id):
         }
     return ret
 
-#Given a number of options "num_options", this method
-#will return a list of labels considered "default" labels
-def DetermineDefaultLabels(num_options):
-    if (num_options == 2):
-        return ["Yes", "No"]
-    if (num_options == 3):
-        return ["Agree", "Neutral", "Disagree"]
-    if (num_options == 4):
-        return ["Stronly agree", "Agree", "Disagree", "Strongly disagree"]
-    if (num_options ==5):
-        return ["Stronly agree", "Agree", "Neutral", "Disagree", "Strongly disagree"]
-    if (num_options ==6):
-        return ["Stronly agree", "Agree", "Somewhat agree", "Somewhat disagree", "Disagree", "Strongly disagree"]
-    if (num_options ==7):
-        return ["Stronly agree", "Agree", "Somewhat agree", "Neither agree nor disagree", "Somewhat disagree", "Disagree", "Strongly disagree"]
-    if (num_options >7):
-        ret = []
-        for i in range(0,num_options):
-            ret.append(str(i))
-        return ret
-    return []#Should really never be here
+def DetermineSurveyLabelsForProgramme(prog_id):
+    prog_qs = ProgrammeOffered.objects.filter(id = prog_id)
+    if (prog_qs.count() != 1):
+        return []#return empty list if this is called with a wrong ID. Should really never happen...
+    prog_obj = prog_qs.get()#should be safe now
+    
+    if prog_obj.slo_survey_labels is None:#No link
+        default_slo_set =  SurveyLabelSet.objects.create(highest_score_label = "Strongly agree",\
+                                        second_highest_score_label = "Agree",\
+                                        third_highest_score_label = "Neutral",\
+                                        fourth_highest_score_label = "Disagree",\
+                                        fifth_highest_score_label = "Strongly disagree")
+        prog_obj.slo_survey_labels = default_slo_set
 
+    if prog_obj.mlo_survey_labels is None:#No link
+        default_mlo_set =  SurveyLabelSet.objects.create(highest_score_label = "Strongly agree",\
+                                        second_highest_score_label = "Agree",\
+                                        third_highest_score_label = "Neutral",\
+                                        fourth_highest_score_label = "Disagree",\
+                                        fifth_highest_score_label = "Strongly disagree")
+        prog_obj.mlo_survey_labels = default_mlo_set
+
+    if prog_obj.peo_survey_labels is None:#No link
+        default_peo_set =  SurveyLabelSet.objects.create(highest_score_label = "Strongly agree",\
+                                        second_highest_score_label = "Agree",\
+                                        third_highest_score_label = "Neutral",\
+                                        fourth_highest_score_label = "Disagree",\
+                                        fifth_highest_score_label = "Strongly disagree")
+        prog_obj.peo_survey_labels = default_peo_set
+    
+    prog_obj.save(force_update=True)
+    prog_obj = ProgrammeOffered.objects.filter(id = prog_id).get()
+    #At this stage, the programme will have links to objects 
+    return {
+        'slo_survey_labels' : prog_obj.slo_survey_labels.GetListOfLabels(),
+        'peo_survey_labels' : prog_obj.peo_survey_labels.GetListOfLabels(),
+        'mlo_survey_labels' : prog_obj.mlo_survey_labels.GetListOfLabels(),
+        'slo_survey_labels_object' : prog_obj.slo_survey_labels,
+        'peo_survey_labels_object' : prog_obj.peo_survey_labels,
+        'mlo_survey_labels_object' : prog_obj.mlo_survey_labels
+    }
+
+
+        

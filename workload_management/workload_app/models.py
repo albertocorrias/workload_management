@@ -171,6 +171,52 @@ class SurveyLabelSet(models.Model):
     ninth_highest_score_label = models.CharField(max_length=150,default = '')
     tenth_score_label = models.CharField(max_length=150,default = '')
 
+    def GetListOfLabels(self):
+        """
+        Convenience method to return a list of non-empty labels
+        """
+        ret = []
+        
+        if (len(self.highest_score_label)>0):
+            ret.append(self.highest_score_label)
+        if (len(self.second_highest_score_label)>0):
+            ret.append(self.second_highest_score_label)
+        if (len(self.third_highest_score_label)>0):
+            ret.append(self.third_highest_score_label)
+        if (len(self.fourth_highest_score_label)>0):
+            ret.append(self.fourth_highest_score_label)
+        if (len(self.fifth_highest_score_label)>0):
+            ret.append(self.fifth_highest_score_label)
+        if (len(self.sixth_highest_score_label)>0):
+            ret.append(self.sixth_highest_score_label)
+        if (len(self.seventh_highest_score_label)>0):
+            ret.append(self.seventh_highest_score_label)
+        if (len(self.eighth_highest_score_label)>0):
+            ret.append(self.eighth_highest_score_label)
+        if (len(self.ninth_highest_score_label)>0):
+            ret.append(self.ninth_highest_score_label)
+        if (len(self.tenth_score_label)>0):
+            ret.append(self.tenth_score_label)
+        return ret
+    
+    def GetFullListOfLabels(self):
+        """
+        Little convenience method to return all the labels in a list
+        (including empty ones)
+        """
+        ret = []
+        ret.append(self.highest_score_label)
+        ret.append(self.second_highest_score_label)
+        ret.append(self.third_highest_score_label)
+        ret.append(self.fourth_highest_score_label)
+        ret.append(self.fifth_highest_score_label)
+        ret.append(self.sixth_highest_score_label)
+        ret.append(self.seventh_highest_score_label)
+        ret.append(self.eighth_highest_score_label)
+        ret.append(self.ninth_highest_score_label)
+        ret.append(self.tenth_score_label)
+        return ret
+
 class ProgrammeOffered(models.Model):
     #The name of the programme
     programme_name = models.CharField(max_length=300)
@@ -405,8 +451,8 @@ class Survey(models.Model):
     max_respondents = models.IntegerField(default=-1)
     #A storage for some comments about the survey
     comments = models.CharField(max_length=50000, default="")
-    #Number of answers for each question
-    num_answers = models.IntegerField(default=-1)
+    #Likert scale labels that were used for this survey
+    likert_labels = models.ForeignKey(SurveyLabelSet, on_delete=models.SET_NULL, null=True)
     #The type of survey
     survey_type = models.CharField(max_length = 10, choices = SurveyType, default = SurveyType.UNDEFINED)
     #Prgramme associated

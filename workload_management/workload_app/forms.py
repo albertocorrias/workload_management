@@ -9,8 +9,6 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
                     StudentLearningOutcome,SubProgrammeOffered,Academicyear,ProgrammeEducationalObjective,\
                     ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure,\
                     CorrectiveAction
-from .global_constants import NUS_SLO_SURVEY_LABELS
-from .helper_methods_survey import DetermineDefaultLabels
 
 class ProfessorForm(ModelForm):
     """
@@ -435,7 +433,6 @@ class AddSLOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Cohort targeted', required=False,\
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
-        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
@@ -446,8 +443,7 @@ class InputSLOSurveyDataForm(forms.Form):
         survey_id = kwargs.pop('survey_id')
         super(InputSLOSurveyDataForm, self).__init__(*args, **kwargs)
 
-        parent_survey = Survey.objects.filter(id = survey_id).get()
-        labels = DetermineDefaultLabels(parent_survey.num_answers)
+        labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels()
         for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id):
             slo_id = str(slo.id)
             self.fields['slo_descr'+slo_id] = forms.CharField(label="SLO: " + slo.slo_description, required=False, widget=forms.HiddenInput)
@@ -465,7 +461,6 @@ class AddPEOSurveyForm(forms.Form):
         self.fields['peo_survey_title'] = forms.CharField(label="Survey title (e.g., alumni survey)")
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
-        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)        
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
@@ -475,9 +470,8 @@ class InputPEOSurveyDataForm(forms.Form):
         programme_id = kwargs.pop('programme_id')
         survey_id = kwargs.pop('survey_id')
         super(InputPEOSurveyDataForm, self).__init__(*args, **kwargs)
-
-        parent_survey = Survey.objects.filter(id = survey_id).get()
-        labels = DetermineDefaultLabels(parent_survey.num_answers)
+        #use labels stored in the survey
+        labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels()
         for peo in ProgrammeEducationalObjective.objects.filter(programme__id = programme_id):
             peo_id = str(peo.id)
             self.fields['peo_descr'+peo_id] = forms.CharField(label="PEO: " + peo.peo_description, required=False, widget=forms.HiddenInput)
@@ -557,8 +551,6 @@ class AddMLOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the module surveyed', required=False,\
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
-        self.fields['num_answers'] = forms.IntegerField(min_value=3, max_value=10, label="Number of options for each question (2 to 10 allowed)")
-
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)
@@ -568,8 +560,8 @@ class InputMLOSurveyForm(forms.Form):
         module_code = kwargs.pop('module_code')
         survey_id = kwargs.pop('survey_id')
         super(InputMLOSurveyForm, self).__init__(*args, **kwargs)
-        parent_survey = Survey.objects.filter(id = survey_id).get()
-        labels = DetermineDefaultLabels(parent_survey.num_answers)
+
+        labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels() #use labels stored in the survey
         for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
             mlo_id = str(mlo.id)
             self.fields['mlo_descr'+mlo_id] = forms.CharField(label="MLO: " + mlo.mlo_description, required=False, widget=forms.HiddenInput)
