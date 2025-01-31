@@ -211,17 +211,35 @@
 
                 <tr style="border-bottom: black solid thin;">
                   {% for sett in survey_settings_table.0 %}
-                  <td> {{ sett }} </td>
+                  {% if forloop.counter0 == 0 %}
+                  <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditPEOLabelsModal">
+                    Edit PEO labels...
+                  </button></td>
+                  {% else %}
+                    <td> {{ sett }} </td>
+                  {% endif %}
                   {% endfor %}
                   </tr>
                   <tr style="border-bottom: black solid thin;">
                     {% for sett in survey_settings_table.1 %}
-                    <td> {{ sett }} </td>
+                      {% if forloop.counter0 == 0 %}
+                      <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditSLOLabelsModal">
+                        Edit SLO labels...
+                      </button></td>
+                      {% else %}
+                        <td> {{ sett }} </td>
+                      {% endif %}
                     {% endfor %}
                   </tr>
                   <tr style="border-bottom: black solid thin;">
                     {% for sett in survey_settings_table.2 %}
-                    <td> {{ sett }} </td>
+                    {% if forloop.counter0 == 0 %}
+                    <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditMLOLabelsModal">
+                      Edit MLO labels...
+                    </button></td>
+                    {% else %}
+                      <td> {{ sett }} </td>
+                    {% endif %}
                     {% endfor %}
                   </tr>
                 
@@ -229,8 +247,97 @@
             </table>
 
         </div>
+        <div>
 
+
+
+
+        </div>
         {% endif %}
+
+
+
+        <!--Modal for editing PEO Labels-->
+        <div class="modal fade" id="EditPEOLabelsModal" tabindex="-1" role="dialog" aria-labelledby="EditPEOLabelsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="EditPEOLabelsModalLabel">Edit labels for future PEO surveys </h5>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                            {{ edit_peo_settings_form.as_p }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>  
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+      </div><!--whole modal--> 
+
+      <!--Modal for editing SLO survey Labels-->
+      <div class="modal fade" id="EditSLOLabelsModal" tabindex="-1" role="dialog" aria-labelledby="EditSLOLabelsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="EditSLOLabelsModalLabel">Edit labels for future SLO surveys </h5>
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                      <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                    </button>
+                  </div>
+                  <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                  {% csrf_token %}
+                      <div class="modal-body">
+                            {{ edit_slo_settings_form.as_p }}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                      </div>
+                </form>  
+            </div><!-- Modal content -->
+          </div><!-- Mdal dialogue-->
+      </div><!--whole modal--> 
+
+      <!--Modal for editing MLO survey Labels-->
+      <div class="modal fade" id="EditMLOLabelsModal" tabindex="-1" role="dialog" aria-labelledby="EditMLOLabelsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="EditMLOLabelsModalLabel">Edit labels for future SLO surveys </h5>
+                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                  </button>
+                </div>
+                <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                          {{ edit_mlo_settings_form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+              </form>  
+          </div><!-- Modal content -->
+        </div><!-- Mdal dialogue-->
+    </div><!--whole modal--> 
+
+
+
+
+
+
+
+
+
+
         <!--Modal for new SLOs-->
         <div class="modal fade" id="NewSLOModal" tabindex="-1" role="dialog" aria-labelledby="NewSLOModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl" role="document">
@@ -269,7 +376,7 @@
                     </form>
               </div><!-- Modal content -->
             </div><!-- Mdal dialogue-->
-          </div><!--whole modal--> 
+        </div><!--whole modal--> 
 
         <!--Modal for new PEOs-->
         <div class="modal fade" id="NewPEOModal" tabindex="-1" role="dialog" aria-labelledby="NewPEOModalLabel" aria-hidden="true">

@@ -140,6 +140,38 @@ class TestAccreditation(TestCase):
         self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_from__start_year=2018).count(),1)
         self.assertEqual(ProgrammeEducationalObjective.objects.filter(peo_cohort_valid_to__start_year=2024).count(),1)
 
+        #Test the survey table settings
+        response = self.client.get(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(len(response.context["slo_survey_table"]),0)
+        self.assertEqual(len(response.context["survey_settings_table"]),3)
+        self.assertEqual(len(response.context["survey_settings_table"][0]),6)#Defaults is a 5-points scale + the "PEO label"
+        self.assertEqual(len(response.context["survey_settings_table"][1]),6)
+        self.assertEqual(len(response.context["survey_settings_table"][2]),6)
+        #TEst the default values
+        self.assertEqual(response.context["survey_settings_table"][0][1],"Strongly agree")
+        self.assertEqual(response.context["survey_settings_table"][1][1],"Strongly agree")
+        self.assertEqual(response.context["survey_settings_table"][2][1],"Strongly agree")
+        self.assertEqual(response.context["survey_settings_table"][0][2],"Agree")
+        self.assertEqual(response.context["survey_settings_table"][1][2],"Agree")
+        self.assertEqual(response.context["survey_settings_table"][2][2],"Agree")
+        self.assertEqual(response.context["survey_settings_table"][0][3],"Neutral")
+        self.assertEqual(response.context["survey_settings_table"][1][3],"Neutral")
+        self.assertEqual(response.context["survey_settings_table"][2][3],"Neutral")
+        self.assertEqual(response.context["survey_settings_table"][0][4],"Disagree")
+        self.assertEqual(response.context["survey_settings_table"][1][4],"Disagree")
+        self.assertEqual(response.context["survey_settings_table"][2][4],"Disagree")
+        self.assertEqual(response.context["survey_settings_table"][0][5],"Strongly disagree")
+        self.assertEqual(response.context["survey_settings_table"][1][5],"Strongly disagree")
+        self.assertEqual(response.context["survey_settings_table"][2][5],"Strongly disagree")
+        #Now change one SLO labels,for example
+        # response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+        #                 {'slo_id': slo_list[0]["slo_id"],
+        #                  'peo_id' : slo_list[0]["peo_mapping"][1]["peo_id"],
+        #                  'mapping_strength'+str(slo_list[0]["peo_mapping"][1]["peo_id"]) : 3,
+        #                  'peo_id' : slo_list[0]["peo_mapping"][0]["peo_id"],
+        #                  'mapping_strength'+str(slo_list[0]["peo_mapping"][0]["peo_id"]) : 0})
+
     def testSLOPEOMapping(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')

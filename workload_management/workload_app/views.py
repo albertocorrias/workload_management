@@ -23,7 +23,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
-                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm
+                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,EditSurveySettingsForm
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
@@ -1547,8 +1547,59 @@ def accreditation(request,programme_id):
             return HttpResponseRedirect(reverse('workload_app:accreditation_report', 
             kwargs={'programme_id' : programme_id, 'start_year' : start, 'end_year': end}));#Trigger a re-direct to full report page
 
+
+        edit_survey_label_form = EditSurveySettingsForm(request.POST)
+        if (edit_survey_label_form.is_valid()):
+            type_of_label = edit_survey_label_form.cleaned_data['tpye']
+            high_1_label = edit_survey_label_form.cleaned_data["highest_score_label"]
+            high_2_label = edit_survey_label_form.cleaned_data["second_highest_score_label"]
+            high_3_label = edit_survey_label_form.cleaned_data["third_highest_score_label"]
+            high_4_label = edit_survey_label_form.cleaned_data["fourth_highest_score_label"]
+            high_5_label = edit_survey_label_form.cleaned_data["fifth_highest_score_label"]
+            high_6_label = edit_survey_label_form.cleaned_data["sixth_highest_score_label"]
+            high_7_label = edit_survey_label_form.cleaned_data["seventh_highest_score_label"]
+            high_8_label = edit_survey_label_form.cleaned_data["eighth_highest_score_label"]
+            high_9_label = edit_survey_label_form.cleaned_data["ninth_highest_score_label"]
+            high_10_label = edit_survey_label_form.cleaned_data["tenth_score_label"]
+            prog = ProgrammeOffered.objects.filter(id=programme_id).get()
+            if (type_of_label == Survey.SurveyType.SLO):
+                prog.slo_survey_labels.highest_score_label = high_1_label
+                prog.slo_survey_labels.second_highest_score_label = high_2_label
+                prog.slo_survey_labels.third_highest_score_label = high_3_label
+                prog.slo_survey_labels.fourth_highest_score_label = high_4_label
+                prog.slo_survey_labels.fifth_highest_score_label = high_5_label
+                prog.slo_survey_labels.sixth_highest_score_label = high_6_label
+                prog.slo_survey_labels.seventh_highest_score_label = high_7_label
+                prog.slo_survey_labels.eighth_highest_score_label = high_8_label
+                prog.slo_survey_labels.ninth_highest_score_label = high_9_label
+                prog.slo_survey_labels.tenth_score_label = high_10_label
+                prog.slo_survey_labels.save()
+            if (type_of_label == Survey.SurveyType.PEO):
+                prog.peo_survey_labels.highest_score_label = high_1_label
+                prog.peo_survey_labels.second_highest_score_label = high_2_label
+                prog.peo_survey_labels.third_highest_score_label = high_3_label
+                prog.peo_survey_labels.fourth_highest_score_label = high_4_label
+                prog.peo_survey_labels.fifth_highest_score_label = high_5_label
+                prog.peo_survey_labels.sixth_highest_score_label = high_6_label
+                prog.peo_survey_labels.seventh_highest_score_label = high_7_label
+                prog.peo_survey_labels.eighth_highest_score_label = high_8_label
+                prog.peo_survey_labels.ninth_highest_score_label = high_9_label
+                prog.peo_survey_labels.tenth_score_label = high_10_label
+                prog.peo_survey_labels.save()               
+            if (type_of_label == Survey.SurveyType.MLO):
+                prog.mlo_survey_labels.highest_score_label = high_1_label
+                prog.mlo_survey_labels.second_highest_score_label = high_2_label
+                prog.mlo_survey_labels.third_highest_score_label = high_3_label
+                prog.mlo_survey_labels.fourth_highest_score_label = high_4_label
+                prog.mlo_survey_labels.fifth_highest_score_label = high_5_label
+                prog.mlo_survey_labels.sixth_highest_score_label = high_6_label
+                prog.mlo_survey_labels.seventh_highest_score_label = high_7_label
+                prog.mlo_survey_labels.eighth_highest_score_label = high_8_label
+                prog.mlo_survey_labels.ninth_highest_score_label = high_9_label
+                prog.mlo_survey_labels.tenth_score_label = high_10_label
+                prog.mlo_survey_labels.save()                  
         return HttpResponseRedirect(reverse('workload_app:accreditation', kwargs={'programme_id' : programme_id}));#Trigger a get
-            
+        
     else:#GET
         new_slo_form = SLOForm(initial = {'fresh_record' : True})
         new_peo_form = PEOForm(initial = {'fresh_record' : True})
@@ -1643,6 +1694,52 @@ def accreditation(request,programme_id):
             mlo_row.append(survey_settings["mlo_survey_labels_object"].GetFullListOfLabels()[i])
         survey_settings_table = [peo_row,slo_row,mlo_row]
 
+        exisitng_labels = DetermineSurveyLabelsForProgramme(programme_id)
+        existing_peo_labels = exisitng_labels['peo_survey_labels_object'].GetFullListOfLabels() 
+        edit_peo_settings_form = EditSurveySettingsForm(initial = {
+                'tpye' : Survey.SurveyType.PEO,
+                'highest_score_label' : existing_peo_labels[0],
+                'second_highest_score_label' : existing_peo_labels[1],
+                'third_highest_score_label' : existing_peo_labels[2],
+                'fourth_highest_score_label' : existing_peo_labels[3],
+                'fifth_highest_score_label' : existing_peo_labels[4],
+                'sixth_highest_score_label' : existing_peo_labels[5],
+                'seventh_highest_score_label' : existing_peo_labels[6],
+                'eighth_highest_score_label' : existing_peo_labels[7],
+                'ninth_highest_score_label' : existing_peo_labels[8],
+                'tenth_score_label' : existing_peo_labels[9]
+        })
+
+        existing_slo_labels = exisitng_labels['slo_survey_labels_object'].GetFullListOfLabels() 
+        edit_slo_settings_form = EditSurveySettingsForm(initial = {
+                'tpye' : Survey.SurveyType.SLO,
+                'highest_score_label' : existing_slo_labels[0],
+                'second_highest_score_label' : existing_slo_labels[1],
+                'third_highest_score_label' : existing_slo_labels[2],
+                'fourth_highest_score_label' : existing_slo_labels[3],
+                'fifth_highest_score_label' : existing_slo_labels[4],
+                'sixth_highest_score_label' : existing_slo_labels[5],
+                'seventh_highest_score_label' : existing_slo_labels[6],
+                'eighth_highest_score_label' : existing_slo_labels[7],
+                'ninth_highest_score_label' : existing_slo_labels[8],
+                'tenth_score_label' : existing_slo_labels[9]
+        })
+
+        existing_mlo_labels = exisitng_labels['mlo_survey_labels_object'].GetFullListOfLabels() 
+        edit_mlo_settings_form = EditSurveySettingsForm(initial = {
+                'tpye' : Survey.SurveyType.MLO,
+                'highest_score_label' : existing_mlo_labels[0],
+                'second_highest_score_label' : existing_mlo_labels[1],
+                'third_highest_score_label' : existing_mlo_labels[2],
+                'fourth_highest_score_label' : existing_mlo_labels[3],
+                'fifth_highest_score_label' : existing_mlo_labels[4],
+                'sixth_highest_score_label' : existing_mlo_labels[5],
+                'seventh_highest_score_label' : existing_mlo_labels[6],
+                'eighth_highest_score_label' : existing_mlo_labels[7],
+                'ninth_highest_score_label' : existing_mlo_labels[8],
+                'tenth_score_label' : existing_mlo_labels[9]
+        })
+
         template = loader.get_template('workload_app/accreditation.html')
         context = {
                 'programme_id' : programme_id,
@@ -1661,7 +1758,10 @@ def accreditation(request,programme_id):
                 'slo_survey_table' : slo_peo_survey_table,
                 'select_report_years_form' : select_report_years_form,
                 'survey_settings_table' : survey_settings_table,
-                'colspan_for_survey_settings' : max_labels
+                'colspan_for_survey_settings' : max_labels,
+                'edit_peo_settings_form' : edit_peo_settings_form,
+                'edit_slo_settings_form' : edit_slo_settings_form,
+                'edit_mlo_settings_form' : edit_mlo_settings_form
         }
         return HttpResponse(template.render(context, request))
 

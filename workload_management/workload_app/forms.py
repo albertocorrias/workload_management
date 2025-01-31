@@ -608,6 +608,19 @@ class RemoveMLOPerformanceMeasureForm(forms.Form):
         #Make user select surveys for this module only
         self.fields['Select_MLO_measure_to_remove'] = forms.ModelChoiceField(queryset=MLOPerformanceMeasure.objects.filter(associated_mlo__module_code=module_code))
 
+class EditSurveySettingsForm(forms.Form):
+    tpye = forms.CharField(widget=forms.HiddenInput(), required=False)
+    highest_score_label = forms.CharField(max_length=150)
+    second_highest_score_label = forms.CharField(max_length=150)
+    third_highest_score_label = forms.CharField(max_length=150, required=False)
+    fourth_highest_score_label = forms.CharField(max_length=150, required=False)
+    fifth_highest_score_label = forms.CharField(max_length=150, required=False)
+    sixth_highest_score_label = forms.CharField(max_length=150, required=False)
+    seventh_highest_score_label = forms.CharField(max_length=150, required=False)
+    eighth_highest_score_label = forms.CharField(max_length=150, required=False)
+    ninth_highest_score_label = forms.CharField(max_length=150, required=False)
+    tenth_score_label = forms.CharField(max_length=150, required=False)
+
 class AddTeachingAssignmentForm(forms.Form):
 
     YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
