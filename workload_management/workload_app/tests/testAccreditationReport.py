@@ -859,6 +859,7 @@ class TestAccreditationReport(TestCase):
         mlo_survey_1 = Survey.objects.create(survey_title = "first mlo survey", opening_date = datetime.datetime(2012, 9, 17),\
                                                                                 closing_date = datetime.datetime(2012, 9, 27),\
                                                                                 cohort_targeted = acad_year_1,\
+                                                                                programme_associated = prog_to_accredit,\
                                                                                 max_respondents = 100)
         #Create the responses
         response_1 = SurveyQuestionResponse.objects.create(question_text = mlo_1_1.mlo_description,\
@@ -972,6 +973,7 @@ class TestAccreditationReport(TestCase):
         mlo_survey_2 = Survey.objects.create(survey_title = "second mlo survey", opening_date = datetime.datetime(2012, 5, 17),\
                                                                                 closing_date = datetime.datetime(2012, 5, 27),\
                                                                                 cohort_targeted = acad_year_2,\
+                                                                                programme_associated = prog_to_accredit,\
                                                                                 max_respondents = 100)
         #Create another response for MLO 1 of module 2
         response_3 = SurveyQuestionResponse.objects.create(question_text = mlo_2_1.mlo_description,\
@@ -1042,6 +1044,7 @@ class TestAccreditationReport(TestCase):
         slo_survey_1 = Survey.objects.create(survey_title = "first slo survey", opening_date = datetime.datetime(2012, 5, 17),\
                                                                                 closing_date = datetime.datetime(2013, 5, 17),\
                                                                                 cohort_targeted = acad_year_1,\
+                                                                                programme_associated = prog_to_accredit,\
                                                                                 max_respondents = 100)
         slo_response_1 = SurveyQuestionResponse.objects.create(question_text = slo_1.slo_description,\
                                                            n_highest_score = 15,\
@@ -1116,6 +1119,7 @@ class TestAccreditationReport(TestCase):
         slo_survey_2 = Survey.objects.create(survey_title = "second slo survey", opening_date = datetime.datetime(2012, 7, 17),\
                                                                                 closing_date = datetime.datetime(2012, 9, 17),\
                                                                                 cohort_targeted = acad_year_1,\
+                                                                                programme_associated = prog_to_accredit,\
                                                                                 max_respondents = 100)
         slo_response_2_srv2 = SurveyQuestionResponse.objects.create(question_text = slo_2.slo_description,\
                                                            n_highest_score = 15,\

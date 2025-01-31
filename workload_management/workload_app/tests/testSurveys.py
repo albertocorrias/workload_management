@@ -157,6 +157,17 @@ class TestSurveys(TestCase):
         wl_scen = WorkloadScenario.objects.create(label = "test_scen", status = WorkloadScenario.OFFICIAL,\
                                                   dept = new_dept,academic_year = acad_year )
         prog_off = ProgrammeOffered.objects.create(programme_name="test prog", primary_dept=new_dept)
+        self.assertEqual(ProgrammeOffered.objects.all().count(),1)
+        self.assertEqual(ProgrammeOffered.objects.filter(slo_survey_labels = None).count(),1)#should be 1 now
+        self.assertEqual(ProgrammeOffered.objects.filter(mlo_survey_labels = None).count(),1)#should be 1 now
+        self.assertEqual(ProgrammeOffered.objects.filter(peo_survey_labels = None).count(),1)#should be 1 now
+        #Since the programme was created 'empty" of links to label set, we run the helper method. It should fill
+        default_lists = DetermineSurveyLabelsForProgramme(prog_off.id)
+        self.assertEqual(ProgrammeOffered.objects.all().count(),1)
+        self.assertEqual(ProgrammeOffered.objects.filter(slo_survey_labels = None).count(),0)#should be zero now
+        self.assertEqual(ProgrammeOffered.objects.filter(mlo_survey_labels = None).count(),0)#should be zero now
+        self.assertEqual(ProgrammeOffered.objects.filter(peo_survey_labels = None).count(),0)#should be zero now
+
         module_code = "BN2102"
         module_1 = Module.objects.create(module_code = module_code, module_title = "test_title", scenario_ref = wl_scen, total_hours = 150, module_type = new_mod_type,primary_programme=prog_off)
         self.assertEqual(WorkloadScenario.objects.all().count(),1)
@@ -196,7 +207,10 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.MLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
-        self.assertEqual(Survey.objects.filter(num_answers= 5).count(),1) #check numbe rof answers (default one)
+        self.assertEqual(Survey.objects.filter(likert_labels = None).count(),0) #creation should ahve linked this up to the programme settings
+        expected_id = ProgrammeOffered.objects.filter(id = prog_off.id).get().mlo_survey_labels.id
+        self.assertEqual(Survey.objects.filter(likert_labels__id = expected_id).count(),1) #creation should ahve linked this up to the programme settings
+
 
         survey_id = Survey.objects.first().id
         #Now test the inputting of responses
@@ -220,8 +234,6 @@ class TestSurveys(TestCase):
             '3' + str(mlo_3.id) : "48",
             '4' + str(mlo_3.id) : "0",
         })
-
-
 
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
         self.assertEqual(SurveyQuestionResponse.objects.filter(associated_mlo = mlo_1).count(),1)
@@ -302,56 +314,65 @@ class TestSurveys(TestCase):
         self.assertEqual(response.context["question_texts"][0], mlo_1.mlo_description)
         self.assertEqual(response.context["question_texts"][1], mlo_2.mlo_description)
         self.assertEqual(response.context["question_texts"][2], mlo_3.mlo_description)
-        self.assertEqual(len(response.context["bar_chart_data"][0]), 4)
-        self.assertEqual(len(response.context["bar_chart_data"][1]), 4)
-        self.assertEqual(len(response.context["bar_chart_data"][2]), 4)
+        self.assertEqual(len(response.context["bar_chart_data"][0]), 5)
+        self.assertEqual(len(response.context["bar_chart_data"][1]), 5)
+        self.assertEqual(len(response.context["bar_chart_data"][2]), 5)
         self.assertEqual(response.context["bar_chart_data"][0][0], 100)
         self.assertEqual(response.context["bar_chart_data"][0][1], 10)
         self.assertEqual(response.context["bar_chart_data"][0][2], 10)
         self.assertEqual(response.context["bar_chart_data"][0][3], 20)
+        self.assertEqual(response.context["bar_chart_data"][0][4], 0)
         self.assertEqual(response.context["bar_chart_data"][1][0], 99)
         self.assertEqual(response.context["bar_chart_data"][1][1], 10)
         self.assertEqual(response.context["bar_chart_data"][1][2], 10)
         self.assertEqual(response.context["bar_chart_data"][1][3], 20)
+        self.assertEqual(response.context["bar_chart_data"][1][4], 0)
         self.assertEqual(response.context["bar_chart_data"][2][0], 98)
         self.assertEqual(response.context["bar_chart_data"][2][1], 1)
         self.assertEqual(response.context["bar_chart_data"][2][2], 1)
         self.assertEqual(response.context["bar_chart_data"][2][3], 48)
+        self.assertEqual(response.context["bar_chart_data"][2][4], 0)
         self.assertEqual(response.context["total_responses_per_question"][0], 100+10+10+20)
         self.assertEqual(response.context["total_responses_per_question"][1], 99+10+10+20)
         self.assertEqual(response.context["total_responses_per_question"][2], 98+1+1+48)
 
-        self.assertEqual(len(response.context["percentages"][0]), 4)
-        self.assertEqual(len(response.context["percentages"][1]), 4)
-        self.assertEqual(len(response.context["percentages"][2]), 4)
+        self.assertEqual(len(response.context["percentages"][0]), 5)
+        self.assertEqual(len(response.context["percentages"][1]), 5)
+        self.assertEqual(len(response.context["percentages"][2]), 5)
         self.assertAlmostEqual(response.context["percentages"][0][0], 100*100/(100+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][0][1], 100*10/(100+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][0][2], 100*10/(100+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][0][3], 100*20/(100+10+10+20))
+        self.assertAlmostEqual(response.context["percentages"][0][4], 100*0/(100+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][1][0], 100*99/(99+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][1][1], 100*10/(99+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][1][2], 100*10/(99+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][1][3], 100*20/(99+10+10+20))
+        self.assertAlmostEqual(response.context["percentages"][1][4], 100*0/(100+10+10+20))
         self.assertAlmostEqual(response.context["percentages"][2][0], 100*98/(98+1+1+48))
         self.assertAlmostEqual(response.context["percentages"][2][1], 100*1/(98+1+1+48))
         self.assertAlmostEqual(response.context["percentages"][2][2], 100*1/(98+1+1+48))
         self.assertAlmostEqual(response.context["percentages"][2][3], 100*48/(98+1+1+48))
-
-        self.assertEqual(len(response.context["cumulative_percentages"][0]), 4)
-        self.assertEqual(len(response.context["cumulative_percentages"][1]), 4)
-        self.assertEqual(len(response.context["cumulative_percentages"][2]), 4)
+        self.assertAlmostEqual(response.context["percentages"][2][4], 100*0/(100+10+10+20))
+        
+        self.assertEqual(len(response.context["cumulative_percentages"][0]), 5)
+        self.assertEqual(len(response.context["cumulative_percentages"][1]), 5)
+        self.assertEqual(len(response.context["cumulative_percentages"][2]), 5)
         self.assertAlmostEqual(response.context["cumulative_percentages"][0][0], 100*100/(100+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][0][1], 100*(100+10)/(100+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][0][2], 100*(100+10+10)/(100+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][0][3], 100*(100+10+10+20)/(100+10+10+20))
+        self.assertAlmostEqual(response.context["cumulative_percentages"][0][4], 100*(100+10+10+20)/(100+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][1][0], 100*99/(99+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][1][1], 100*(99+10)/(99+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][1][2], 100*(99+10+10)/(99+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][1][3], 100*(99+10+10+20)/(99+10+10+20))
+        self.assertAlmostEqual(response.context["cumulative_percentages"][1][4], 100*(99+10+10+20)/(99+10+10+20))
         self.assertAlmostEqual(response.context["cumulative_percentages"][2][0], 100*98/(98+1+1+48))
         self.assertAlmostEqual(response.context["cumulative_percentages"][2][1], 100*(98+1)/(98+1+1+48))
         self.assertAlmostEqual(response.context["cumulative_percentages"][2][2], 100*(98+1+1)/(98+1+1+48))
         self.assertAlmostEqual(response.context["cumulative_percentages"][2][3], 100*(98+1+1+48)/(98+1+1+48))
+        self.assertAlmostEqual(response.context["cumulative_percentages"][2][4], 100*(98+1+1+48)/(98+1+1+48))
 
         #Now try the POST with REMOVING
         self.assertEqual(Survey.objects.all().count(),1) #one survey should still be there
@@ -388,6 +409,17 @@ class TestSurveys(TestCase):
                                                   dept = new_dept,academic_year = acad_year )
     
         prog_off  = ProgrammeOffered.objects.create(programme_name="test_prog", primary_dept = new_dept)
+        self.assertEqual(ProgrammeOffered.objects.all().count(),1)
+        self.assertEqual(ProgrammeOffered.objects.filter(slo_survey_labels = None).count(),1)#should be 1 now
+        self.assertEqual(ProgrammeOffered.objects.filter(mlo_survey_labels = None).count(),1)#should be 1 now
+        self.assertEqual(ProgrammeOffered.objects.filter(peo_survey_labels = None).count(),1)#should be 1 now
+        #Since the programme was created 'empty" of links to label set, we run the helper method. It should fill
+        default_lists = DetermineSurveyLabelsForProgramme(prog_off.id)
+        self.assertEqual(ProgrammeOffered.objects.all().count(),1)
+        self.assertEqual(ProgrammeOffered.objects.filter(slo_survey_labels = None).count(),0)#should be zero now
+        self.assertEqual(ProgrammeOffered.objects.filter(mlo_survey_labels = None).count(),0)#should be zero now
+        self.assertEqual(ProgrammeOffered.objects.filter(peo_survey_labels = None).count(),0)#should be zero now
+
         #Create 3 MLOs
         slo_1 = StudentLearningOutcome.objects.create(slo_description = "First SLO", slo_short_description = "1", letter_associated = "a)", programme = prog_off)
         slo_2 = StudentLearningOutcome.objects.create(slo_description = "Second SLO", slo_short_description = "2", letter_associated = "b)", programme = prog_off)
@@ -412,10 +444,13 @@ class TestSurveys(TestCase):
             'end_date_day' : 15,
             'end_date_year' : 2023,
             'totoal_N_recipients' : "150",
-            'num_answers' : '5',
             'comments' : survey_comment,
             'survey_type' : Survey.SurveyType.SLO})
         survey_id = Survey.objects.first().id
+
+        expected_id = ProgrammeOffered.objects.filter(id = prog_off.id).get().slo_survey_labels.id
+        self.assertEqual(Survey.objects.filter(likert_labels__id = expected_id).count(),1) #creation should ahve linked this up to the programme settings
+
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
             'slo_descr' + str(slo_1.id) : slo_1.slo_description,
@@ -441,7 +476,6 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
         self.assertEqual(Survey.objects.filter(comments = survey_comment).count(),1) #check comment
-        self.assertEqual(Survey.objects.filter(num_answers = 5).count(),1) #check numbe rof answers
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
 
@@ -596,7 +630,7 @@ class TestSurveys(TestCase):
         self.assertEqual(len(calculated_survey_table),0)
 
 
-        #Now add abother one, same as beforem  but with targeted cohort
+        #Now add abother one, same as before  but with targeted cohort
         cohort_year = Academicyear.objects.create(start_year=2020)
         response = self.client.post(reverse('workload_app:accreditation',kwargs={'programme_id' : prog_off.id}),{
             'slo_survey_title' : survey_title + "number_2",
@@ -607,7 +641,6 @@ class TestSurveys(TestCase):
             'end_date_day' : 15,
             'end_date_year' : 2023,
             'totoal_N_recipients' : "150",
-            'num_answers' : '5',
             'cohort_targeted' : cohort_year.id,
             'comments' : survey_comment,
             'survey_type' : Survey.SurveyType.SLO
@@ -636,7 +669,6 @@ class TestSurveys(TestCase):
         self.assertEqual(response.status_code, 200) #post all good
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
-        self.assertEqual(Survey.objects.filter(num_answers=5).count(),1)#check numbe rof answers
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(cohort_targeted__start_year =2020).count(),1)#should be specified as 2020 (see above)
@@ -693,7 +725,9 @@ class TestSurveys(TestCase):
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         surv_obj = Survey.objects.filter(survey_title = survey_title).get()
-
+        expected_id = ProgrammeOffered.objects.filter(id = prog_off.id).get().peo_survey_labels.id
+        self.assertEqual(Survey.objects.filter(likert_labels__id = expected_id).count(),1) #creation should ahve linked this up to the programme settings
+        
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : surv_obj.id}),{
             'peo_descr' + str(peo_1.id) : peo_1.peo_description,
