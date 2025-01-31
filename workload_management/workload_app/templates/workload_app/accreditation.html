@@ -196,8 +196,37 @@
         </div>
         <hr>
         <h3>Settings for new surveys for {{ programme_name }}</h3>
+        <p>
+          The table below shows settings for any new survey that will be created. Existing surveys will be unaffacted by any change to the settings.
+        </p>
         <div class="table_flex_container">
+          <table id="SURVEYS_SETTINGS_TABLE" class="workload_tables table table-striped">
+            <thead class="table-dark">
+                <tr>
+                  <th style="background-color: #f4f3f1; border-bottom: black solid thin;"> </th>
+                  <th colspan="{{ colspan_for_survey_settings }}"> Labels </th>
+                </tr>
+            </thead>
+              <tbody style="border: solid thin lightslategray;">
 
+                <tr style="border-bottom: black solid thin;">
+                  {% for sett in survey_settings_table.0 %}
+                  <td> {{ sett }} </td>
+                  {% endfor %}
+                  </tr>
+                  <tr style="border-bottom: black solid thin;">
+                    {% for sett in survey_settings_table.1 %}
+                    <td> {{ sett }} </td>
+                    {% endfor %}
+                  </tr>
+                  <tr style="border-bottom: black solid thin;">
+                    {% for sett in survey_settings_table.2 %}
+                    <td> {{ sett }} </td>
+                    {% endfor %}
+                  </tr>
+                
+                </tbody>
+            </table>
 
         </div>
 

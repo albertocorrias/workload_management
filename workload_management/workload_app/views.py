@@ -1631,6 +1631,18 @@ def accreditation(request,programme_id):
                    Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.PEO):
             slo_peo_survey_table.append(CalculateSurveyDetails(srv.id))
         
+        #Table for current programme settings
+        survey_settings = DetermineSurveyLabelsForProgramme(programme_id)
+        max_labels = max(len(survey_settings["slo_survey_labels"]), len(survey_settings["mlo_survey_labels"]),len(survey_settings["peo_survey_labels"]))
+        peo_row = ['PEO survey labels']
+        slo_row = ['SLO survey labels']
+        mlo_row = ['MLO survey labels']
+        for i in range(0,max_labels):
+            peo_row.append(survey_settings["peo_survey_labels_object"].GetFullListOfLabels()[i])
+            slo_row.append(survey_settings["slo_survey_labels_object"].GetFullListOfLabels()[i])
+            mlo_row.append(survey_settings["mlo_survey_labels_object"].GetFullListOfLabels()[i])
+        survey_settings_table = [peo_row,slo_row,mlo_row]
+
         template = loader.get_template('workload_app/accreditation.html')
         context = {
                 'programme_id' : programme_id,
@@ -1647,7 +1659,9 @@ def accreditation(request,programme_id):
                 'new_peo_form' : new_peo_form,
                 'remove_peo_form' : remove_peo_form,
                 'slo_survey_table' : slo_peo_survey_table,
-                'select_report_years_form' : select_report_years_form
+                'select_report_years_form' : select_report_years_form,
+                'survey_settings_table' : survey_settings_table,
+                'colspan_for_survey_settings' : max_labels
         }
         return HttpResponse(template.render(context, request))
 
