@@ -1550,7 +1550,7 @@ def accreditation(request,programme_id):
 
         edit_survey_label_form = EditSurveySettingsForm(request.POST)
         if (edit_survey_label_form.is_valid()):
-            type_of_label = edit_survey_label_form.cleaned_data['tpye']
+            type_of_label = edit_survey_label_form.cleaned_data['type']
             high_1_label = edit_survey_label_form.cleaned_data["highest_score_label"]
             high_2_label = edit_survey_label_form.cleaned_data["second_highest_score_label"]
             high_3_label = edit_survey_label_form.cleaned_data["third_highest_score_label"]
@@ -1697,7 +1697,7 @@ def accreditation(request,programme_id):
         exisitng_labels = DetermineSurveyLabelsForProgramme(programme_id)
         existing_peo_labels = exisitng_labels['peo_survey_labels_object'].GetFullListOfLabels() 
         edit_peo_settings_form = EditSurveySettingsForm(initial = {
-                'tpye' : Survey.SurveyType.PEO,
+                'type' : Survey.SurveyType.PEO,
                 'highest_score_label' : existing_peo_labels[0],
                 'second_highest_score_label' : existing_peo_labels[1],
                 'third_highest_score_label' : existing_peo_labels[2],
@@ -1712,7 +1712,7 @@ def accreditation(request,programme_id):
 
         existing_slo_labels = exisitng_labels['slo_survey_labels_object'].GetFullListOfLabels() 
         edit_slo_settings_form = EditSurveySettingsForm(initial = {
-                'tpye' : Survey.SurveyType.SLO,
+                'type' : Survey.SurveyType.SLO,
                 'highest_score_label' : existing_slo_labels[0],
                 'second_highest_score_label' : existing_slo_labels[1],
                 'third_highest_score_label' : existing_slo_labels[2],
@@ -1727,7 +1727,7 @@ def accreditation(request,programme_id):
 
         existing_mlo_labels = exisitng_labels['mlo_survey_labels_object'].GetFullListOfLabels() 
         edit_mlo_settings_form = EditSurveySettingsForm(initial = {
-                'tpye' : Survey.SurveyType.MLO,
+                'type' : Survey.SurveyType.MLO,
                 'highest_score_label' : existing_mlo_labels[0],
                 'second_highest_score_label' : existing_mlo_labels[1],
                 'third_highest_score_label' : existing_mlo_labels[2],

@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping, Academicyear
+from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping, Academicyear, Survey
 
 
 class TestAccreditation(TestCase):
@@ -164,13 +164,35 @@ class TestAccreditation(TestCase):
         self.assertEqual(response.context["survey_settings_table"][0][5],"Strongly disagree")
         self.assertEqual(response.context["survey_settings_table"][1][5],"Strongly disagree")
         self.assertEqual(response.context["survey_settings_table"][2][5],"Strongly disagree")
-        #Now change one SLO labels,for example
-        # response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
-        #                 {'slo_id': slo_list[0]["slo_id"],
-        #                  'peo_id' : slo_list[0]["peo_mapping"][1]["peo_id"],
-        #                  'mapping_strength'+str(slo_list[0]["peo_mapping"][1]["peo_id"]) : 3,
-        #                  'peo_id' : slo_list[0]["peo_mapping"][0]["peo_id"],
-        #                  'mapping_strength'+str(slo_list[0]["peo_mapping"][0]["peo_id"]) : 0})
+        #Now change one SLO labels,for example. We set it to 2-point scale
+        response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
+                        {'type' : Survey.SurveyType.SLO,
+                         'highest_score_label' : 'test_highest',
+                          'second_highest_score_label' : 'second'})
+        
+        response = self.client.get(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(len(response.context["slo_survey_table"]),0)
+        self.assertEqual(len(response.context["survey_settings_table"]),3)
+        self.assertEqual(len(response.context["survey_settings_table"][0]),6)#a 5-points scale + the "PEO label"
+        self.assertEqual(len(response.context["survey_settings_table"][1]),6)
+        self.assertEqual(len(response.context["survey_settings_table"][2]),6)
+        #Test the new values, SLO is second position and should have changed
+        self.assertEqual(response.context["survey_settings_table"][0][1],"Strongly agree")
+        self.assertEqual(response.context["survey_settings_table"][1][1],"test_highest")
+        self.assertEqual(response.context["survey_settings_table"][2][1],"Strongly agree")
+        self.assertEqual(response.context["survey_settings_table"][0][2],"Agree")
+        self.assertEqual(response.context["survey_settings_table"][1][2],"second")
+        self.assertEqual(response.context["survey_settings_table"][2][2],"Agree")
+        self.assertEqual(response.context["survey_settings_table"][0][3],"Neutral")
+        self.assertEqual(response.context["survey_settings_table"][1][3],"")
+        self.assertEqual(response.context["survey_settings_table"][2][3],"Neutral")
+        self.assertEqual(response.context["survey_settings_table"][0][4],"Disagree")
+        self.assertEqual(response.context["survey_settings_table"][1][4],"")
+        self.assertEqual(response.context["survey_settings_table"][2][4],"Disagree")
+        self.assertEqual(response.context["survey_settings_table"][0][5],"Strongly disagree")
+        self.assertEqual(response.context["survey_settings_table"][1][5],"")
+        self.assertEqual(response.context["survey_settings_table"][2][5],"Strongly disagree")
 
     def testSLOPEOMapping(self):
         self.setup_user()

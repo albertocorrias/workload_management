@@ -609,7 +609,7 @@ class RemoveMLOPerformanceMeasureForm(forms.Form):
         self.fields['Select_MLO_measure_to_remove'] = forms.ModelChoiceField(queryset=MLOPerformanceMeasure.objects.filter(associated_mlo__module_code=module_code))
 
 class EditSurveySettingsForm(forms.Form):
-    tpye = forms.CharField(widget=forms.HiddenInput(), required=False)
+    type = forms.CharField(widget=forms.HiddenInput(), required=False)
     highest_score_label = forms.CharField(max_length=150)
     second_highest_score_label = forms.CharField(max_length=150)
     third_highest_score_label = forms.CharField(max_length=150, required=False)
