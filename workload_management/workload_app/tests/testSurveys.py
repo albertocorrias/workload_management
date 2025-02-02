@@ -67,6 +67,7 @@ class TestSurveys(TestCase):
         self.assertAlmostEqual(properties['cumulative_percentages'][1],100*(25+35)/(25+35+20+13))
         self.assertAlmostEqual(properties['cumulative_percentages'][2],100*(25+35+20)/(25+35+20+13))
         self.assertAlmostEqual(properties['cumulative_percentages'][3],100*(25+35+20+13)/(25+35+20+13))
+        self.assertAlmostEqual(len(properties['responses']),4)
         self.assertAlmostEqual(properties['responses'][0],25)
         self.assertAlmostEqual(properties['responses'][1],35)
         self.assertAlmostEqual(properties['responses'][2],20)
