@@ -50,6 +50,7 @@ class TestSurveys(TestCase):
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),1)
         properties = resp.CalculateRepsonsesProprties()
         self.assertEqual(properties["all_respondents"], 25+35+20+13)
+        self.assertEqual(len(properties["responses"]), 4)
         self.assertEqual(properties["point_scales"], 4)
         self.assertEqual(properties["positives"], 25+35)
         self.assertEqual(properties["non_negatives"], 25+35)
@@ -66,6 +67,10 @@ class TestSurveys(TestCase):
         self.assertAlmostEqual(properties['cumulative_percentages'][1],100*(25+35)/(25+35+20+13))
         self.assertAlmostEqual(properties['cumulative_percentages'][2],100*(25+35+20)/(25+35+20+13))
         self.assertAlmostEqual(properties['cumulative_percentages'][3],100*(25+35+20+13)/(25+35+20+13))
+        self.assertAlmostEqual(properties['responses'][0],25)
+        self.assertAlmostEqual(properties['responses'][1],35)
+        self.assertAlmostEqual(properties['responses'][2],20)
+        self.assertAlmostEqual(properties['responses'][3],13)
 
         #Now the same, but with an odd-numbered scale
         five_point_scale = SurveyLabelSet.objects.create(
