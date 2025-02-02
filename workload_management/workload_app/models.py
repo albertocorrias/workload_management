@@ -562,6 +562,16 @@ class SurveyQuestionResponse(models.Model):
         if (responses > 0):
             fraction_positives = positives/responses
             fraction_non_negatives = non_negatives/responses
+        
+        percentages = []
+        cumulative_percentages = []
+        cumulat = 0
+        for i in range(0,len(all_scores)):
+            if (all_scores[i] > -1):
+                percentages.append(100*all_scores[i]/responses)
+                cumulat += 100*all_scores[i]/responses
+                cumulative_percentages.append(cumulat)
+
         nps = 'N/A'
         nps_message = "NPS is not calculates for scales with less than 4 points"
         if (point_scale_index == 4):#Promoter is first, detractors are bottom 2
@@ -596,6 +606,8 @@ class SurveyQuestionResponse(models.Model):
             'non_negatives' : non_negatives,
             'fraction_positives' : fraction_positives,
             'fraction_non_negatives' : fraction_non_negatives,
+            'percentages' : percentages,
+            'cumulative_percentages' : cumulative_percentages,
             'nps' : nps,
             'nps_message' : nps_message
         }
