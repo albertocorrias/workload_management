@@ -73,6 +73,10 @@ table.workload_tables > thead > tr > th.secondary_header{
     background-color: #003D7C;
 }
 
+table.workload_tables > tr > th {
+    background-color: #003D7C;
+}
+
 div.table_flex_container {
     display: flex;
     flex-wrap: wrap;    

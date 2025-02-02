@@ -14,6 +14,117 @@ class TestSurveys(TestCase):
         #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
+    def test_helper_method_for_survey_response(self):
+
+        new_faculty = Faculty.objects.create(faculty_name = "new faculty", faculty_acronym = "NFC")
+        new_dept = Department.objects.create(department_name = "new_dept", department_acronym = "NDPT",faculty=new_faculty)
+        acad_year = Academicyear.objects.create(start_year=2023)
+        prog_off = ProgrammeOffered.objects.create(programme_name="test prog", primary_dept=new_dept)
+
+        four_point_scale = SurveyLabelSet.objects.create(
+        highest_score_label ='highest',
+        second_highest_score_label = 'second',
+        third_highest_score_label = 'third',
+        fourth_highest_score_label = 'fourth')
+        four_pouint_survey  = Survey.objects.create(survey_title = "test_survey",\
+                                               opening_date = datetime.datetime.today(),\
+                                               closing_date = datetime.datetime.today(),\
+                                               cohort_targeted = acad_year,\
+                                               likert_labels = four_point_scale,\
+                                               survey_type = Survey.SurveyType.SLO,\
+                                               max_respondents =  100, comments = "None",\
+                                               programme_associated = prog_off)
+        self.assertEqual(Survey.objects.all().count(),1)
+        self.assertEqual(SurveyLabelSet.objects.all().count(),1)
+        #Create a response
+        resp = SurveyQuestionResponse.objects.create(question_text = 'hello',\
+                label_highest_score = four_point_scale.highest_score_label,
+                n_highest_score = 25,
+                label_second_highest_score = four_point_scale.second_highest_score_label,
+                n_second_highest_score = 35,
+                label_third_highest_score = four_point_scale.third_highest_score_label,
+                n_third_highest_score = 20,
+                label_fourth_highest_score = four_point_scale.fourth_highest_score_label,
+                n_fourth_highest_score  =13,
+                parent_survey = four_pouint_survey)
+        self.assertEqual(SurveyQuestionResponse.objects.all().count(),1)
+        properties = resp.CalculateRepsonsesProprties()
+        self.assertEqual(properties["all_respondents"], 25+35+20+13)
+        self.assertEqual(properties["point_scales"], 4)
+        self.assertEqual(properties["positives"], 25+35)
+        self.assertEqual(properties["non_negatives"], 25+35)
+        self.assertAlmostEqual(properties["fraction_positives"], (25+35)/(25+35+20+13))
+        self.assertAlmostEqual(properties["fraction_non_negatives"], (25+35)/(25+35+20+13))
+
+        #Now the same, but with an odd-numbered scale
+        five_point_scale = SurveyLabelSet.objects.create(
+        highest_score_label ='highest',
+        second_highest_score_label = 'second',
+        third_highest_score_label = 'third',
+        fourth_highest_score_label = 'fourth',
+        fifth_highest_score_label = 'fifth')
+        five_pouint_survey  = Survey.objects.create(survey_title = "test_survey",\
+                                               opening_date = datetime.datetime.today(),\
+                                               closing_date = datetime.datetime.today(),\
+                                               cohort_targeted = acad_year,\
+                                               likert_labels = five_point_scale,\
+                                               survey_type = Survey.SurveyType.SLO,\
+                                               max_respondents =  100, comments = "None",\
+                                               programme_associated = prog_off)
+        self.assertEqual(Survey.objects.all().count(),2)
+        self.assertEqual(SurveyLabelSet.objects.all().count(),2)
+        #Create a response
+        resp_5 = SurveyQuestionResponse.objects.create(question_text = 'hello',\
+                label_highest_score = five_point_scale.highest_score_label,
+                n_highest_score = 25,
+                label_second_highest_score = five_point_scale.second_highest_score_label,
+                n_second_highest_score = 35,
+                label_third_highest_score = five_point_scale.third_highest_score_label,
+                n_third_highest_score = 20,
+                label_fourth_highest_score = five_point_scale.fourth_highest_score_label,
+                n_fourth_highest_score  =13,
+                label_fifth_highest_score = five_point_scale.fifth_highest_score_label,
+                n_fifth_highest_score  =9,
+                parent_survey = five_pouint_survey)
+        self.assertEqual(SurveyQuestionResponse.objects.all().count(),2)
+        properties_5 = resp_5.CalculateRepsonsesProprties()
+        self.assertEqual(properties_5["all_respondents"], 25+35+20+13+9)
+        self.assertEqual(properties_5["point_scales"], 5)
+        self.assertEqual(properties_5["positives"], 25+35)
+        self.assertEqual(properties_5["non_negatives"], 25+35+20)
+        self.assertAlmostEqual(properties_5["fraction_positives"], (25+35)/(25+35+20+13+9))
+        self.assertAlmostEqual(properties_5["fraction_non_negatives"], (25+35+20)/(25+35+20+13+9))
+
+
+        #Strange case of two-point scale
+        two_point_scale = SurveyLabelSet.objects.create(
+        highest_score_label ='highest',
+        second_highest_score_label = 'second')
+        two_point_survey  = Survey.objects.create(survey_title = "test_survey",\
+                                               opening_date = datetime.datetime.today(),\
+                                               closing_date = datetime.datetime.today(),\
+                                               cohort_targeted = acad_year,\
+                                               likert_labels = two_point_scale,\
+                                               survey_type = Survey.SurveyType.SLO,\
+                                               max_respondents =  100, comments = "None",\
+                                               programme_associated = prog_off)
+        self.assertEqual(Survey.objects.all().count(),3)
+        self.assertEqual(SurveyLabelSet.objects.all().count(),3)
+        #Create a response
+        resp_2 = SurveyQuestionResponse.objects.create(question_text = 'hello',\
+                label_highest_score = two_point_scale.highest_score_label,
+                n_highest_score = 25,
+                label_second_highest_score = two_point_scale.second_highest_score_label,
+                n_second_highest_score = 35,
+                parent_survey = two_point_survey)
+        self.assertEqual(SurveyQuestionResponse.objects.all().count(),3)
+        properties_2 = resp_2.CalculateRepsonsesProprties()
+        self.assertEqual(properties_2["all_respondents"], 25+35)
+        self.assertEqual(properties_2["point_scales"], 2)
+        self.assertEqual(properties_2["positives"], 25)
+        self.assertEqual(properties_2["non_negatives"], 25)
+        self.assertAlmostEqual(properties_2["fraction_positives"], 25/(25+35))
+        self.assertAlmostEqual(properties_2["fraction_non_negatives"], 25/(25+35))
 
     def test_helper_method_for_labels(self):
         self.setup_user()

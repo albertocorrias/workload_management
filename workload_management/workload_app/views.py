@@ -1,4 +1,5 @@
 import datetime
+import math
 import os
 from django.http import HttpResponse,HttpResponseRedirect
 from django.urls import reverse
@@ -27,7 +28,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type
+                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type,ShortenString
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -2046,12 +2047,14 @@ def survey_results(request,survey_id):
         back_text += 'accreditation page' 
 
     question_texts = []
+    shorter_question_texts = []
     srv_results = []
     percentages = []
     cumulative_percenatges = []
     total_responses_per_question = []
     for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
         question_texts.append(response.question_text)
+        shorter_question_texts.append(ShortenString(response.question_text,25))
         srv_results.append([])
         percentages.append([])
         cumulative_percenatges.append([])
@@ -2100,13 +2103,20 @@ def survey_results(request,survey_id):
             cumulative_percenatges[-1].append(cumulative)
     all_survey_details = CalculateSurveyDetails(survey_id)
     template = loader.get_template('workload_app/survey_results.html')
+
+    #transpose percentages for the overall stacked chart data
+    overall_plot_data = list(map(list, zip(*percentages)))
+
+
     context = {
         'survey_details' : all_survey_details,
         'average_response_rate' : all_survey_details["average_response_rate"],
         'question_texts' : question_texts,
+        'shorter_question_texts' : shorter_question_texts,
         'labels' : survey_labels,
         'bar_chart_data' : srv_results,
         'percentages' : percentages,
+        'overall_plot_data' : overall_plot_data,
         'cumulative_percentages' : cumulative_percenatges,
         'total_responses_per_question' : total_responses_per_question,
         'back_address' : back_address,

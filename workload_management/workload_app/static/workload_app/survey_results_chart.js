@@ -3,12 +3,16 @@
 var survey_results = JSON.parse(document.getElementById('bar_chart_data').textContent);
 var survey_labels = JSON.parse(document.getElementById('chart_labels').textContent);
 var question_texts = JSON.parse(document.getElementById('question_texts').textContent);
-var bar_background_colors = ['rgba(0, 0, 71, 0.7)',
-                             'rgba(0, 0, 71, 0.6)',
-                             'rgba(0, 0, 71, 0.5)',
-                             'rgba(0, 0, 71, 0.4)',
-                             'rgba(0, 0, 71, 0.3)',
-                             'rgba(0, 0, 71, 0.2)', ]
+var bar_background_colors = ['rgb(0, 0, 71)' ,
+                            'rgba(20, 2, 81, 0.9)',
+                            'rgba(40, 40, 91, 0.8)',
+                            'rgba(60, 60, 101, 0.7)',
+                            'rgba(80, 80, 121, 0.6)',
+                            'rgba(100, 100, 131, 0.5)',
+                            'rgba(120, 120, 141, 0.4)',
+                            'rgba(140, 140, 151, 0.3)',
+                            'rgba(160, 160, 161, 0.2)',
+                            'rgba(180, 180, 171, 0.1)', ]
 for (let i = 0; i < survey_results.length; i++) {
     const data = {
       labels: survey_labels,

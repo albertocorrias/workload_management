@@ -6,7 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
 from .global_constants import ShortenString
 import datetime
-
+import math
 
 class Faculty(models.Model):
     """
@@ -525,7 +525,54 @@ class SurveyQuestionResponse(models.Model):
         
     class Meta:
         ordering = ['question_text']
-        
+    
+    def CalculateRepsonsesProprties(self):
+        """
+        A convenience method that calculates some properties of this object
+        """
+        all_scores = [self.n_highest_score,\
+                      self.n_second_highest_score, \
+                      self.n_third_highest_score,\
+                      self.n_fourth_highest_score,\
+                      self.n_fifth_highest_score,\
+                      self.n_sixth_highest_score,\
+                      self.n_seventh_highest_score,\
+                      self.n_eighth_highest_score,\
+                      self.n_ninth_highest_score,\
+                      self.n_tenth_highest_score]
+        responses = 0
+        for i in range(0,len(all_scores)):
+            if all_scores[i] > -1:
+                responses += all_scores[i]
+        point_scale_index = all_scores.index(-1)#the first "-1"indicates the end of the scale
+        positives = 0
+        non_negatives = 0
+        if (point_scale_index %2 == 0 ):#This is an even point scale 
+            for i in range(0,int(point_scale_index/2)):
+                positives += all_scores[i]
+                non_negatives += all_scores[i]
+        else: #Odd point scale
+            mid_point  = math.floor(point_scale_index/2)#index of mid-point e.g., 2 in a 5-poont scale (index of "neutral")
+            for i in range(0,mid_point):
+                positives += all_scores[i]
+            non_negatives = positives + all_scores[mid_point]
+
+        fraction_positives = 0
+        fraction_non_negatives = 0
+        if (responses > 0):
+            fraction_positives = positives/responses
+            fraction_non_negatives = non_negatives/responses
+        ret = {
+            'all_respondents' : responses,
+            'point_scales' : point_scale_index,
+            'positives' : positives,
+            'non_negatives' : non_negatives,
+            'fraction_positives' : fraction_positives,
+            'fraction_non_negatives' : fraction_non_negatives,
+        }
+        return ret
+
+
 class MLOPerformanceMeasure(models.Model):
     #The descrpition, e.g. Question 5 of final exam, etc
     description = models.CharField(max_length=100000)

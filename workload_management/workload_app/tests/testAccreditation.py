@@ -164,7 +164,7 @@ class TestAccreditation(TestCase):
         self.assertEqual(response.context["survey_settings_table"][0][5],"Strongly disagree")
         self.assertEqual(response.context["survey_settings_table"][1][5],"Strongly disagree")
         self.assertEqual(response.context["survey_settings_table"][2][5],"Strongly disagree")
-        #Now change one SLO labels,for example. We set it to 2-point scale
+        #Now change SLO labels,for example. We set it to 2-point scale
         response = self.client.post(reverse('workload_app:accreditation',  kwargs={'programme_id': new_prog.id}),
                         {'type' : Survey.SurveyType.SLO,
                          'highest_score_label' : 'test_highest',
@@ -185,13 +185,13 @@ class TestAccreditation(TestCase):
         self.assertEqual(response.context["survey_settings_table"][1][2],"second")
         self.assertEqual(response.context["survey_settings_table"][2][2],"Agree")
         self.assertEqual(response.context["survey_settings_table"][0][3],"Neutral")
-        self.assertEqual(response.context["survey_settings_table"][1][3],"")
+        self.assertEqual(response.context["survey_settings_table"][1][3],"") #only two labels supplied in the form. Rest should be empty
         self.assertEqual(response.context["survey_settings_table"][2][3],"Neutral")
         self.assertEqual(response.context["survey_settings_table"][0][4],"Disagree")
-        self.assertEqual(response.context["survey_settings_table"][1][4],"")
+        self.assertEqual(response.context["survey_settings_table"][1][4],"") #only two labels supplied in the form. Rest should be empty
         self.assertEqual(response.context["survey_settings_table"][2][4],"Disagree")
         self.assertEqual(response.context["survey_settings_table"][0][5],"Strongly disagree")
-        self.assertEqual(response.context["survey_settings_table"][1][5],"")
+        self.assertEqual(response.context["survey_settings_table"][1][5],"") #only two labels supplied in the form. Rest should be empty
         self.assertEqual(response.context["survey_settings_table"][2][5],"Strongly disagree")
 
     def testSLOPEOMapping(self):

@@ -6,7 +6,7 @@ DEFAULT_WORKLOAD_NAME = 'Workload 1'
 
 DEFAULT_MODULE_TYPE_NAME = 'Not assigned'
 
-MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL = 20;
+MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL = 20
 
 #The numbe rof weeks in one semester
 NUMBER_OF_WEEKS_PER_SEM = 13
@@ -107,12 +107,12 @@ def DetermineColourBasedOnAttentionScore(score):
 # - the last 4 characters as the original last 4 characters.
 #If thes tring is shorter than MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL
 # then it just returns the string unmodified
-def ShortenString(string):
-    if (len(string)<=MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL):
+def ShortenString(string,max_number = MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL):
+    if (len(string)<=max_number):
         return string
     else:
         ret = '';
-        for i in range (0,MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL - 4 - 3):
+        for i in range (0,max_number - 4 - 3):
                 ret += string[i]
 
         ret+='...'

@@ -14,11 +14,11 @@ div.survey_results_container{
     display: flex;
 }
 div.survey_table_results_container{
-    width: 45%;
+    width: 48%;
     margin-right: 2vmin;
 }
 div.chart_results_container{
-    width: 45%;
+    width: 48%;
 }
 
 div.slo_tables_container{
