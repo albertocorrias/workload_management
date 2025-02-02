@@ -55,6 +55,7 @@ class TestSurveys(TestCase):
         self.assertEqual(properties["non_negatives"], 25+35)
         self.assertAlmostEqual(properties["fraction_positives"], (25+35)/(25+35+20+13))
         self.assertAlmostEqual(properties["fraction_non_negatives"], (25+35)/(25+35+20+13))
+        self.assertAlmostEqual(properties['nps'], 25/(25+35+20+13) - (20+13)/(25+35+20+13) )
 
         #Now the same, but with an odd-numbered scale
         five_point_scale = SurveyLabelSet.objects.create(
@@ -94,7 +95,7 @@ class TestSurveys(TestCase):
         self.assertEqual(properties_5["non_negatives"], 25+35+20)
         self.assertAlmostEqual(properties_5["fraction_positives"], (25+35)/(25+35+20+13+9))
         self.assertAlmostEqual(properties_5["fraction_non_negatives"], (25+35+20)/(25+35+20+13+9))
-
+        self.assertAlmostEqual(properties_5['nps'], 25/(25+35+20+13+9) - (20+13+9)/(25+35+20+13+9) )
 
         #Strange case of two-point scale
         two_point_scale = SurveyLabelSet.objects.create(
@@ -125,6 +126,7 @@ class TestSurveys(TestCase):
         self.assertEqual(properties_2["non_negatives"], 25)
         self.assertAlmostEqual(properties_2["fraction_positives"], 25/(25+35))
         self.assertAlmostEqual(properties_2["fraction_non_negatives"], 25/(25+35))
+        self.assertEqual(properties_2['nps'], 'N/A')
 
     def test_helper_method_for_labels(self):
         self.setup_user()
