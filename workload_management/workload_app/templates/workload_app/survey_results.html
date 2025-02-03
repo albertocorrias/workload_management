@@ -98,6 +98,29 @@
                                 <td></td>
                             </tr>
                         </tbody>
+                        <thead class="table-dark">
+                            <tr>
+                                <th colspan="4"> Other metrics </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td> Percenteage positive</td>
+                                <td colspan = "3"> {{ questions_perc_positive|list_index:forloop.counter0|floatformat }}%</td>
+                            </tr>
+                            <tr>
+                                <td> Percenteage non-negative</td>
+                                <td colspan = "3"> {{ questions_perc_non_negative|list_index:forloop.counter0|floatformat }}%</td>
+                            </tr>
+                            <tr>
+                                <td> Net Promoter Score (NPS)* </td>
+                                <td colspan = "3"> {{ questions_nps|list_index:forloop.counter0|floatformat }}%</td>
+                            </tr>
+                            <tr>
+                                <td colspan = "4" style="font-size:7pt; text-align:left;"> *{{ questions_nps_messages|list_index:forloop.counter0 }}</td>
+                            </tr>
+                        </tbody>
+                        
                     </table>
                 </div>
                 <div class="chart_results_container">

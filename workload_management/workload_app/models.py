@@ -557,11 +557,11 @@ class SurveyQuestionResponse(models.Model):
                 positives += all_scores[i]
             non_negatives = positives + all_scores[mid_point]
 
-        fraction_positives = 0
-        fraction_non_negatives = 0
+        percentage_positive = 0
+        percentage_non_negative = 0
         if (num_responses > 0):
-            fraction_positives = positives/num_responses
-            fraction_non_negatives = non_negatives/num_responses
+            percentage_positive = 100*positives/num_responses
+            percentage_non_negative = 100*non_negatives/num_responses
         
         responses = []
         percentages = []
@@ -578,28 +578,28 @@ class SurveyQuestionResponse(models.Model):
         nps_message = "NPS is not calculates for scales with less than 4 points"
         if (point_scale_index == 4):#Promoter is first, detractors are bottom 2
             nps = self.n_highest_score/num_responses - (self.n_third_highest_score + self.n_fourth_highest_score)/num_responses
-            nps_message = "NPS for a 4-point scale is calculates as % of respondents with highest score minus % of respondents with the bottom two scores."
+            nps_message = "NPS for a 4-point scale is calculated as % of respondents with highest score minus % of respondents with the bottom two scores."
         if (point_scale_index == 5):#promoter is first, detractors are bottom 3
             nps = self.n_highest_score/num_responses - (self.n_third_highest_score + self.n_fourth_highest_score + self.n_fifth_highest_score)/num_responses
-            nps_message = "NPS for a 5-point scale is calculates as % of respondents with highest score minus % of respondents with the bottom three scores."
+            nps_message = "NPS for a 5-point scale is calculated as % of respondents with highest score minus % of respondents with the bottom three scores."
         if (point_scale_index == 6):#promoter is first, detractors are bottom 3
             nps = self.n_highest_score/num_responses - (self.n_fourth_highest_score + self.n_fifth_highest_score + self.n_sixth_highest_score)/num_responses
-            nps_message = "NPS for a 6-point scale is calculates as % of respondents with highest score minus % of respondents with the bottom three scores."
+            nps_message = "NPS for a 6-point scale is calculated as % of respondents with highest score minus % of respondents with the bottom three scores."
         if (point_scale_index == 7):#promoter is first, detractors are bottom 4
             nps = self.n_highest_score/num_responses - (self.n_fourth_highest_score + self.n_fifth_highest_score + self.n_sixth_highest_score + self.n_seventh_highest_score)/num_responses
-            nps_message = "NPS for a 7-point scale is calculates as % of respondents with highest score minus % of respondents with the bottom four scores."
+            nps_message = "NPS for a 7-point scale is calculated as % of respondents with highest score minus % of respondents with the bottom four scores."
         if (point_scale_index == 8):#promoter is first, detractors are bottom 4
             nps = self.n_highest_score/num_responses - (self.n_fifth_highest_score + self.n_sixth_highest_score + self.n_seventh_highest_score+self.n_eighth_highest_score)/num_responses
-            nps_message = "NPS for a 8-point scale is calculates as % of respondents with highest score minus % of respondents with the bottom four scores."
+            nps_message = "NPS for a 8-point scale is calculated as % of respondents with highest score minus % of respondents with the bottom four scores."
         if (point_scale_index == 9):#Promoter are top 2, detractors are bottom 6
             nps = (self.n_highest_score+self.n_second_highest_score)/num_responses - (self.n_fourth_highest_score + self.n_fifth_highest_score + self.n_sixth_highest_score + \
                                                             self.n_seventh_highest_score + self.n_eighth_highest_score + self.n_eighth_highest_score )/num_responses
-            nps_message = "NPS for a 9-point scale is calculates as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
+            nps_message = "NPS for a 9-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
         if (point_scale_index == 10):#Promoter are top 2, detractors are bottom 6
             nps = (self.n_highest_score+self.n_second_highest_score)/num_responses - (self.n_fifth_highest_score + self.n_sixth_highest_score + \
                                                             self.n_seventh_highest_score + self.n_eighth_highest_score + self.n_eighth_highest_score + \
                                                             self.n_tenth_highest_score)/num_responses
-            nps_message = "NPS for a 9-point scale is calculates as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
+            nps_message = "NPS for a 9-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
 
         ret = {
             'all_respondents' : num_responses,
@@ -607,8 +607,8 @@ class SurveyQuestionResponse(models.Model):
             'point_scales' : point_scale_index,
             'positives' : positives,
             'non_negatives' : non_negatives,
-            'fraction_positives' : fraction_positives,
-            'fraction_non_negatives' : fraction_non_negatives,
+            'percentage_positive' : percentage_positive,
+            'percentage_non_negative' : percentage_non_negative,
             'percentages' : percentages,
             'cumulative_percentages' : cumulative_percentages,
             'nps' : nps,

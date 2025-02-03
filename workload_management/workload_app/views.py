@@ -2052,61 +2052,28 @@ def survey_results(request,survey_id):
     percentages = []
     cumulative_percenatges = []
     total_responses_per_question = []
+    questions_nps = []
+    questions_nps_messages = []
+    questions_perc_positive = []
+    questions_perc_non_negative = []
     for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
         question_texts.append(response.question_text)
         shorter_question_texts.append(ShortenString(response.question_text,25))
-        srv_results.append([])
-        percentages.append([])
-        cumulative_percenatges.append([])
-        total_question_responses = 0
-        if (response.n_highest_score > -1): 
-            srv_results[-1].append(response.n_highest_score)
-            total_question_responses += response.n_highest_score
-        if (response.n_second_highest_score > -1): 
-            srv_results[-1].append(response.n_second_highest_score)
-            total_question_responses += response.n_second_highest_score
-        if (response.n_third_highest_score > -1): 
-            srv_results[-1].append(response.n_third_highest_score)
-            total_question_responses += response.n_third_highest_score
-        if (response.n_fourth_highest_score > -1): 
-            srv_results[-1].append(response.n_fourth_highest_score)
-            total_question_responses += response.n_fourth_highest_score
-        if (response.n_fifth_highest_score > -1): 
-            srv_results[-1].append(response.n_fifth_highest_score)
-            total_question_responses += response.n_fifth_highest_score
-        if (response.n_sixth_highest_score > -1): 
-            srv_results[-1].append(response.n_sixth_highest_score)
-            total_question_responses += response.n_sixth_highest_score
-        if (response.n_seventh_highest_score > -1): 
-            srv_results[-1].append(response.n_seventh_highest_score)
-            total_question_responses += response.n_seventh_highest_score
-        if (response.n_eighth_highest_score > -1): 
-            srv_results[-1].append(response.n_eighth_highest_score)
-            total_question_responses += response.n_eighth_highest_score
-        if (response.n_ninth_highest_score > -1): 
-            srv_results[-1].append(response.n_ninth_highest_score)
-            total_question_responses += response.n_ninth_highest_score
-        if (response.n_tenth_highest_score > -1): 
-            srv_results[-1].append(response.n_tenth_highest_score)
-            total_question_responses += response.n_tenth_highest_score
 
-        total_responses_per_question.append(total_question_responses)
-        #Calculate the percentages for this question
-        cumulative = 0
-        for idx in range(0,len(srv_results[-1])):
-            if total_question_responses > 0:
-                calculated_perc = 100 * srv_results[-1][idx]/total_question_responses
-            else:
-                calculated_perc = 0
-            percentages[-1].append(calculated_perc)
-            cumulative+=calculated_perc
-            cumulative_percenatges[-1].append(cumulative)
+        resp_feat = response.CalculateRepsonsesProprties()
+        srv_results.append(resp_feat["responses"])
+        percentages.append(resp_feat["percentages"])
+        cumulative_percenatges.append(resp_feat["cumulative_percentages"])
+        total_responses_per_question.append(resp_feat["all_respondents"])
+        questions_nps.append(resp_feat["nps"])
+        questions_nps_messages.append(resp_feat["nps_message"])
+        questions_perc_positive.append(resp_feat["percentage_positive"])
+        questions_perc_non_negative.append(resp_feat["percentage_non_negative"])
     all_survey_details = CalculateSurveyDetails(survey_id)
     template = loader.get_template('workload_app/survey_results.html')
 
     #transpose percentages for the overall stacked chart data
     overall_plot_data = list(map(list, zip(*percentages)))
-
 
     context = {
         'survey_details' : all_survey_details,
@@ -2119,6 +2086,10 @@ def survey_results(request,survey_id):
         'overall_plot_data' : overall_plot_data,
         'cumulative_percentages' : cumulative_percenatges,
         'total_responses_per_question' : total_responses_per_question,
+        'questions_nps' : questions_nps,
+        'questions_nps_messages' : questions_nps_messages,
+        'questions_perc_positive' : questions_perc_positive,
+        'questions_perc_non_negative' : questions_perc_non_negative,
         'back_address' : back_address,
         'back_text' : back_text
     }
