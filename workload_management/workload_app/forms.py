@@ -435,7 +435,7 @@ class AddSLOSurveyForm(forms.Form):
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
-        self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
+        
 
 class InputSLOSurveyDataForm(forms.Form):
     def __init__(self,*args,**kwargs):
@@ -451,6 +451,8 @@ class InputSLOSurveyDataForm(forms.Form):
                 #Note concatenation between option index and slo-id (used in the view)
                 self.fields[str(opt_idx)+slo_id] = forms.IntegerField(label = labels[opt_idx], initial = 0)
 
+        self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file, if any", required=False)
+
 class AddPEOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         years_to_show = []
@@ -463,7 +465,7 @@ class AddPEOSurveyForm(forms.Form):
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)        
-        self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)
+        
 
 class InputPEOSurveyDataForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -478,7 +480,8 @@ class InputPEOSurveyDataForm(forms.Form):
             for opt_idx in range(0,len(labels)):
                 #Note concatenation between option index and peo-id (used in the view)
                 self.fields[str(opt_idx)+peo_id] = forms.IntegerField(label = labels[opt_idx], initial = 0)
-              
+        self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file", required=False)     
+
 class RemoveSLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
         programme_id = kwargs.pop('programme_id')
@@ -553,7 +556,7 @@ class AddMLOSurveyForm(forms.Form):
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
-        self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)
+        
 
 class InputMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -568,7 +571,7 @@ class InputMLOSurveyForm(forms.Form):
             for opt_idx in range(0,len(labels)):
                 #Note concatenation between option index and mlo-id (used in the view)
                 self.fields[str(opt_idx)+mlo_id] = forms.IntegerField(label = labels[opt_idx], initial = 0)
-
+        self.fields['raw_file'] = forms.FileField(label="Upload raw results file", required=False)
 
 class RemoveMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):

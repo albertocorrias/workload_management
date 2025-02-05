@@ -1150,11 +1150,7 @@ def module(request, module_code):
             supplied_cohort_targeted = mlo_survey_form.cleaned_data['cohort_targeted']
             comments = mlo_survey_form.cleaned_data['comments']
             survey_name = "MLO survey for module " + module_code
-            
-            file_obj = None
-            if ("raw_file" in request.FILES):#raw_file is the field in the form!
-                file_obj = request.FILES["raw_file"]
-            
+                        
             #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
             #Note: the line below will take care of creatingd efaults, if needed
             likert_scale = DetermineSurveyLabelsForProgramme(programme_id)["mlo_survey_labels_object"]
@@ -1164,8 +1160,7 @@ def module(request, module_code):
                                                likert_labels = likert_scale,\
                                                max_respondents = n_invited, comments = comments,\
                                                survey_type = Survey.SurveyType.MLO,\
-                                               programme_associated = prog,\
-                                               original_file = file_obj)
+                                               programme_associated = prog)
             new_survey.save()
 
         
@@ -1467,9 +1462,6 @@ def accreditation(request,programme_id):
             supplied_targeted_cohort = slo_survey_form.cleaned_data["cohort_targeted"]
             supplied_max_respondents = slo_survey_form.cleaned_data["totoal_N_recipients"]
             supplied_comments = slo_survey_form.cleaned_data["comments"]
-            file_obj = None
-            if ("raw_file" in request.FILES):#raw_file is the field in the form!
-                file_obj = request.FILES["raw_file"]
             
             survey_type = Survey.SurveyType.UNDEFINED
             #We will set this according the policy stored in the programme because this is point of creation of survey object
@@ -1491,8 +1483,7 @@ def accreditation(request,programme_id):
                                                likert_labels = likert_labels,\
                                                survey_type = survey_type,\
                                                max_respondents =  supplied_max_respondents, comments = supplied_comments,\
-                                               programme_associated = programme,\
-                                               original_file = file_obj)
+                                               programme_associated = programme)
             new_survey.save()
 
             
@@ -1883,6 +1874,13 @@ def input_module_survey_results(request,module_code,survey_id):
                     n_tenth_highest_score = survey_scores[9],\
                     associated_mlo = mlo, parent_survey = survey_obj)
                     new_response.save()
+        file_obj = None
+        if ("raw_file" in request.FILES):#raw_file is the field in the form!
+            file_obj = request.FILES["raw_file"]
+            #Store file in the survey object
+            Survey.objects.filter(id = survey_id).update(original_file = file_obj)
+
+            
     else: #This is a get
         back_address = '/workload_app/module/'+str(module_code)
         back_text = 'Back to module page'
@@ -1988,6 +1986,13 @@ def input_programme_survey_results(request,programme_id,survey_id):
                     n_tenth_highest_score = survey_scores[9],\
                     associated_peo = peo, parent_survey = survey_obj)
                     new_response.save()
+        
+        file_obj = None
+        if ("raw_file" in request.FILES):#raw_file is the field in the form!
+            file_obj = request.FILES["raw_file"]
+            #Store file in the survey object
+            Survey.objects.filter(id = survey_id).update(original_file = file_obj)
+        
         #Re-load accreditation (trigger a get there)
         return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))
 
@@ -1999,14 +2004,15 @@ def input_programme_survey_results(request,programme_id,survey_id):
         form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
-
+        parent_survey = Survey.objects.filter(id=survey_id).get().survey_title
         template = loader.get_template('workload_app/survey_input.html')
         context = {
             'back_address' : back_address,
             'back_text' : back_text,
             'form_to_show' : form_to_show,
             'programme_id' : programme_id,
-            'survey_id' :survey_id
+            'survey_id' :survey_id,
+            'parent_survey': parent_survey
         }
         return HttpResponse(template.render(context, request))
 
