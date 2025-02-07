@@ -34,7 +34,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable
-from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme
+from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
@@ -1888,7 +1888,6 @@ def input_module_survey_results(request,module_code,survey_id):
         back_text = 'Back to module page'
 
         form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id)
-
         template = loader.get_template('workload_app/module_survey_input.html')
         context = {
             'back_address' : back_address,
@@ -2005,6 +2004,7 @@ def input_programme_survey_results(request,programme_id,survey_id):
         back_address = '/workload_app/accreditation/'+str(programme_id)
         back_text = 'Back to accreditation page'
 
+        print(DeteremineSurveyInitialValues(survey_id))
         form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)

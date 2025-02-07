@@ -1,4 +1,4 @@
-from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet
+from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet, StudentLearningOutcome
 
 
 def CalculateTotalResponsesForQuestion(response_id):
@@ -54,6 +54,38 @@ def CalculateSurveyDetails(survey_id):
         'average_response_rate' : av_response_rate
         }
     return ret
+
+#TO BE CHECKED AND TESTED!!!!!!!!!!!!!!!!!!!!!!
+def DeteremineSurveyInitialValues(survey_id):
+    ret = {}
+    surv_obj =  Survey.objects.filter(id = survey_id).get()
+    labels = surv_obj.likert_labels.GetListOfLabels()
+    
+    for resp in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
+        lo_id_involved = 0
+        if (resp.associated_slo is not None):
+            lo_id_involved = resp.associated_slo.id
+        if (resp.associated_mlo is not None):
+            lo_id_involved = resp.associated_mlo.id
+        if (resp.associated_peo is not None):
+            lo_id_involved = resp.associated_peo.id
+
+        all_scores = [resp.n_highest_score,\
+                      resp.n_second_highest_score, \
+                      resp.n_third_highest_score,\
+                      resp.n_fourth_highest_score,\
+                      resp.n_fifth_highest_score,\
+                      resp.n_sixth_highest_score,\
+                      resp.n_seventh_highest_score,\
+                      resp.n_eighth_highest_score,\
+                      resp.n_ninth_highest_score,\
+                      resp.n_tenth_highest_score]
+        for opt_idx in range(0,len(labels)):
+            #Note concatenation between option index and slo-id (used in the form)
+            ret[str(opt_idx)+str(lo_id_involved)] = all_scores[opt_idx]
+
+    return ret
+
 
 def DetermineSurveyLabelsForProgramme(prog_id):
     prog_qs = ProgrammeOffered.objects.filter(id = prog_id)
