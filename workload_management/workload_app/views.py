@@ -1878,7 +1878,9 @@ def input_module_survey_results(request,module_code,survey_id):
         if ("raw_file" in request.FILES):#raw_file is the field in the form!
             file_obj = request.FILES["raw_file"]
             #Store file in the survey object
-            Survey.objects.filter(id = survey_id).update(original_file = file_obj)
+            survey = Survey.objects.filter(id = survey_id).get()
+            survey.original_file = file_obj
+            survey.save(update_fields = ["original_file"]) 
 
             
     else: #This is a get
@@ -1913,13 +1915,13 @@ def input_programme_survey_results(request,programme_id,survey_id):
         return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get()#Should be safe after the if above
     
-    #USe the labels stored in the Survey object (the programme ones may have changed)
+    #USe the labels stored in the Survey object (the programme ones may have changed in the meanwhile, but behaviour is that existing surveys don't change)
     labels = survey_obj.likert_labels.GetListOfLabels()
     full_labels = survey_obj.likert_labels.GetFullListOfLabels()
     survey_scores = [-1]*len(full_labels) # max allowed number of options see model of SurveyLabelSet
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.SLO:
-            slo_survey_form = InputSLOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
+            slo_survey_form = InputSLOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
             if slo_survey_form.is_valid():
                 for slo in StudentLearningOutcome.objects.filter(programme_id=programme_id):
                     for i in range(0,len(labels)):
@@ -1953,14 +1955,14 @@ def input_programme_survey_results(request,programme_id,survey_id):
                     associated_slo = slo, parent_survey = survey_obj)
                     new_response.save()
         if survey_obj.survey_type == Survey.SurveyType.PEO:
-            peo_survey_form = InputPEOSurveyDataForm(request.POST, programme_id = programme_id,survey_id = survey_id)
+            peo_survey_form = InputPEOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
             if peo_survey_form.is_valid():
                 for peo in ProgrammeEducationalObjective.objects.filter(programme_id=programme_id):
                     for i in range(0,len(labels)):
                         #Concatenation of index and slo id - see form
                         survey_scores[i] = int(peo_survey_form.cleaned_data[str(i)+str(peo.id)])
                     
-                    #If there are alreday responses, we delte them first (i.e., editing)
+                    #If there are alreday responses, we delete them first (i.e., editing)
                     existing_response = SurveyQuestionResponse.objects.filter(associated_peo = peo).filter(parent_survey = survey_obj).delete()
                     
                     new_response = SurveyQuestionResponse.objects.create(question_text = peo.peo_description,\
@@ -1991,7 +1993,9 @@ def input_programme_survey_results(request,programme_id,survey_id):
         if ("raw_file" in request.FILES):#raw_file is the field in the form!
             file_obj = request.FILES["raw_file"]
             #Store file in the survey object
-            Survey.objects.filter(id = survey_id).update(original_file = file_obj)
+            survey = Survey.objects.filter(id = survey_id).get()
+            survey.original_file = file_obj
+            survey.save(update_fields = ["original_file"])
         
         #Re-load accreditation (trigger a get there)
         return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))

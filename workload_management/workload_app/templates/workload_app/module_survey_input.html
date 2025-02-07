@@ -20,7 +20,7 @@
         <hr>
         <h4>Responses for each MLO</h4>
         Fill in, for each MLO the number of respondents choosing each choice.
-        <form action="{% url 'workload_app:input_module_survey_results' module_code survey_id %}" method="post">
+        <form action="{% url 'workload_app:input_module_survey_results' module_code survey_id %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% for field in form_to_show %}
               {% if field.is_hidden %}

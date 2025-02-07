@@ -20,7 +20,7 @@
         <hr>
         <h4>Responses for survey: {{ parent_survey }}</h4>
         Fill in, for the number of respondents choosing each choice.
-        <form action="{% url 'workload_app:input_programme_survey_results' programme_id survey_id %}" method="post">
+        <form action="{% url 'workload_app:input_programme_survey_results' programme_id survey_id %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% for field in form_to_show %}
               {% if field.is_hidden %}

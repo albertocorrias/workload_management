@@ -175,7 +175,7 @@
                 <td> {{ survey.recipients }}</td>
                 <td> {{ survey.comments }} </td>
                 <td>
-                  {% if survey.original_file_url|length > 0 %}
+                  {% if survey.file|length > 0 %}
                     Download  <a href="{{ survey.file }}" download> original file</a>
                   {% else %}
                     N/A
@@ -204,43 +204,35 @@
             <thead class="table-dark">
                 <tr>
                   <th style="background-color: #f4f3f1; border-bottom: black solid thin;"> </th>
-                  <th colspan="{{ colspan_for_survey_settings }}"> Labels </th>
+                  <th colspan="{{ colspan_for_survey_settings }}"> Existing labels </th>
+                  <th style="background-color: #f4f3f1; border-bottom: black solid thin;"> </th>
                 </tr>
             </thead>
               <tbody style="border: solid thin lightslategray;">
 
                 <tr style="border-bottom: black solid thin;">
                   {% for sett in survey_settings_table.0 %}
-                  {% if forloop.counter0 == 0 %}
+                    <td> {{ sett }} </td>
+                  {% endfor %}
                   <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditPEOLabelsModal">
                     Edit PEO labels...
                   </button></td>
-                  {% else %}
-                    <td> {{ sett }} </td>
-                  {% endif %}
-                  {% endfor %}
                   </tr>
                   <tr style="border-bottom: black solid thin;">
                     {% for sett in survey_settings_table.1 %}
-                      {% if forloop.counter0 == 0 %}
-                      <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditSLOLabelsModal">
-                        Edit SLO labels...
-                      </button></td>
-                      {% else %}
                         <td> {{ sett }} </td>
-                      {% endif %}
                     {% endfor %}
+                    <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditSLOLabelsModal">
+                      Edit SLO labels...
+                    </button></td>
                   </tr>
                   <tr style="border-bottom: black solid thin;">
                     {% for sett in survey_settings_table.2 %}
-                    {% if forloop.counter0 == 0 %}
+                      <td> {{ sett }} </td>
+                    {% endfor %}
                     <td><button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#EditMLOLabelsModal">
                       Edit MLO labels...
                     </button></td>
-                    {% else %}
-                      <td> {{ sett }} </td>
-                    {% endif %}
-                    {% endfor %}
                   </tr>
                 
                 </tbody>
