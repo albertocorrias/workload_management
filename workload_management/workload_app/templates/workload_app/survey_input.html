@@ -20,22 +20,27 @@
         <hr>
         <h4>Responses for survey: {{ parent_survey }}</h4>
         Fill in, for the number of respondents choosing each choice.
+        <hr>
         <form action="{% url 'workload_app:input_programme_survey_results' programme_id survey_id %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% for field in form_to_show %}
-              {% if field.is_hidden %}
-                <br><hr>
-                <h5> Question for {{ field.label }}</h5>
-              {% else %}
-                    {% if forloop.last %}<!--File is the last field-->
-                      <hr>
-                      <br>
-                    {% endif %} 
-                {{ field.label }}: {{ field }}
-              {% endif %} 
-              {% if field.is_hidden %}
+              {% if forloop.first %}
+                {{ field.label}}: {{field}}
               <br>
+              <hr>
+              {% else %}
+                {% if 'Question text' in field.label %}
+                <br>
+                <br>
+                <br>
+                {% endif %}
+                {{ field.label }}: {{ field }}
+                {% if 'Targeted' in field.label %}
+                <br>
+                <br>
+                {% endif %}
               {% endif %}
+              
             {% endfor %}
             <hr>
             <button type="submit" class="btn btn-primary">Submit changes</button>
