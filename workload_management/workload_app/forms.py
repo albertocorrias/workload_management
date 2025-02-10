@@ -470,7 +470,7 @@ class InputSLOSurveyDataForm(forms.Form):
             for opt_idx in range(0,len(labels)):
                 #Note concatenation used in the view
                 self.fields['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + slo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0)
+                      forms.IntegerField(label = labels[opt_idx], initial = 0, required=False)
             
 
         
@@ -522,7 +522,7 @@ class InputPEOSurveyDataForm(forms.Form):
             for opt_idx in range(0,len(labels)):
                 #Note concatenation used in the view
                 self.fields['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + peo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0)
+                      forms.IntegerField(label = labels[opt_idx], initial = 0, required=False)
                 
 class RemoveSLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -634,7 +634,7 @@ class InputMLOSurveyForm(forms.Form):
             for opt_idx in range(0,len(labels)):
                 #Note concatenation used in the view
                 self.fields['response_' + str(opt_idx)+ 'for_module_' + str(module_code) + 'for_question_' + str(question_index)+ 'target_lo' + mlo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0)
+                      forms.IntegerField(label = labels[opt_idx], initial = 0,required=False)
 
 class RemoveMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):

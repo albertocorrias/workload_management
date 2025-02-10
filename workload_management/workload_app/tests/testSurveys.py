@@ -343,6 +343,7 @@ class TestSurveys(TestCase):
             'end_date_year' : 2023,
             'cohort_targeted' : acad_year.id,
             'totoal_N_recipients' : "150",
+            'survey_type' : Survey.SurveyType.MLO,
             'comments' : survey_comment})
 
 
@@ -358,28 +359,30 @@ class TestSurveys(TestCase):
         expected_id = ProgrammeOffered.objects.filter(id = prog_off.id).get().mlo_survey_labels.id
         self.assertEqual(Survey.objects.filter(likert_labels__id = expected_id).count(),1) #creation should ahve linked this up to the programme settings
 
-
         survey_id = Survey.objects.first().id
-        #Now test the inputting of responses
+        #Now test the inputting of responses - we simulate input of 3 responses, one per mlo, no extras
         response = self.client.post(reverse('workload_app:input_module_survey_results',kwargs={'module_code' : module_code,'survey_id' : survey_id}),{
-            'mlo_descr' + str(mlo_1.id) : mlo_1.mlo_description,
-            '0' + str(mlo_1.id): "100",            
-            '1' + str(mlo_1.id) : "10",
-            '2' + str(mlo_1.id): "10",
-            '3' + str(mlo_1.id): "20",
-            '4' + str(mlo_1.id): "0",
-            'mlo_descr' + str(mlo_2.id) : mlo_2.mlo_description,
-            '0' + str(mlo_2.id): "99",            
-            '1' + str(mlo_2.id): "10",
-            '2' + str(mlo_2.id): "10",
-            '3' + str(mlo_2.id) : "20",
-            '4' + str(mlo_2.id) : "0",
-            'mlo_descr' + str(mlo_3.id) : mlo_3.mlo_description,
-            '0' + str(mlo_3.id) : "98",            
-            '1' + str(mlo_3.id) : "1",
-            '2' + str(mlo_3.id) : "1",
-            '3' + str(mlo_3.id) : "48",
-            '4' + str(mlo_3.id) : "0",
+            'question_0for_module' + str(module_code) + 'target_lo' + str(mlo_1.id) : mlo_1.mlo_description,
+            'associated_mlo_of_question0in_module' + str(module_code) : mlo_1.id,
+            'response_0for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "100",            
+            'response_1for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id) : "10",
+            'response_2for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "10",
+            'response_3for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "20",
+            'response_4for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "0",
+            'question_1for_module' + str(module_code) + 'target_lo' + str(mlo_2.id) : mlo_2.mlo_description,
+            'associated_mlo_of_question1in_module' + str(module_code) : mlo_2.id,
+            'response_0for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "99",            
+            'response_1for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id) : "10",
+            'response_2for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "10",
+            'response_3for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "20",
+            'response_4for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "0",
+            'question_2for_module' + str(module_code) + 'target_lo' + str(mlo_3.id) : mlo_3.mlo_description,
+            'associated_mlo_of_question2in_module' + str(module_code) : mlo_3.id,
+            'response_0for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "98",            
+            'response_1for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id) : "1",
+            'response_2for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "1",
+            'response_3for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "48",
+            'response_4for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "0"
         })
 
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
@@ -529,7 +532,7 @@ class TestSurveys(TestCase):
         })
         self.assertEqual(response.status_code, 302)#Post redirects here
         #Nothing should be left
-        self.assertEqual(Survey.objects.all().count(),0) #one survey should still be there
+        self.assertEqual(Survey.objects.all().count(),0) #no survey should still be there
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),0)
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_code}))
         self.assertEqual(response.status_code, 200)
@@ -600,24 +603,27 @@ class TestSurveys(TestCase):
 
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
-            'slo_descr' + str(slo_1.id) : slo_1.slo_description,
-            '0' + str(slo_1.id): "100",            
-            '1' + str(slo_1.id) : "10",
-            '2' + str(slo_1.id): "10",
-            '3' + str(slo_1.id): "20",
-            '4' + str(slo_1.id): "20",
-            'slo_descr' + str(slo_2.id) : slo_2.slo_description,
-            '0' + str(slo_2.id): "99",            
-            '1' + str(slo_2.id): "10",
-            '2' + str(slo_2.id): "10",
-            '3' + str(slo_2.id) : "20",
-            '4' + str(slo_2.id): "120",
-            'slo_descr' + str(slo_3.id) : slo_3.slo_description,
-            '0' + str(slo_3.id) : "98",            
-            '1' + str(slo_3.id) : "1",
-            '2' + str(slo_3.id) : "1",
-            '3' + str(slo_3.id) : "48",
-            '4' + str(slo_3.id): "20",
+            'question_0for_programme' + str(prog_off.id) + 'target_lo' + str(slo_1.id): slo_1.slo_description,
+            'associated_slo_of_question0in_programme' + str(prog_off.id) : slo_1.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"100",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"10",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"10",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"20",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"20",
+            'question_1for_programme' + str(prog_off.id) + 'target_lo' + str(slo_2.id): slo_2.slo_description,
+            'associated_slo_of_question1in_programme' + str(prog_off.id) : slo_2.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"99",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"10",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"10",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"20",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"120",
+            'question_2for_programme' + str(prog_off.id) + 'target_lo' + str(slo_3.id): slo_3.slo_description,
+            'associated_slo_of_question2in_programme' + str(prog_off.id) : slo_3.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"98",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"1",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"1",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"48",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"20",
         })
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
@@ -792,28 +798,8 @@ class TestSurveys(TestCase):
             'comments' : survey_comment,
             'survey_type' : Survey.SurveyType.SLO
         })
-        #Now test the inputting of responses
-        response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
-            'slo_descr' + str(slo_1.id) : slo_1.slo_description,
-            '0' + str(slo_1.id): "100",            
-            '1' + str(slo_1.id) : "10",
-            '2' + str(slo_1.id): "10",
-            '3' + str(slo_1.id): "20",
-            '4' + str(slo_1.id): "20",
-            'slo_descr' + str(slo_2.id) : slo_2.slo_description,
-            '0' + str(slo_2.id): "99",            
-            '1' + str(slo_2.id): "10",
-            '2' + str(slo_2.id): "10",
-            '3' + str(slo_2.id) : "20",
-            '4' + str(slo_2.id): "120",
-            'slo_descr' + str(slo_3.id) : slo_3.slo_description,
-            '0' + str(slo_3.id) : "98",            
-            '1' + str(slo_3.id) : "1",
-            '2' + str(slo_3.id) : "1",
-            '3' + str(slo_3.id) : "48",
-            '4' + str(slo_3.id): "20",
-        })
-        self.assertEqual(response.status_code, 200) #post all good
+
+        self.assertEqual(response.status_code, 302) #post all good, re-dircets
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
         self.assertEqual(Survey.objects.filter(cohort_targeted__isnull = True).count(),0)#should be specified
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
@@ -877,24 +863,27 @@ class TestSurveys(TestCase):
         
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : surv_obj.id}),{
-            'peo_descr' + str(peo_1.id) : peo_1.peo_description,
-            '0' + str(peo_1.id): "100",            
-            '1' + str(peo_1.id) : "10",
-            '2' + str(peo_1.id): "10",
-            '3' + str(peo_1.id): "20",
-            '4' + str(peo_1.id): "20",
-            'peo_descr' + str(peo_2.id) : peo_2.peo_description,
-            '0' + str(peo_2.id): "99",            
-            '1' + str(peo_2.id): "10",
-            '2' + str(peo_2.id): "10",
-            '3' + str(peo_2.id) : "20",
-            '4' + str(peo_2.id): "120",
-            'peo_descr' + str(peo_3.id) : peo_3.peo_description,
-            '0' + str(peo_3.id) : "98",            
-            '1' + str(peo_3.id) : "1",
-            '2' + str(peo_3.id) : "1",
-            '3' + str(peo_3.id) : "48",
-            '4' + str(peo_3.id): "20",
+            'question_0for_programme' + str(prog_off.id) + 'target_lo' + str(peo_1.id): peo_1.peo_description,
+            'associated_peo_of_question0in_programme' + str(prog_off.id): peo_1.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "100",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "10",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "10",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "20",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "20",
+            'question_1for_programme' + str(prog_off.id) + 'target_lo' + str(peo_2.id): peo_2.peo_description,
+            'associated_peo_of_question1in_programme' + str(prog_off.id): peo_2.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "99",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "10",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "10",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "20",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "120",
+            'question_2for_programme' + str(prog_off.id) + 'target_lo' + str(peo_3.id): peo_3.peo_description,
+            'associated_peo_of_question2in_programme' + str(prog_off.id): peo_3.id,
+            'response_0for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "98",
+            'response_1for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "1",
+            'response_2for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "1",
+            'response_3for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "48",
+            'response_4for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "20",
         })
         labels = surv_obj.likert_labels.GetListOfLabels()
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name
