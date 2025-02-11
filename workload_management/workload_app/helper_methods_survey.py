@@ -1,23 +1,6 @@
 from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet, StudentLearningOutcome,ModuleLearningOutcome, ProgrammeEducationalObjective
 
 
-def CalculateTotalResponsesForQuestion(response_id):
-    response = SurveyQuestionResponse.objects.filter(id = response_id).get()
-    n_for_question  = 0
-    if (response.n_highest_score >= 0) : n_for_question += response.n_highest_score
-    if (response.n_second_highest_score >= 0) : n_for_question += response.n_second_highest_score
-    if (response.n_third_highest_score >= 0) : n_for_question += response.n_third_highest_score
-    if (response.n_fourth_highest_score >= 0) : n_for_question += response.n_fourth_highest_score
-    if (response.n_fifth_highest_score >= 0) : n_for_question += response.n_fifth_highest_score
-    if (response.n_sixth_highest_score >= 0) : n_for_question += response.n_sixth_highest_score
-    return n_for_question
-
-def CalulatePositiveResponsesFractionForQuestion(response_id):
-    total_respondents = CalculateTotalResponsesForQuestion(response_id)
-    response = SurveyQuestionResponse.objects.filter(id = response_id).get()
-    #For now, we count the top 2 as "positive". If more sophistiaction is needed, adjust here
-    return (response.n_highest_score + response.n_second_highest_score)/total_respondents
-
 #Given and ID, it returns info on the survey
 def CalculateSurveyDetails(survey_id):
     ret = 'Invalid ID'
@@ -31,7 +14,8 @@ def CalculateSurveyDetails(survey_id):
         how_many_questions = 0
         n_recipients = survey.max_respondents
         for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
-            av_response_rate += CalculateTotalResponsesForQuestion(response.id)/n_recipients
+            props = response.CalculateRepsonsesProprties()
+            av_response_rate += props['all_respondents']/n_recipients
             how_many_questions = how_many_questions + 1
         if (how_many_questions > 0 ):
             av_response_rate = 100*av_response_rate/how_many_questions

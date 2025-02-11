@@ -3,7 +3,7 @@ import copy
 from .models import Survey,SurveyQuestionResponse, StudentLearningOutcome,MLOSLOMapping, \
                     MLOPerformanceMeasure, Module,ModuleLearningOutcome, ProgrammeEducationalObjective,\
                     TeachingAssignment, WorkloadScenario
-from .helper_methods_survey import CalulatePositiveResponsesFractionForQuestion
+
 from .global_constants import accreditation_outcome_type, DetermineColourBasedOnAttentionScore
 
 
@@ -123,16 +123,17 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year):
                 'n_questions' : 0
             }
             n_questions = 0
-            fraction_positive = 0
+            perc_positive = 0
             questions = ''
             #Look, within this survey for all responses associated with this SLO. We will condense them in one line of the table
             for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id):
-                fraction_positive += CalulatePositiveResponsesFractionForQuestion(response.id)
+                props = response.CalculateRepsonsesProprties()
+                perc_positive += props['percentage_positive']
                 questions += response.question_text + ', '
                 n_questions+=1
             if (n_questions > 0):
                 single_slo_survey_measure['question'] = questions[:-2]
-                single_slo_survey_measure['percent_positive'] = 100*fraction_positive/n_questions
+                single_slo_survey_measure['percent_positive'] = perc_positive/n_questions
                 single_slo_survey_measure['n_questions'] = n_questions
                 slo_survey_measures.append(single_slo_survey_measure)
     return slo_survey_measures
@@ -195,13 +196,14 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year):
                         'n_questions' : 0
                     }
                     n_questions = 0
-                    positive_for_survey  = 0
+                    perc_positive_for_survey  = 0
                     for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_mlo = mlo_mapping.mlo):
-                        positive_for_survey += CalulatePositiveResponsesFractionForQuestion(response.id)
+                        props = response.CalculateRepsonsesProprties()
+                        perc_positive_for_survey += props['percentage_positive']
                         n_questions +=1
                     if (n_questions > 0):
                         single_survey_mlo_measure['n_questions'] = n_questions
-                        single_survey_mlo_measure['percentage_positive'] = 100*positive_for_survey/n_questions
+                        single_survey_mlo_measure['percentage_positive'] = perc_positive_for_survey/n_questions
                         mlo_survey_measures.append(single_survey_mlo_measure)
     
     #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
