@@ -51,7 +51,7 @@
                         <tr>
                             <th> Original file </th>
                             <td>
-                                {% if survey_details.original_file_url|length > 0 %}
+                                {% if survey_details.file|length > 0 %}
                                     Download  <a href="{{ survey_details.file }}" download> original file</a>
                                 {% else %}
                                     N/A
