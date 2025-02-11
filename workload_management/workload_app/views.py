@@ -1847,26 +1847,25 @@ def input_module_survey_results(request,module_code,survey_id):
                 #If there are alreday responses, we delete them first (i.e., editing)
                 existing_response = SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
 
-                relevant_lo_queryset = ModuleLearningOutcome.objects.filter(module_code = module_code)
-                lo_ids = []
-                for mlo in relevant_lo_queryset:
-                    lo_ids.append(mlo.id)
-                #pad with 5 extra questions (id  =-1)
-                for i in range(0,5):
-                    lo_ids.append(-1)
-                
-                for question_index in range(0,len(lo_ids)):
-                    mlo_id = str(lo_ids[question_index])
-                    question = mlo_survey_form.cleaned_data['question_'+ str(question_index)+ 'for_module' + str(module_code) + 'target_lo' + mlo_id]
-                    associated_lo = mlo_survey_form.cleaned_data['associated_mlo_of_question'+ str(question_index) + 'in_module' + str(module_code)]
-                    if (len(question) > 0):
+                #If there are alreday responses, we delete them first (i.e., editing)
+                SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
+
+                relevant_lo_queryset = ModuleLearningOutcome.objects.filter(module_code=module_code)
+                how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
+
+                for question_index in range(0,how_many_questions):
+                    question_text = mlo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_'+ str(question_index)]
+                    associated_lo = mlo_survey_form.cleaned_data['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)]
+                    if(len(question_text) > 0):
                         survey_scores = [-1]*len(full_labels) # max allowed number of options, see model of SurveyLabelSet
                         for opt_idx in range(0,len(labels)):
-                            #Note concatenation between option index and mlo-id (used in the view)
-                            survey_scores[opt_idx] = \
-                                int(mlo_survey_form.cleaned_data['response_' + str(opt_idx)+ 'for_module_' + str(module_code) + 'for_question_' + str(question_index)+ 'target_lo' + mlo_id])
-
-                        new_response = SurveyQuestionResponse.objects.create(question_text = question,\
+                            #Note concatenation 
+                            supplied_score = mlo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)]
+                            if (supplied_score is not None):
+                                survey_scores[opt_idx] = int(supplied_score)
+                            else:
+                                survey_scores[opt_idx] = 0
+                        new_response = SurveyQuestionResponse.objects.create(question_text = question_text,\
                         label_highest_score = full_labels[0],\
                         n_highest_score = survey_scores[0],
                         label_second_highest_score = full_labels[1],\
@@ -1890,6 +1889,7 @@ def input_module_survey_results(request,module_code,survey_id):
                         associated_mlo = associated_lo, parent_survey = survey_obj)
                         new_response.save()
 
+
                 file_obj = None
                 if ("raw_file" in request.FILES):#raw_file is the field in the form!
                     file_obj = request.FILES["raw_file"]
@@ -1903,7 +1903,7 @@ def input_module_survey_results(request,module_code,survey_id):
         back_address = '/workload_app/module/'+str(module_code)
         back_text = 'Back to module page'
 
-        form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id)
+        form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,module_code))
         template = loader.get_template('workload_app/module_survey_input.html')
         context = {
             'back_address' : back_address,
@@ -1938,30 +1938,25 @@ def input_programme_survey_results(request,programme_id,survey_id):
         if survey_obj.survey_type == Survey.SurveyType.SLO:
             slo_survey_form = InputSLOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
             if slo_survey_form.is_valid():
-
                 #If there are alreday responses, we delete them first (i.e., editing)
-                existing_response = SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
+                SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
 
                 relevant_lo_queryset = StudentLearningOutcome.objects.filter(programme__id = programme_id)
-                lo_ids = []
-                for slo in relevant_lo_queryset:
-                    lo_ids.append(slo.id)
-                #pad with 5 extra questions (id  =-1)
-                for i in range(0,5):
-                    lo_ids.append(-1)
-                
-                for question_index in range(0,len(lo_ids)):
-                    slo_id = str(lo_ids[question_index])
-                    question = slo_survey_form.cleaned_data['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + slo_id]
-                    associated_lo = slo_survey_form.cleaned_data['associated_slo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)]
-                    if (len(question) > 0):
+                how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
+
+                for question_index in range(0,how_many_questions):
+                    question_text = slo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_'+ str(question_index)]
+                    associated_lo = slo_survey_form.cleaned_data['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)]
+                    if(len(question_text) > 0):
                         survey_scores = [-1]*len(full_labels) # max allowed number of options, see model of SurveyLabelSet
                         for opt_idx in range(0,len(labels)):
-                            #Note concatenation between option index and slo-id (used in the view)
-                            survey_scores[opt_idx] = \
-                                int(slo_survey_form.cleaned_data['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + slo_id])
-
-                        new_response = SurveyQuestionResponse.objects.create(question_text = question,\
+                            #Note concatenation 
+                            supplied_score = slo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)]
+                            if (supplied_score is not None):
+                                survey_scores[opt_idx] = int(supplied_score)
+                            else:
+                                survey_scores[opt_idx] = 0
+                        new_response = SurveyQuestionResponse.objects.create(question_text = question_text,\
                         label_highest_score = full_labels[0],\
                         n_highest_score = survey_scores[0],
                         label_second_highest_score = full_labels[1],\
@@ -1989,28 +1984,24 @@ def input_programme_survey_results(request,programme_id,survey_id):
             peo_survey_form = InputPEOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
             if peo_survey_form.is_valid():
                 #If there are alreday responses, we delete them first (i.e., editing)
-                existing_response = SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
+                SurveyQuestionResponse.objects.filter(parent_survey = survey_obj).delete()
                 
                 relevant_lo_queryset = ProgrammeEducationalObjective.objects.filter(programme__id = programme_id)
-                lo_ids = []
-                for peo in relevant_lo_queryset:
-                    lo_ids.append(peo.id)
-                #pad with 5 extra questions (id  =-1)
-                for i in range(0,5):
-                    lo_ids.append(-1)
-                
-                for question_index in range(0,len(lo_ids)):
-                    peo_id = str(lo_ids[question_index])
-                    question = peo_survey_form.cleaned_data['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + peo_id]
-                    associated_lo = peo_survey_form.cleaned_data['associated_peo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)]
-                    if (len(question) > 0):
+                how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
+
+                for question_index in range(0,how_many_questions):
+                    question_text = peo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_'+ str(question_index)]
+                    associated_lo = peo_survey_form.cleaned_data['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)]
+                    if(len(question_text) > 0):
                         survey_scores = [-1]*len(full_labels) # max allowed number of options, see model of SurveyLabelSet
                         for opt_idx in range(0,len(labels)):
-                            #Note concatenation between option index and peo-id (used in the view)
-                            survey_scores[opt_idx] = \
-                                int(peo_survey_form.cleaned_data['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + peo_id])
-                        
-                        new_response = SurveyQuestionResponse.objects.create(question_text = question,\
+                            #Note concatenation 
+                            supplied_score = peo_survey_form.cleaned_data['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)]
+                            if (supplied_score is not None):
+                                survey_scores[opt_idx] = int(supplied_score)
+                            else:
+                                survey_scores[opt_idx] = 0
+                        new_response = SurveyQuestionResponse.objects.create(question_text = question_text,\
                         label_highest_score = full_labels[0],\
                         n_highest_score = survey_scores[0],
                         label_second_highest_score = full_labels[1],\
@@ -2050,9 +2041,9 @@ def input_programme_survey_results(request,programme_id,survey_id):
         back_address = '/workload_app/accreditation/'+str(programme_id)
         back_text = 'Back to accreditation page'
 
-        form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
+        form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,'N/A'))
         if survey_obj.survey_type == Survey.SurveyType.PEO:
-            form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id)
+            form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id, 'N/A'))
         parent_survey = Survey.objects.filter(id=survey_id).get().survey_title
         template = loader.get_template('workload_app/survey_input.html')
         context = {

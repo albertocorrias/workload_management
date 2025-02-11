@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Department, Faculty, Survey, Module, ModuleLearningOutcome,WorkloadScenario,Academicyear, SurveyQuestionResponse, \
                                 ModuleType,StudentLearningOutcome,ProgrammeOffered, ProgrammeEducationalObjective,SurveyLabelSet
-from workload_app.helper_methods_survey import CalculateSurveyDetails, DetermineSurveyLabelsForProgramme
+from workload_app.helper_methods_survey import CalculateSurveyDetails, DetermineSurveyLabelsForProgramme, DeteremineSurveyInitialValues
 
 
 class TestSurveys(TestCase):
@@ -362,27 +362,27 @@ class TestSurveys(TestCase):
         survey_id = Survey.objects.first().id
         #Now test the inputting of responses - we simulate input of 3 responses, one per mlo, no extras
         response = self.client.post(reverse('workload_app:input_module_survey_results',kwargs={'module_code' : module_code,'survey_id' : survey_id}),{
-            'question_0for_module' + str(module_code) + 'target_lo' + str(mlo_1.id) : mlo_1.mlo_description,
-            'associated_mlo_of_question0in_module' + str(module_code) : mlo_1.id,
-            'response_0for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "100",            
-            'response_1for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id) : "10",
-            'response_2for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "10",
-            'response_3for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "20",
-            'response_4for_module_' + str(module_code) + 'for_question_0target_lo' + str(mlo_1.id): "0",
-            'question_1for_module' + str(module_code) + 'target_lo' + str(mlo_2.id) : mlo_2.mlo_description,
-            'associated_mlo_of_question1in_module' + str(module_code) : mlo_2.id,
-            'response_0for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "99",            
-            'response_1for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id) : "10",
-            'response_2for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "10",
-            'response_3for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "20",
-            'response_4for_module_' + str(module_code) + 'for_question_1target_lo' + str(mlo_2.id): "0",
-            'question_2for_module' + str(module_code) + 'target_lo' + str(mlo_3.id) : mlo_3.mlo_description,
-            'associated_mlo_of_question2in_module' + str(module_code) : mlo_3.id,
-            'response_0for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "98",            
-            'response_1for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id) : "1",
-            'response_2for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "1",
-            'response_3for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "48",
-            'response_4for_module_' + str(module_code) + 'for_question_2target_lo' + str(mlo_3.id): "0"
+            'survey_' + str(survey_id) + '_question_0' : mlo_1.mlo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_0' : mlo_1.id,
+            'survey_' + str(survey_id) + '_question_0response_0' : "100",            
+            'survey_' + str(survey_id) + '_question_0response_1' : "10",
+            'survey_' + str(survey_id) + '_question_0response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_0response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_0response_4' :  "0",
+            'survey_' + str(survey_id) + '_question_1' : mlo_2.mlo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_1' : mlo_2.id,
+            'survey_' + str(survey_id) + '_question_1response_0' : "99",            
+            'survey_' + str(survey_id) + '_question_1response_1' : "10",
+            'survey_' + str(survey_id) + '_question_1response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_1response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_1response_4' :  "0",
+            'survey_' + str(survey_id) + '_question_2' : mlo_3.mlo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_2' : mlo_3.id,
+            'survey_' + str(survey_id) + '_question_2response_0' : "98",            
+            'survey_' + str(survey_id) + '_question_2response_1' : "1",
+            'survey_' + str(survey_id) + '_question_2response_2' :  "1",
+            'survey_' + str(survey_id) + '_question_2response_3' :  "48",
+            'survey_' + str(survey_id) + '_question_2response_4' :  "0"
         })
 
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),3) #One response for each MLO
@@ -603,27 +603,27 @@ class TestSurveys(TestCase):
 
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : survey_id}),{
-            'question_0for_programme' + str(prog_off.id) + 'target_lo' + str(slo_1.id): slo_1.slo_description,
-            'associated_slo_of_question0in_programme' + str(prog_off.id) : slo_1.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"100",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"10",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"10",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"20",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(slo_1.id):"20",
-            'question_1for_programme' + str(prog_off.id) + 'target_lo' + str(slo_2.id): slo_2.slo_description,
-            'associated_slo_of_question1in_programme' + str(prog_off.id) : slo_2.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"99",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"10",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"10",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"20",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(slo_2.id):"120",
-            'question_2for_programme' + str(prog_off.id) + 'target_lo' + str(slo_3.id): slo_3.slo_description,
-            'associated_slo_of_question2in_programme' + str(prog_off.id) : slo_3.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"98",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"1",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"1",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"48",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(slo_3.id):"20",
+            'survey_' + str(survey_id) + '_question_0' : slo_1.slo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_0' : slo_1.id,
+            'survey_' + str(survey_id) + '_question_0response_0' : "100",            
+            'survey_' + str(survey_id) + '_question_0response_1' : "10",
+            'survey_' + str(survey_id) + '_question_0response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_0response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_0response_4' :  "20",
+            'survey_' + str(survey_id) + '_question_1' : slo_2.slo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_1' : slo_2.id,
+            'survey_' + str(survey_id) + '_question_1response_0' : "99",            
+            'survey_' + str(survey_id) + '_question_1response_1' : "10",
+            'survey_' + str(survey_id) + '_question_1response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_1response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_1response_4' :  "120",
+            'survey_' + str(survey_id) + '_question_2' : slo_3.slo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_2' : slo_3.id,
+            'survey_' + str(survey_id) + '_question_2response_0' : "98",            
+            'survey_' + str(survey_id) + '_question_2response_1' : "1",
+            'survey_' + str(survey_id) + '_question_2response_2' :  "1",
+            'survey_' + str(survey_id) + '_question_2response_3' :  "48",
+            'survey_' + str(survey_id) + '_question_2response_4' :  "20",
         })
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
@@ -766,6 +766,33 @@ class TestSurveys(TestCase):
         self.assertEqual(srv_details["recipients"], 150)
         self.assertEqual(srv_details["comments"], survey_comment)
         self.assertEqual(srv_details["type_of_survey"], 'SLO')
+
+        #Now we test the helper method for the initial values
+        init = DeteremineSurveyInitialValues(surv_obj.id,'N/A')
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_0'],100)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_1'],10)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_2'],10)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_3'],20)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_4'],20)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_0'],99)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_1'],10)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_2'],10)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_3'],20)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_4'],120)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_0'],98)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_1'],1)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_2'],1)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_3'],48)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_4'],20)
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0'], slo_1.slo_description)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1'], slo_2.slo_description)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2'], slo_3.slo_description)
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_0'], slo_1.id)
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_1'], slo_2.id)
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_2'], slo_3.id)
         
         #Now try the POST with REMOVING
         self.assertEqual(Survey.objects.all().count(),1) #one survey should still be there
@@ -805,6 +832,35 @@ class TestSurveys(TestCase):
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.UNDEFINED).count(),0) #check survey type
         self.assertEqual(Survey.objects.filter(survey_type = Survey.SurveyType.SLO).count(),1) #check survey type
         self.assertEqual(Survey.objects.filter(cohort_targeted__start_year =2020).count(),1)#should be specified as 2020 (see above)
+
+        #Now we test the helper method for the initial values - WITH EMPTY SURVEY
+        surv_obj = Survey.objects.all().get()#Only one there....
+        survey_id = surv_obj.id
+        init = DeteremineSurveyInitialValues(surv_obj.id,'N/A')
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_0'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_1'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_2'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_3'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0response_4'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_0'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_1'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_2'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_3'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1response_4'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_0'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_1'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_2'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_3'],0)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2response_4'],0)
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_0'], slo_1.slo_description)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_1'], slo_2.slo_description)
+        self.assertEqual(init['survey_' + str(survey_id) + '_question_2'], slo_3.slo_description)
+
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_0'], slo_1.id)
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_1'], slo_2.id)
+        self.assertEqual(init['survey_' + str(survey_id) + '_associated_lo_of_question_2'], slo_3.id)
 
     def test_add_remove_peo_survey(self):
 
@@ -860,30 +916,30 @@ class TestSurveys(TestCase):
         surv_obj = Survey.objects.filter(survey_title = survey_title).get()
         expected_id = ProgrammeOffered.objects.filter(id = prog_off.id).get().peo_survey_labels.id
         self.assertEqual(Survey.objects.filter(likert_labels__id = expected_id).count(),1) #creation should ahve linked this up to the programme settings
-        
+        survey_id = surv_obj.id
         #Now test the inputting of responses
         response = self.client.post(reverse('workload_app:input_programme_survey_results',kwargs={'programme_id' : prog_off.id,'survey_id' : surv_obj.id}),{
-            'question_0for_programme' + str(prog_off.id) + 'target_lo' + str(peo_1.id): peo_1.peo_description,
-            'associated_peo_of_question0in_programme' + str(prog_off.id): peo_1.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "100",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "10",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "10",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "20",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_0target_lo' + str(peo_1.id) : "20",
-            'question_1for_programme' + str(prog_off.id) + 'target_lo' + str(peo_2.id): peo_2.peo_description,
-            'associated_peo_of_question1in_programme' + str(prog_off.id): peo_2.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "99",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "10",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "10",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "20",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_1target_lo' + str(peo_2.id) : "120",
-            'question_2for_programme' + str(prog_off.id) + 'target_lo' + str(peo_3.id): peo_3.peo_description,
-            'associated_peo_of_question2in_programme' + str(prog_off.id): peo_3.id,
-            'response_0for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "98",
-            'response_1for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "1",
-            'response_2for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "1",
-            'response_3for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "48",
-            'response_4for_programme_' + str(prog_off.id) + 'for_question_2target_lo' + str(peo_3.id) : "20",
+            'survey_' + str(survey_id) + '_question_0' : peo_1.peo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_0' : peo_1.id,
+            'survey_' + str(survey_id) + '_question_0response_0' : "100",            
+            'survey_' + str(survey_id) + '_question_0response_1' : "10",
+            'survey_' + str(survey_id) + '_question_0response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_0response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_0response_4' :  "20",
+            'survey_' + str(survey_id) + '_question_1' : peo_2.peo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_1' : peo_2.id,
+            'survey_' + str(survey_id) + '_question_1response_0' : "99",            
+            'survey_' + str(survey_id) + '_question_1response_1' : "10",
+            'survey_' + str(survey_id) + '_question_1response_2' :  "10",
+            'survey_' + str(survey_id) + '_question_1response_3' :  "20",
+            'survey_' + str(survey_id) + '_question_1response_4' :  "120",
+            'survey_' + str(survey_id) + '_question_2' : peo_3.peo_description,
+            'survey_' + str(survey_id) +'_associated_lo_of_question_2' : peo_3.id,
+            'survey_' + str(survey_id) + '_question_2response_0' : "98",            
+            'survey_' + str(survey_id) + '_question_2response_1' : "1",
+            'survey_' + str(survey_id) + '_question_2response_2' :  "1",
+            'survey_' + str(survey_id) + '_question_2response_3' :  "48",
+            'survey_' + str(survey_id) + '_question_2response_4' :  "20",
         })
         labels = surv_obj.likert_labels.GetListOfLabels()
         self.assertEqual(Survey.objects.filter(survey_title = survey_title).count(),1) #check name

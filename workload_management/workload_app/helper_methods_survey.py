@@ -1,4 +1,4 @@
-from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet, StudentLearningOutcome
+from .models import Survey,SurveyQuestionResponse,ProgrammeOffered, SurveyLabelSet, StudentLearningOutcome,ModuleLearningOutcome, ProgrammeEducationalObjective
 
 
 def CalculateTotalResponsesForQuestion(response_id):
@@ -55,21 +55,30 @@ def CalculateSurveyDetails(survey_id):
         }
     return ret
 
-#TO BE CHECKED AND TESTED!!!!!!!!!!!!!!!!!!!!!!
-def DeteremineSurveyInitialValues(survey_id):
+
+def DeteremineSurveyInitialValues(survey_id, module_code):
+    ''''
+    This method determines the initial values of a survey
+    '''
     ret = {}
     surv_obj =  Survey.objects.filter(id = survey_id).get()
     labels = surv_obj.likert_labels.GetListOfLabels()
-    
+    question_index = 0
     for resp in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
         lo_id_involved = 0
+        question_text = ''
         if (resp.associated_slo is not None):
             lo_id_involved = resp.associated_slo.id
+            #question_text = StudentLearningOutcome.objects.filter(id = lo_id_involved).get().slo_description
         if (resp.associated_mlo is not None):
             lo_id_involved = resp.associated_mlo.id
+            #question_text = ModuleLearningOutcome.objects.filter(id = lo_id_involved).get().mlo_description
         if (resp.associated_peo is not None):
             lo_id_involved = resp.associated_peo.id
+            #question_text = ProgrammeEducationalObjective.objects.filter(id = lo_id_involved).get().peo_description
 
+        ret['survey_' + str(survey_id) + '_question_'+ str(question_index)] = resp.question_text
+        ret['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)] = lo_id_involved
         all_scores = [resp.n_highest_score,\
                       resp.n_second_highest_score, \
                       resp.n_third_highest_score,\
@@ -81,9 +90,37 @@ def DeteremineSurveyInitialValues(survey_id):
                       resp.n_ninth_highest_score,\
                       resp.n_tenth_highest_score]
         for opt_idx in range(0,len(labels)):
-            #Note concatenation between option index and slo-id (used in the form)
-            ret[str(opt_idx)+str(lo_id_involved)] = all_scores[opt_idx]
+            #Note concatenation used in the form
+            ret['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] = all_scores[opt_idx]
+        question_index += 1
 
+    if (question_index == 0): #This is when there were no previous responses - fresh input
+        programme_id = surv_obj.programme_associated.id
+        qn_txt = []
+        lo_ids = []
+        if (surv_obj.survey_type == Survey.SurveyType.SLO):
+            relevant_lo_queryset = StudentLearningOutcome.objects.filter(programme__id = programme_id)
+            for qs in relevant_lo_queryset:
+                qn_txt.append(qs.slo_description)
+                lo_ids.append(qs.id)    
+        if (surv_obj.survey_type == Survey.SurveyType.MLO):
+            #lo_id_involved = resp.associated_mlo.id
+            relevant_lo_queryset = ModuleLearningOutcome.objects.filter(module_code = module_code)
+            for qs in relevant_lo_queryset:
+                qn_txt.append(qs.mlo_description)
+                lo_ids.append(qs.id)    
+        if (surv_obj.survey_type == Survey.SurveyType.PEO):
+            relevant_lo_queryset = ProgrammeEducationalObjective.objects.filter(programme__id = programme_id)
+            for qs in relevant_lo_queryset:
+                qn_txt.append(qs.peo_description)
+                lo_ids.append(qs.id)    
+        
+        for question_index in range(0,relevant_lo_queryset.count()):
+            ret['survey_' + str(survey_id) + '_question_'+ str(question_index)] = qn_txt[question_index]
+            ret['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)] =lo_ids[question_index]  
+            for opt_idx in range(0,len(labels)):
+                #Note concatenation 
+                ret['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] = 0
     return ret
 
 

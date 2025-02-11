@@ -445,32 +445,17 @@ class InputSLOSurveyDataForm(forms.Form):
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file, if any", required=False)
         labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels()
         relevant_lo_queryset = StudentLearningOutcome.objects.filter(programme__id = programme_id)
+        how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
 
-        lo_ids = []
-        for slo in relevant_lo_queryset:
-            lo_ids.append(slo.id)
-        #pad with 5 extra questions (id  =-1)
-        for i in range(0,5):
-            lo_ids.append(-1)
-
-        question_index = 0
-        for question_index in range(0,len(lo_ids)):
-            slo_id = str(lo_ids[question_index])
-            if (lo_ids[question_index] >-1):
-                examined_lo = StudentLearningOutcome.objects.filter(id = lo_ids[question_index]).get()
-                self.fields['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + slo_id] =\
-                    forms.CharField(label="Question text ", initial =  examined_lo.slo_description, required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_slo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)] =\
-                      forms.ModelChoiceField(label = 'Targeted SLO', queryset=relevant_lo_queryset, initial=lo_ids[question_index])
-            else:#No loassociated at the start
-                self.fields['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + slo_id] =\
-                    forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_slo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)] =\
-                      forms.ModelChoiceField(label = 'Targeted SLO', queryset=relevant_lo_queryset, required=False)
+        for question_index in range(0,how_many_questions):
+            self.fields['survey_' + str(survey_id) + '_question_'+ str(question_index)] =\
+                forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
+            self.fields['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)] =\
+                    forms.ModelChoiceField(label = 'Targeted SLO', queryset=relevant_lo_queryset, required=False)   
             for opt_idx in range(0,len(labels)):
-                #Note concatenation used in the view
-                self.fields['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + slo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0, required=False)
+                #Note concatenation 
+                self.fields['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] =\
+                      forms.IntegerField(label = labels[opt_idx], required=False)
             
 
         
@@ -495,34 +480,20 @@ class InputPEOSurveyDataForm(forms.Form):
         survey_id = kwargs.pop('survey_id')
         super(InputPEOSurveyDataForm, self).__init__(*args, **kwargs)
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file, if any", required=False)
+
         labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels()
         relevant_lo_queryset = ProgrammeEducationalObjective.objects.filter(programme__id = programme_id)
+        how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
 
-        lo_ids = []
-        for peo in relevant_lo_queryset:
-            lo_ids.append(peo.id)
-        #pad with 5 extra questions (id  =-1)
-        for i in range(0,5):
-            lo_ids.append(-1)
-
-        question_index = 0
-        for question_index in range(0,len(lo_ids)):
-            peo_id = str(lo_ids[question_index])
-            if (lo_ids[question_index] >-1):
-                examined_lo = ProgrammeEducationalObjective.objects.filter(id = lo_ids[question_index]).get()
-                self.fields['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + peo_id] =\
-                    forms.CharField(label="Question text ", initial =  examined_lo.peo_description, required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_peo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)] =\
-                      forms.ModelChoiceField(label = 'Targeted PEO', queryset=relevant_lo_queryset, initial=lo_ids[question_index])
-            else:#No loassociated at the start
-                self.fields['question_'+ str(question_index)+ 'for_programme' + str(programme_id) + 'target_lo' + peo_id] =\
-                    forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_peo_of_question'+ str(question_index) + 'in_programme' + str(programme_id)] =\
-                      forms.ModelChoiceField(label = 'Targeted PEO', queryset=relevant_lo_queryset, required=False)
+        for question_index in range(0,how_many_questions):
+            self.fields['survey_' + str(survey_id) + '_question_'+ str(question_index)] =\
+                forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
+            self.fields['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)] =\
+                    forms.ModelChoiceField(label = 'Targeted PEO', queryset=relevant_lo_queryset, required=False)   
             for opt_idx in range(0,len(labels)):
-                #Note concatenation used in the view
-                self.fields['response_' + str(opt_idx)+ 'for_programme_' + str(programme_id) + 'for_question_' + str(question_index)+ 'target_lo' + peo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0, required=False)
+                #Note concatenation 
+                self.fields['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] =\
+                      forms.IntegerField(label = labels[opt_idx], required=False)
                 
 class RemoveSLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -605,36 +576,21 @@ class InputMLOSurveyForm(forms.Form):
         module_code = kwargs.pop('module_code')
         survey_id = kwargs.pop('survey_id')
         super(InputMLOSurveyForm, self).__init__(*args, **kwargs)
-
         self.fields['raw_file'] = forms.FileField(label="Upload raw survey results file, if any", required=False)
+
         labels = Survey.objects.filter(id = survey_id).get().likert_labels.GetListOfLabels()
         relevant_lo_queryset = ModuleLearningOutcome.objects.filter(module_code = module_code)
+        how_many_questions = relevant_lo_queryset.count() + 5 #5 extra questions
 
-        lo_ids = []
-        for mlo in relevant_lo_queryset:
-            lo_ids.append(mlo.id)
-        #pad with 5 extra questions (id  =-1)
-        for i in range(0,5):
-            lo_ids.append(-1)
-
-        question_index = 0
-        for question_index in range(0,len(lo_ids)):
-            mlo_id = str(lo_ids[question_index])
-            if (lo_ids[question_index] >-1):
-                examined_lo = ModuleLearningOutcome.objects.filter(id = lo_ids[question_index]).get()
-                self.fields['question_'+ str(question_index)+ 'for_module' + str(module_code) + 'target_lo' + mlo_id] =\
-                    forms.CharField(label="Question text ", initial =  examined_lo.mlo_description, required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_mlo_of_question'+ str(question_index) + 'in_module' + str(module_code)] =\
-                      forms.ModelChoiceField(label = 'Targeted MLO', queryset=relevant_lo_queryset, initial=lo_ids[question_index])
-            else:#No loassociated at the start
-                self.fields['question_'+ str(question_index)+ 'for_module' + str(module_code) + 'target_lo' + mlo_id] =\
-                    forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
-                self.fields['associated_mlo_of_question'+ str(question_index) + 'in_module' + str(module_code)] =\
-                      forms.ModelChoiceField(label = 'Targeted MLO', queryset=relevant_lo_queryset, required=False)
+        for question_index in range(0,how_many_questions):
+            self.fields['survey_' + str(survey_id) + '_question_'+ str(question_index)] =\
+                forms.CharField(label="Question text ", required=False, widget=forms.TextInput(attrs={"size": "40"}))
+            self.fields['survey_' + str(survey_id) + '_associated_lo_of_question_'+ str(question_index)] =\
+                    forms.ModelChoiceField(label = 'Targeted MLO', queryset=relevant_lo_queryset, required=False)   
             for opt_idx in range(0,len(labels)):
-                #Note concatenation used in the view
-                self.fields['response_' + str(opt_idx)+ 'for_module_' + str(module_code) + 'for_question_' + str(question_index)+ 'target_lo' + mlo_id] =\
-                      forms.IntegerField(label = labels[opt_idx], initial = 0,required=False)
+                #Note concatenation 
+                self.fields['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] =\
+                      forms.IntegerField(label = labels[opt_idx], required=False)
 
 class RemoveMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
