@@ -1896,8 +1896,7 @@ def input_module_survey_results(request,module_code,survey_id):
                     survey = Survey.objects.filter(id = survey_id).get()                        
                     survey.original_file = file_obj
                     survey.save(update_fields = ["original_file"]) 
-
-            
+                    
     else: #This is a get
         back_address = '/workload_app/module/'+str(module_code)
         back_text = 'Back to module page'
