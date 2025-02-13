@@ -25,7 +25,11 @@
             {% csrf_token %}
             {% for field in form_to_show %}
               {% if forloop.first %}
-                {{ field.label}}: {{field}}
+                {% if pre_file_upload_message|length > 0 %}
+                  {{ pre_file_upload_message }}  <a href="{{ file_url }}" download> click here to download</a>. {{ field.label}}: {{field}}
+                {% else %}
+                  {{ field.label}}: {{field}}
+                {% endif %}
               <br>
               <hr>
               {% else %}

@@ -1889,12 +1889,11 @@ def input_module_survey_results(request,module_code,survey_id):
                         associated_mlo = associated_lo, parent_survey = survey_obj)
                         new_response.save()
 
-
                 file_obj = None
                 if ("raw_file" in request.FILES):#raw_file is the field in the form!
                     file_obj = request.FILES["raw_file"]
                     #Store file in the survey object
-                    survey = Survey.objects.filter(id = survey_id).get()
+                    survey = Survey.objects.filter(id = survey_id).get()                        
                     survey.original_file = file_obj
                     survey.save(update_fields = ["original_file"]) 
 
@@ -1905,12 +1904,23 @@ def input_module_survey_results(request,module_code,survey_id):
 
         form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,module_code))
         template = loader.get_template('workload_app/module_survey_input.html')
+        
+        all_survey_details = CalculateSurveyDetails(survey_id)
+        parent_survey = all_survey_details["title"]
+        file_url = all_survey_details["file"] #empty string or something, template may check
+        pre_file_upload_message = ''
+        if len(file_url) > 0:#there is already a file
+            pre_file_upload_message = 'An existing file for this survey is uploaded: '
+            form_to_show.fields["raw_file"].label = "If you wish to change the uploaded survey file, upload another one and click \"Submit changes\" below"
+
         context = {
             'back_address' : back_address,
             'back_text' : back_text,
             'form_to_show' : form_to_show,
             'survey_id' :survey_id,
-            'module_code' : module_code
+            'module_code' : module_code,
+            'pre_file_upload_message' : pre_file_upload_message,
+            'parent_survey' : parent_survey
         }
         return HttpResponse(template.render(context, request))
 
@@ -2024,14 +2034,14 @@ def input_programme_survey_results(request,programme_id,survey_id):
                         n_tenth_highest_score = survey_scores[9],\
                         associated_peo = associated_lo, parent_survey = survey_obj)
                         new_response.save()
-        
-        file_obj = None
-        if ("raw_file" in request.FILES):#raw_file is the field in the form!
-            file_obj = request.FILES["raw_file"]
-            #Store file in the survey object
-            survey = Survey.objects.filter(id = survey_id).get()
-            survey.original_file = file_obj
-            survey.save(update_fields = ["original_file"])
+        if slo_survey_form.is_valid() or peo_survey_form.is_valid():
+            file_obj = None
+            if ("raw_file" in request.FILES):#raw_file is the field in the form!
+                file_obj = request.FILES["raw_file"]
+                #Store file in the survey object
+                survey = Survey.objects.filter(id = survey_id).get()
+                survey.original_file = file_obj
+                survey.save(update_fields = ["original_file"])
         
         #Re-load accreditation (trigger a get there)
         return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))
@@ -2044,7 +2054,15 @@ def input_programme_survey_results(request,programme_id,survey_id):
         form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,'N/A'))
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id, 'N/A'))
-        parent_survey = Survey.objects.filter(id=survey_id).get().survey_title
+
+        all_survey_details = CalculateSurveyDetails(survey_id)
+        parent_survey = all_survey_details["title"]
+        file_url = all_survey_details["file"] #empty string or something, template may check
+        pre_file_upload_message = ''
+        if len(file_url) > 0:#there is already a file
+            pre_file_upload_message = 'An existing file for this survey is uploaded: '
+            form_to_show.fields["raw_file"].label = "If you wish to change the uploaded survey file, upload another one and click \"Submit changes\" below"
+
         template = loader.get_template('workload_app/survey_input.html')
         context = {
             'back_address' : back_address,
@@ -2052,7 +2070,9 @@ def input_programme_survey_results(request,programme_id,survey_id):
             'form_to_show' : form_to_show,
             'programme_id' : programme_id,
             'survey_id' :survey_id,
-            'parent_survey': parent_survey
+            'parent_survey': parent_survey,
+            'pre_file_upload_message' : pre_file_upload_message,
+            'file_url' : file_url
         }
         return HttpResponse(template.render(context, request))
 

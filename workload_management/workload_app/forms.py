@@ -456,9 +456,6 @@ class InputSLOSurveyDataForm(forms.Form):
                 #Note concatenation 
                 self.fields['survey_' + str(survey_id) + '_question_' +  str(question_index) + 'response_' + str(opt_idx)] =\
                       forms.IntegerField(label = labels[opt_idx], required=False)
-            
-
-        
 
 class AddPEOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -814,9 +811,6 @@ class EditModuleAssignmentForm(forms.Form):
                                             choices=YES_NO_CHOICES, \
                                             label = "Counted towards workload?",
                                             initial=counted_flag)
-
-
-        
     
 class ScenarioForm(ModelForm):
     #A flag to establish whether it's a new record or editing an existing one
@@ -877,5 +871,5 @@ class SelectAcademicYearForm(forms.Form):
 
 class SelectAccreditationReportForm(forms.Form):
     this_year = datetime.datetime.now().year
-    academic_year_start = forms.ModelChoiceField(label = "From cohort ", queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
-    academic_year_end = forms.ModelChoiceField(label = "To cohort (included)",queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_start = forms.ModelChoiceField(label = "From cohort ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_end = forms.ModelChoiceField(label = "To cohort (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
