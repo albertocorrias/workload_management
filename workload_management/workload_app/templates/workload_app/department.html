@@ -100,7 +100,14 @@
                       </td>
                     </tr>
                     {% endfor %}
-                    
+                    <tr>
+                      <td colspan="3">
+                        <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#AddRemoveworkloads">
+                          Add/Remove workloads...
+                          </button>
+
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -391,6 +398,91 @@
           </div><!-- Modal content -->
         </div><!-- Mdal dialogue-->
       </div><!--whole modal--> 
+
+
+      <!--Modal for new workload-->
+      <div class="modal fade" id="AddRemoveworkloads" tabindex="-1" role="dialog" aria-labelledby="AddRemoveworkloadsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="AddRemoveworkloadsLabel">Add new workload</h5>
+                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                  </button>
+                </div>
+                <form action="{% url 'workload_app:department' dept_id %}" method="post">
+                {% csrf_token %}
+                    <div class="modal-body">
+                          {{ wl_form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                      <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+              </form>  
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="AddRemoveworkloadsLabel">Remove existing workload</h5>
+            </div>
+            <form action="{% url 'workload_app:remove_programme_offered' dept_id %}" method="post">
+            {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_prog_form }}
+                            <br>
+                        <p>Note: all modules within the removed programme will be retained and become not assigned to any programme</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>    
+
+
+          </div><!-- Modal content -->
+        </div><!-- Mdal dialogue-->
+      </div><!--whole modal--> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       <!--Modal for new sub-programme-->
       <div class="modal fade" id="NewSubProgrammeModal" tabindex="-1" role="dialog" aria-labelledby="NewSubProgrammeModalLabel" aria-hidden="true">
