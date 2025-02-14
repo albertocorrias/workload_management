@@ -27,7 +27,6 @@ urlpatterns = [
     path('edit_module_assignments/<int:module_id>/', views.edit_module_assignments, name='edit_module_assignments'),
     path('manage_scenario', views.manage_scenario, name='manage_scenario'),
     path('remove_scenario', views.remove_scenario, name='remove_scenario'),
-    path('individual_report/', views.individual_report, name='individual_report'),
     path('faculty_report/', views.faculty_report, name='faculty_report'),
     path('accreditation/<int:programme_id>/', views.accreditation, name='accreditation'),
     path('accreditation_report/<int:programme_id>/<int:start_year>-<int:end_year>/', views.accreditation_report, name='accreditation_report'),
@@ -40,6 +39,7 @@ urlpatterns = [
     path('remove_programme_offered/<int:dept_id>/', views.remove_programme_offered, name='remove_programme_offered'),
     path('manage_subprogramme_offered/<int:dept_id>/', views.manage_subprogramme_offered, name='manage_subprogramme_offered'),
     path('remove_subprogramme_offered/<int:dept_id>/', views.remove_subprogramme_offered, name='remove_subprogramme_offered'),
+    path('lecturer_page/<int:lecturer_id>/', views.lecturer_page,name="lecturer_page"),
     path('accounts/', include('django.contrib.auth.urls')),
     path("admin/", admin.site.urls),
 ]

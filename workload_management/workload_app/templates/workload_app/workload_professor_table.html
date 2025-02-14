@@ -22,8 +22,7 @@
             </td>
             <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#AddToProf{{ entry.prof_id }}AddAssignmentModal">
                 <img src="{% static 'workload_app/plus-square-green.svg' %}" alt="edit"></td>
-            <td>{{ entry.prof_name }} 
-            </td>
+            <td><a href="/workload_app/lecturer_page/{{ entry.prof_id }}">{{ entry.prof_name }}</a></td><!-- Name of prof with link-->
             <td>{{ entry.prof_tfte|floatformat:2 }}</td><!-- Teaching FTE-->
             <td>{{ entry.assignments }} <div class="not_counted_assignments">{{ entry.not_counted_assignments }}</div></td><!--Assignments-->
             <td>{{ entry.total_hours_for_prof|floatformat }}</td><!-- Total hours assigned-->

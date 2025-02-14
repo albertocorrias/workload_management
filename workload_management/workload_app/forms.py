@@ -850,9 +850,6 @@ class ScenarioForm(ModelForm):
 class RemoveScenarioForm(forms.Form):
     select_scenario_to_remove = forms.ModelChoiceField(queryset=WorkloadScenario.objects.all())
 
-class SelectLecturerForReport(forms.Form):
-    select_lecturer = forms.CharField(label = 'Lecturer\'s name ')
-
 class SelectFacultyForReport(forms.Form):
     EXPECTATION_PER_tFTE= 'Expected hours per tFTE'
     TOTAL_TFTE = 'Total tFTE'

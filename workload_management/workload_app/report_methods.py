@@ -3,10 +3,13 @@ from .models import Lecturer, Module, TeachingAssignment, ModuleType, Employment
 from .helper_methods import CalculateSummaryData
 from .forms import SelectFacultyForReport
 
-def GetLastFiveYears():
-    this_year = datetime.datetime.now().year
-    labels = [str(this_year-4),str(this_year-3), str(this_year-2), str(this_year-1), str(this_year)]
-    years = [this_year-4,this_year-3, this_year-2, this_year-1, this_year]
+def GetLastNYears(num_years):
+    this_year = datetime.datetime.now().year + 1        
+    labels = []
+    years = []
+    for i in range(0,num_years):
+        labels.append(str(this_year-num_years+i)+'/'+ str(this_year-num_years+i+1))
+        years.append(this_year - num_years + i)
     ret = {"labels" : labels, "years" : years}
     return ret
 
@@ -26,7 +29,7 @@ def GetLastFiveYears():
 # tFTE of teh prof for each of the last five years
 def CalculateProfessorIndividualWorkload(prof_name):    
     ret = [];
-    time_info = GetLastFiveYears()
+    time_info = GetLastNYears(5)
     years = time_info["years"]
     all_mod_codes = []
     all_mod_titles = []
@@ -77,9 +80,52 @@ def CalculateProfessorIndividualWorkload(prof_name):
     
     return ret;    
 
+def CalculateProfessorChartData(lec_name):
+    time_info  = GetLastNYears(5)
+    labels = time_info["labels"]
+    years = time_info["years"]
+    
+    hours_expected = [0]*len(years)
+    hours_delivered = [0]*len(years)
+    
+    all_assignments = TeachingAssignment.objects.filter(assigned_lecturer__name = lec_name).filter(workload_scenario__status=WorkloadScenario.OFFICIAL)
+    workload_ids = []
+    for assign in all_assignments:
+        for index, year in enumerate(years):
+            if (assign.workload_scenario.academic_year.start_year == year):
+                hours_delivered[index] = hours_delivered[index] + assign.number_of_hours
+                wl_id = assign.workload_scenario.id
+                if (wl_id not in workload_ids):
+                    workload_ids.append(wl_id)
+
+    for wl in workload_ids:
+        summary = CalculateSummaryData(wl)
+        expected_per_FTE = summary["expected_hours_per_tFTE"]
+        prof = Lecturer.objects.filter(name = lec_name).filter(workload_scenario = wl).get()
+        track_adj = prof.employment_track.track_adjustment
+        empl_adj = prof.service_role.role_adjustment
+        prof_fte =  prof.fraction_appointment*track_adj*empl_adj #for worload wl
+
+        index = years.index(WorkloadScenario.objects.filter(id = wl).get().academic_year.start_year)
+
+        hours_expected[index] = expected_per_FTE*prof_fte
+    hrs_expected_upper_boundary = []
+    hrs_expected_lower_boundary = []
+    for i in range(0,len(hours_expected)):
+        hrs_expected_upper_boundary.append(hours_expected[i] + 15)
+        hrs_expected_lower_boundary.append(hours_expected[i] - 15)
+    return {
+        'labels_temp_individual' : labels,
+        'hrs_temp_individual_expected'  : hours_expected,
+        'hrs_temp_individual_delivered' : hours_delivered,
+        'hrs_expected_upper_boundary' : hrs_expected_upper_boundary,
+        'hrs_expected_lower_boundary':  hrs_expected_lower_boundary
+    }
+
+
 def CalculateFacultyReportTable(faculty, report_type):
     ret =[]
-    time_info = GetLastFiveYears()
+    time_info = GetLastNYears(5)
     years = time_info["years"]
     for dept in Department.objects.filter(faculty__faculty_name = faculty):
         table_row = [None] * (len(years) + 2) #+2 for module code and title (below)

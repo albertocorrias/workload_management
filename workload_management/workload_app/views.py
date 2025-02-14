@@ -19,7 +19,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    RemoveTeachingAssignmentForm,ScenarioForm,RemoveScenarioForm,EditTeachingAssignmentForm,\
                    EditModuleAssignmentForm, RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
                    EmplymentTrackForm, RemoveEmploymentTrackForm,ServiceRoleForm, RemoveServiceRoleForm,\
-                   FacultyForm, RemoveFacultyForm,SelectLecturerForReport, SelectFacultyForReport,ProgrammeOfferedForm,\
+                   FacultyForm, RemoveFacultyForm, SelectFacultyForReport,ProgrammeOfferedForm,\
                    RemoveProgrammeForm,SLOForm,RemoveSLOForm,SubProgrammeOfferedForm,RemoveSubProgrammeForm,\
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
@@ -38,7 +38,7 @@ from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsF
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
-from .report_methods import GetLastFiveYears,CalculateProfessorIndividualWorkload, CalculateFacultyReportTable
+from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 
 def scenario_view(request, workloadscenario_id):
 
@@ -157,6 +157,31 @@ def workloads_index(request):
                'remove_scenario_form':remove_scenario_form.as_p(),
                 }
     return HttpResponse(template.render(context, request))
+
+def lecturer_page(request,lecturer_id):
+    lecturer_qs = Lecturer.objects.filter(id = lecturer_id)
+    if (lecturer_qs.count() != 1):#this should never happen, but just in case the user enters some random number
+        #This should really never happen, but just in case the user enters some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+            'form_errors': 'No such lecturer exists',
+            'return_label': 'Back to index of workloads',
+            'return_page' : 'workloads_index/',
+        }
+        return HttpResponse(template.render(context, request))
+    lec_name = lecturer_qs.get().name
+    print(lec_name)
+    summary_wl_table = CalculateProfessorIndividualWorkload(lec_name)
+    chart_data = CalculateProfessorChartData(lec_name)
+
+    template = loader.get_template('workload_app/lecturer_page.html')
+    context = {
+        'return_page' : 'scenario_view/'+'1',
+        'lec_name' : lec_name,
+        'summary_wl_table_individual' : summary_wl_table,
+        'chart_data' : chart_data
+    }
+    return HttpResponse(template.render(context, request))       
 
 def add_assignment(request,workloadscenario_id):
     if request.method =='POST':
@@ -885,60 +910,8 @@ def remove_subprogramme_offered(request, dept_id):
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
 
-def individual_report(request):
-    time_info  = GetLastFiveYears()
-    labels = time_info["labels"]
-    years = time_info["years"]
-    
-    hours_expected = [0, 0, 0, 0, 0]
-    hours_delivered = [0, 0, 0, 0, 0]
-    prof_name = ''
-    if request.method =='POST':
-        form = SelectLecturerForReport(request.POST)
-        
-        if (form.is_valid()):
-            prof_name = form.cleaned_data["select_lecturer"]
-            #prof_name = Lecturer.objects.filter(id = prof_id).first.get().name
-
-            all_assignments = TeachingAssignment.objects.filter(assigned_lecturer__name = prof_name).filter(workload_scenario__status=WorkloadScenario.OFFICIAL)
-            workload_ids = []
-            for assign in all_assignments:
-                for index, year in enumerate(years):
-                    if (assign.workload_scenario.academic_year.start_year == year):
-                        hours_delivered[index] = hours_delivered[index] + assign.number_of_hours
-                        wl_id = assign.workload_scenario.id
-                        if (wl_id not in workload_ids):
-                            workload_ids.append(wl_id)
-
-            for wl in workload_ids:
-                summary = CalculateSummaryData(wl)
-                expected_per_FTE = summary["expected_hours_per_tFTE"]
-                prof = Lecturer.objects.filter(name = prof_name).filter(workload_scenario = wl).get()
-                track_adj = prof.employment_track.track_adjustment
-                empl_adj = prof.service_role.role_adjustment
-                prof_fte =  prof.fraction_appointment*track_adj*empl_adj #for worload wl
-                
-                index = years.index(WorkloadScenario.objects.filter(id = wl).get().academic_year.start_year)
-                
-                hours_expected[index] = expected_per_FTE*prof_fte
-            
-            
-    else: #get
-        form = SelectLecturerForReport(initial = {'select_lecturer' : ''})
-
-    summary_wl_table = CalculateProfessorIndividualWorkload(prof_name)
-    template = loader.get_template('workload_app/individual_report.html')
-    context = {
-        'labels_temp_individual' : labels,
-        'hrs_temp_individual_expected'  : hours_expected,
-        'hrs_temp_individual_delivered' : hours_delivered,
-        'select_lecturer_form' : form,
-        'summary_wl_table_individual' : summary_wl_table
-    }
-    return HttpResponse(template.render(context, request))
-
 def faculty_report(request):
-    time_info  = GetLastFiveYears()
+    time_info  = GetLastNYears(5)
     labels = time_info["labels"]
     years = time_info["years"]
     table_header = " "
@@ -1896,7 +1869,7 @@ def input_module_survey_results(request,module_code,survey_id):
                     survey = Survey.objects.filter(id = survey_id).get()                        
                     survey.original_file = file_obj
                     survey.save(update_fields = ["original_file"]) 
-                    
+
     else: #This is a get
         back_address = '/workload_app/module/'+str(module_code)
         back_text = 'Back to module page'

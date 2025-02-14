@@ -15,17 +15,9 @@
           <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>
   </div>
     <div class = "report-title-container">
-      Individual lecturer report
+      Workload overview of {{ lec_name }}
     </div>
-    <div class = "report-select-form-container">
-      <form action="{% url 'workload_app:individual_report' %}" method="post">
-        {% csrf_token %}
-        {{ select_lecturer_form.as_p }}
-        <button type="submit" class="btn btn-primary">Generate report</button>
-        
-      </form>  
 
-    </div>
   <hr>
   <div class="overall-report-container">
     <div class="report-table-container">
@@ -34,7 +26,7 @@
         <tr> 
             <th> </th>
             <th> </th>
-            {% for entry in labels_temp_individual %}
+            {% for entry in chart_data.labels_temp_individual %}
             <th> {{ entry }} </th>
             {% endfor %}
         </tr>
@@ -42,7 +34,11 @@
         <tbody>
           {% for entry in summary_wl_table_individual %}
           <tr>
-            <td>{{ entry.0 }}</td>
+            {% if entry.1|length > 1 %}<!-- Checking module title. If empty, it means this is the row of totals...-->
+                <td><a href="/workload_app/module/{{ entry.0 }}">{{ entry.0 }}</a></td><!-- Mod code-->
+            {% else %}
+                <td>{{ entry.0 }}</td>
+            {% endif %}
             <td>{{ entry.1 }}</td>
             <td>{{ entry.2|floatformat }}</td>
             <td>{{ entry.3|floatformat }}</td>
@@ -56,9 +52,12 @@
     </div>
     <div class="report-chart-container">
         <canvas id="temporal-individual-staff-chart"></canvas>
-        {{ labels_temp_individual|json_script:"labels_temp_individual" }}
-        {{ hrs_temp_individual_delivered|json_script:"hrs_temp_individual_delivered" }}
-        {{ hrs_temp_individual_expected|json_script:"hrs_temp_individual_expected" }}
+        {{ chart_data.labels_temp_individual|json_script:"labels_temp_individual" }}
+        {{ chart_data.hrs_temp_individual_delivered|json_script:"hrs_temp_individual_delivered" }}
+        {{ chart_data.hrs_temp_individual_expected|json_script:"hrs_temp_individual_expected" }}
+
+        {{ chart_data.hrs_expected_upper_boundary|json_script:"hrs_expected_upper_boundary" }}
+        {{ chart_data.hrs_expected_lower_boundary|json_script:"hrs_expected_lower_boundary" }}
         <script src="{% static   'workload_app/temporal_individual_chart.js' %}"></script>
 
     </div>

@@ -58,7 +58,7 @@
               </button>
             </div><!-- end of buttons container-->
 
-            <div class="table_flex_container">
+            <div class="overall_container">
             {% if mlo_list|length > 0 %}
                 <div>
                   <table id="OVERALL_MLO_TABLE" class="workload_tables table table-striped">
@@ -271,7 +271,7 @@
                 <!-- Modals to edit MLOs-->
                 {% for entry in mlo_list %}
                     <div class="modal fade" id="EditMLO{{ entry.mlo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditMLO{{ entry.mlo_id }}Label" aria-hidden="true">
-                      <div class="modal-dialog" role="document">
+                      <div class="modal-dialog modal-xl" role="document">
                         <div class="modal-content">
                               <div class="modal-header">
                                 <h5 class="modal-title" id="EditMLO{{ entry.mlo_id }}Label">Edit existing MLO</h5>
