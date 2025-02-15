@@ -560,6 +560,7 @@ class AddMLOSurveyForm(forms.Form):
             years_to_show.append(datetime.datetime.now().year + gap)
         module_code = kwargs.pop('module_code')
         super(AddMLOSurveyForm, self).__init__(*args, **kwargs)
+        self.fields['survey_title'] = forms.CharField(label="Titleof the survey (e.g., module survey 2026)", max_length=300)
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the module surveyed', required=False,\

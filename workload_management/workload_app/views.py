@@ -1085,12 +1085,12 @@ def module(request, module_code):
 
         mlo_survey_form = AddMLOSurveyForm(request.POST, request.FILES, module_code = module_code)
         if (mlo_survey_form.is_valid()):
+            survey_name = mlo_survey_form.cleaned_data['survey_title']
             start_date = mlo_survey_form.cleaned_data['start_date']
             end_date = mlo_survey_form.cleaned_data['end_date']
             n_invited = mlo_survey_form.cleaned_data['totoal_N_recipients']
             supplied_cohort_targeted = mlo_survey_form.cleaned_data['cohort_targeted']
             comments = mlo_survey_form.cleaned_data['comments']
-            survey_name = "MLO survey for module " + module_code
                         
             #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
             #Note: the line below will take care of creatingd efaults, if needed

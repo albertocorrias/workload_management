@@ -333,8 +333,10 @@ class TestSurveys(TestCase):
         self.assertContains(response, mlo_2.mlo_description)
         self.assertContains(response, mlo_3.mlo_description)
         survey_comment = "hello, this is a test survey"
+        survey_label = "new MLO survey"
         #Now try the POST with adding a module survey
         response = self.client.post(reverse('workload_app:module',kwargs={'module_code' : module_code}),{
+            'survey_title' : survey_label,
             'start_date_month' : 1,
             'start_date_day' : 15,
             'start_date_year' : 2021,
@@ -349,7 +351,6 @@ class TestSurveys(TestCase):
 
         self.assertEqual(response.status_code, 302) #post re-directs
         self.assertEqual(Survey.objects.all().count(),1) #one survey should have been created
-        survey_label = "MLO survey for module " + module_code
         self.assertEqual(Survey.objects.filter(survey_title = survey_label).count(),1) #check name
         self.assertEqual(Survey.objects.filter(cohort_targeted__id = acad_year.id).count(),1) #check cohort targeted
         self.assertEqual(Survey.objects.filter(max_respondents = 150).count(),1) #check max respondents
