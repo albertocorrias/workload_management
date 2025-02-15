@@ -848,7 +848,13 @@ class ScenarioForm(ModelForm):
                 raise ValidationError(_('Invalid workload name: it alreday exists'), code='invalid')
               
 class RemoveScenarioForm(forms.Form):
-    select_scenario_to_remove = forms.ModelChoiceField(queryset=WorkloadScenario.objects.all())
+    def __init__(self, *args, **kwargs):
+        department_id = kwargs.pop('dept_id')
+        super(RemoveScenarioForm, self).__init__(*args, **kwargs)
+        if (department_id > -1):
+            self.fields['select_scenario_to_remove'] = forms.ModelChoiceField(queryset=WorkloadScenario.objects.filter(dept__id = department_id))
+        else:
+            self.fields['select_scenario_to_remove'] = forms.ModelChoiceField(queryset=WorkloadScenario.objects.all())
 
 class SelectFacultyForReport(forms.Form):
     EXPECTATION_PER_tFTE= 'Expected hours per tFTE'

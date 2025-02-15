@@ -242,7 +242,7 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
         self.assertEqual(Department.objects.filter(department_name = new_name_tried).count(), 0)
 
-    def testDepartmentSummaryView(self):
+    def testDepartmentSummaryViewAndAddNewScenario(self):
         this_year = datetime.datetime.now().year
         #Create a Dept affiliated to a faculty
         dept_name = 'test_dept'
@@ -326,5 +326,30 @@ class TestDepartments(TestCase):
         self.assertEqual(len(response.context["dept_wls"][7]["official_wl_ids"]),0)#No official wls
         self.assertEqual(len(response.context["dept_wls"][7]["draft_wl_ids"]),0)#no unofficial ones
         
+        #check one is there first
+        self.assertEqual(WorkloadScenario.objects.all().count(),1)
+        self.assertEqual(Lecturer.objects.all().count(),3)
+        self.assertEqual(Module.objects.all().count(),5)
+        #Now try adding a new scenario from the department page
+        new_label = 'new_scenario'
+        self.client.post(reverse('workload_app:department', kwargs={'department_id': test_dept.id}),{\
+                        'label':new_label, \
+                        'dept' : test_dept.id,\
+                        'academic_year' : test_acad_year.id,\
+                        'status' : WorkloadScenario.OFFICIAL,\
+                        'copy_from' : wl_scen.id,
+                        'fresh_record' :  True})
+        self.assertEqual(WorkloadScenario.objects.all().count(),2)
+        self.assertEqual(Lecturer.objects.all().count(),6)
+        self.assertEqual(Module.objects.all().count(),10)
+
+        #Remove the scenario we just created
+        new_scen = WorkloadScenario.objects.filter(label = new_label).get()
+        self.client.post(reverse('workload_app:department', kwargs={'department_id': test_dept.id}), {'select_scenario_to_remove': new_scen.id})
+        #Back to previous situation
+        self.assertEqual(WorkloadScenario.objects.all().count(),1)
+        self.assertEqual(Lecturer.objects.all().count(),3)
+        self.assertEqual(Module.objects.all().count(),5)
+
 
         

@@ -33,7 +33,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                            CalculateSingleModuleInformationTable
+                            CalculateSingleModuleInformationTable, HandleScenarioForm
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
@@ -117,7 +117,7 @@ def workloads_index(request):
 
     #Scenario forms
     scenario_form = ScenarioForm(initial = {'fresh_record' : True})
-    remove_scenario_form = RemoveScenarioForm()
+    remove_scenario_form = RemoveScenarioForm(dept_id=-1) #-1 indicates no dept restrictions
     
     #Dept forms
     dept_form = DepartmentForm(initial = {'fresh_record' : True})
@@ -361,136 +361,19 @@ def edit_module_assignments(request, module_id):
                                                 number_of_weeks_assigned = int(supplied_weeks_assigned),\
                                                 counted_towards_workload = counted_in_wl)
                             else:#0 hours, delete the assignment
-                                assign.delete();
-
-                        
+                                assign.delete()         
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
 
-###################################3
-# TO BE TESTED!!!!!!!!!!!!!!!!!!!!!!!!
-######################################
-def handle_scanerio_form(request,form,department_id):
-    if form.is_valid():
-        supplied_label = form.cleaned_data['label']
-        supplied_dept = Department.objects.filter(id = department_id)
-        supplied_status = form.cleaned_data['status']
-        supplied_acad_year = form.cleaned_data['academic_year']
-        id_involved = 0
-        if (form.cleaned_data['fresh_record'] == True):
-            #create a new one, this is a fresh record
-            new_scen = WorkloadScenario.objects.create(label=supplied_label,dept = supplied_dept.get(),\
-                                                        academic_year = supplied_acad_year, status = supplied_status)
-            id_involved = new_scen.id
-            
-            #check if we need to copy teaching assignments, profs and modules over
-            supplied_copy_from = form.cleaned_data['copy_from']
-            if (supplied_copy_from != None):
-                #Copy the modules. #See here for the pk tricks below
-                # https://docs.djangoproject.com/en/5.1/topics/db/queries/#copying-model-instances
-                for mod in Module.objects.filter(scenario_ref__label = supplied_copy_from):
-                    mod.pk = None
-                    mod.scenario_ref = new_scen
-                    mod.save()
-                
-                #Copy the profs
-                for prof in Lecturer.objects.filter(workload_scenario__label = supplied_copy_from):
-                    prof.pk = None
-                    prof.workload_scenario = new_scen
-                    prof.save()
-                    
-                #Now copy all assignments
-                for to_be_copied in  TeachingAssignment.objects.filter(workload_scenario__label = supplied_copy_from):
-                    #Make sure to involve the profs and mods in the new scenario
-                    module_involved = Module.objects.filter(module_code = to_be_copied.assigned_module.module_code).filter(scenario_ref__label = supplied_label).get()
-                    prof_involved = Lecturer.objects.filter(name = to_be_copied.assigned_lecturer.name).filter(workload_scenario__label = supplied_label).get()
-                    #Then create the new assignment
-                    TeachingAssignment.objects.create(assigned_module=module_involved,\
-                                                    assigned_lecturer=prof_involved,\
-                                                    number_of_hours=int(to_be_copied.number_of_hours),\
-                                                    counted_towards_workload = to_be_copied.counted_towards_workload,\
-                                                    workload_scenario=new_scen)
-        else: #This is an edit
-            id_involved = form.cleaned_data['scenario_id'] #for edits, the form has the info on which scenario to be edited
-            #Update
-            WorkloadScenario.objects.filter(id = int(id_involved)).update(label=supplied_label,dept = supplied_dept.get(), \
-                                                                            status = supplied_status, academic_year = supplied_acad_year)
-
-        #After adding or modifying, here we check that we maintain one OFFICIAL workload per academic year per department
-        #We do so by autmatically turning all the "same year", "same dept" workloads into draft mode, except, of course, the official one
-        #we wanted to become official, if any.
-        if(supplied_status==WorkloadScenario.OFFICIAL):
-            WorkloadScenario.objects.filter(academic_year = supplied_acad_year).filter(dept = supplied_dept.get()).exclude(id=id_involved)\
-                                        .update(status=WorkloadScenario.DRAFT)
-
-    else:#Invalid data, send to error page
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-            'form_errors': form.errors,
-            'return_label': 'Back to index of workloads',
-            'return_page' : 'workloads_index/',
-        }
-        return HttpResponse(template.render(context, request))
-
-
 def manage_scenario(request):
-    
     if request.method =='POST':
         form = ScenarioForm(request.POST)
-        
         if form.is_valid():
-            supplied_label = form.cleaned_data['label']
+            #This is from the workloads index page. We capture the required dept
             supplied_dept_name = form.cleaned_data['dept']
             supplied_dept = Department.objects.filter(department_name = supplied_dept_name)
-            supplied_status = form.cleaned_data['status']
-            supplied_acad_year = form.cleaned_data['academic_year']
-            id_involved = 0
-            if (request.POST['fresh_record'] == 'True'):
-                #create a new one, this is a fresh record
-                new_scen = WorkloadScenario.objects.create(label=supplied_label,dept = supplied_dept.get(),\
-                                                            academic_year = supplied_acad_year, status = supplied_status)
-                id_involved = new_scen.id
-                
-                #check if we need to copy teaching assignments, profs and modules over
-                supplied_copy_from = form.cleaned_data['copy_from']
-                if (supplied_copy_from != None):
-                    #Copy the modules. #See here for the pk tricks below
-                    # https://docs.djangoproject.com/en/5.1/topics/db/queries/#copying-model-instances
-                    for mod in Module.objects.filter(scenario_ref__label = supplied_copy_from):
-                        mod.pk = None
-                        mod.scenario_ref = new_scen
-                        mod.save()
-                    
-                    #Copy the profs
-                    for prof in Lecturer.objects.filter(workload_scenario__label = supplied_copy_from):
-                        prof.pk = None
-                        prof.workload_scenario = new_scen
-                        prof.save()
-                        
-                    #Now copy all assignments
-                    for to_be_copied in  TeachingAssignment.objects.filter(workload_scenario__label = supplied_copy_from):
-                        #Make sure to involve the profs and mods in the new scenario
-                        module_involved = Module.objects.filter(module_code = to_be_copied.assigned_module.module_code).filter(scenario_ref__label = supplied_label).get()
-                        prof_involved = Lecturer.objects.filter(name = to_be_copied.assigned_lecturer.name).filter(workload_scenario__label = supplied_label).get()
-                        #Then create the new assignment
-                        TeachingAssignment.objects.create(assigned_module=module_involved,\
-                                                        assigned_lecturer=prof_involved,\
-                                                        number_of_hours=int(to_be_copied.number_of_hours),\
-                                                        counted_towards_workload = to_be_copied.counted_towards_workload,\
-                                                        workload_scenario=new_scen)
-            else: #This is an edit
-                id_involved = form.cleaned_data['scenario_id'] #for edits, the form has the info on which scenario to be edited
-                #Update
-                WorkloadScenario.objects.filter(id = int(id_involved)).update(label=supplied_label,dept = supplied_dept.get(), \
-                                                                              status = supplied_status, academic_year = supplied_acad_year)
-
-            #After adding or modifying, here we check that we maintain one OFFICIAL workload per academic year per department
-            #We do so by autmatically turning all the "same year", "same dept" workloads into draft mode, except, of course, the official one
-            #we wanted to become official, if any.
-            if(supplied_status==WorkloadScenario.OFFICIAL):
-                WorkloadScenario.objects.filter(academic_year = supplied_acad_year).filter(dept = supplied_dept.get()).exclude(id=id_involved)\
-                                            .update(status=WorkloadScenario.DRAFT)
-
+            #Call the helpert o create what's needed
+            HandleScenarioForm(form,supplied_dept.get().id)
         else:#Invalid data, send to error page
             template = loader.get_template('workload_app/errors_page.html')
             context = {
@@ -504,7 +387,7 @@ def manage_scenario(request):
 
 def remove_scenario(request):
     if request.method =='POST':
-        form = RemoveScenarioForm(request.POST)
+        form = RemoveScenarioForm(request.POST, dept_id=-1)
         if form.is_valid():
             selected_scenario_label = form.cleaned_data['select_scenario_to_remove'];
             how_many_scenarios = WorkloadScenario.objects.all().count()
@@ -1013,20 +896,20 @@ def department(request,department_id):
             }
             return HttpResponse(template.render(context, request))
     else:
-
         if request.method =='POST':
-
             new_wl_form = ScenarioForm(request.POST)
             if(new_wl_form.is_valid()):
-                print('***************************************************************')
-                supplied_label = new_wl_form.cleaned_data['label']
-                supplied_dept = Department.objects.filter(id = department_id)
-                supplied_status = new_wl_form.cleaned_data['status']
-                supplied_acad_year = new_wl_form.cleaned_data['academic_year']
+                HandleScenarioForm(new_wl_form,department_id)
 
-                #create a new one, this is a fresh record
-                new_scen = WorkloadScenario.objects.create(label=supplied_label,dept = supplied_dept.get(),\
-                                                                academic_year = supplied_acad_year, status = supplied_status)
+            remove_wl_form =  RemoveScenarioForm(request.POST, dept_id=department_id)
+            if remove_wl_form.is_valid():
+                selected_scenario_label = remove_wl_form.cleaned_data['select_scenario_to_remove']
+                how_many_scenarios = WorkloadScenario.objects.all().count()
+                if (how_many_scenarios>1):
+                    #Remove relevant teaching assignment
+                    TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
+                    #Remove the selected scenario.
+                    WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
 
             acad_year_form = SelectAcademicYearForm(request.POST)
             if (acad_year_form.is_valid()):
@@ -1076,7 +959,7 @@ def department(request,department_id):
 
             remove_prog_form = RemoveProgrammeForm(department_id = department_id)
             remove_sub_prog_form = RemoveSubProgrammeForm(department_id = department_id)
-
+            remove_wl_scenario_form = RemoveScenarioForm(dept_id=department_id)
             #Table with all the workloads for this Department
             dept_wls = []
             this_year = datetime.datetime.now().year
@@ -1155,6 +1038,7 @@ def department(request,department_id):
                 'mod_type_form': mod_type_form,
                 'remove_mod_type_form':remove_mod_type_form.as_p(),
                 'wl_form' : wl_form,
+                'remove_wl_scenario_form' : remove_wl_scenario_form,
                 'prog_form' : prog_form,
                 'sub_prog_form' : sub_prog_form,
                 'remove_prog_form' : remove_prog_form,
@@ -2045,6 +1929,15 @@ def input_programme_survey_results(request,programme_id,survey_id):
                         n_tenth_highest_score = survey_scores[9],\
                         associated_slo = associated_lo, parent_survey = survey_obj)
                         new_response.save()
+                        #Process file for SLO surveys
+                        file_obj = None
+                        if ("raw_file" in request.FILES):#raw_file is the field in the form!
+                            file_obj = request.FILES["raw_file"]
+                            #Store file in the survey object
+                            survey = Survey.objects.filter(id = survey_id).get()
+                            survey.original_file = file_obj
+                            survey.save(update_fields = ["original_file"])
+
 
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             peo_survey_form = InputPEOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
@@ -2090,14 +1983,14 @@ def input_programme_survey_results(request,programme_id,survey_id):
                         n_tenth_highest_score = survey_scores[9],\
                         associated_peo = associated_lo, parent_survey = survey_obj)
                         new_response.save()
-        if slo_survey_form.is_valid() or peo_survey_form.is_valid():
-            file_obj = None
-            if ("raw_file" in request.FILES):#raw_file is the field in the form!
-                file_obj = request.FILES["raw_file"]
-                #Store file in the survey object
-                survey = Survey.objects.filter(id = survey_id).get()
-                survey.original_file = file_obj
-                survey.save(update_fields = ["original_file"])
+                        #Process file for PEO surveys
+                        file_obj = None
+                        if ("raw_file" in request.FILES):#raw_file is the field in the form!
+                            file_obj = request.FILES["raw_file"]
+                            #Store file in the survey object
+                            survey = Survey.objects.filter(id = survey_id).get()
+                            survey.original_file = file_obj
+                            survey.save(update_fields = ["original_file"])
         
         #Re-load accreditation (trigger a get there)
         return HttpResponseRedirect(reverse('workload_app:accreditation',  kwargs={'programme_id': programme_id}))

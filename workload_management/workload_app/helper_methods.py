@@ -114,6 +114,72 @@ def CalculateFacultiesTable():
         ret.append(item)
     return ret;  
 
+###################################
+# A helper method that takes in a form (assumed valid)
+# of the type ScenarioForm duly populated. The second parameter
+# is teh id of thed epartment where the scenario is suppsed to belong to.
+# The form is assumed valid (must check before using this).
+# This method came about because we needed to create workload
+# scenarios from two different places: one from the department page, which 
+# should not be allowed to create for other departemnts, and one from 
+# the workloads index page, which should be allowed to choose dpeartment.
+# To avoid code repetition, this little helper method is created.
+# The entire logic of cretaing workload scenario in the database, 
+# copying over what is needed, if necessary, and setting all the draft/official flags
+# are handled here.
+######################################
+def HandleScenarioForm(form,department_id):
+
+    supplied_label = form.cleaned_data['label']
+    supplied_dept = Department.objects.filter(id = department_id)
+    supplied_status = form.cleaned_data['status']
+    supplied_acad_year = form.cleaned_data['academic_year']
+    id_involved = 0
+    if (form.cleaned_data['fresh_record'] == True):
+        #create a new one, this is a fresh record
+        new_scen = WorkloadScenario.objects.create(label=supplied_label,dept = supplied_dept.get(),\
+                                                    academic_year = supplied_acad_year, status = supplied_status)
+        id_involved = new_scen.id
+        
+        #check if we need to copy teaching assignments, profs and modules over
+        supplied_copy_from = form.cleaned_data['copy_from']
+        if (supplied_copy_from != None):
+            #Copy the modules. #See here for the pk tricks below
+            # https://docs.djangoproject.com/en/5.1/topics/db/queries/#copying-model-instances
+            for mod in Module.objects.filter(scenario_ref__label = supplied_copy_from):
+                mod.pk = None
+                mod.scenario_ref = new_scen
+                mod.save()
+            
+            #Copy the profs
+            for prof in Lecturer.objects.filter(workload_scenario__label = supplied_copy_from):
+                prof.pk = None
+                prof.workload_scenario = new_scen
+                prof.save()
+                
+            #Now copy all assignments
+            for to_be_copied in  TeachingAssignment.objects.filter(workload_scenario__label = supplied_copy_from):
+                #Make sure to involve the profs and mods in the new scenario
+                module_involved = Module.objects.filter(module_code = to_be_copied.assigned_module.module_code).filter(scenario_ref__label = supplied_label).get()
+                prof_involved = Lecturer.objects.filter(name = to_be_copied.assigned_lecturer.name).filter(workload_scenario__label = supplied_label).get()
+                #Then create the new assignment
+                TeachingAssignment.objects.create(assigned_module=module_involved,\
+                                                assigned_lecturer=prof_involved,\
+                                                number_of_hours=int(to_be_copied.number_of_hours),\
+                                                counted_towards_workload = to_be_copied.counted_towards_workload,\
+                                                workload_scenario=new_scen)
+    else: #This is an edit
+        id_involved = form.cleaned_data['scenario_id'] #for edits, the form has the info on which scenario to be edited
+        #Update
+        WorkloadScenario.objects.filter(id = int(id_involved)).update(label=supplied_label,dept = supplied_dept.get(), \
+                                                                        status = supplied_status, academic_year = supplied_acad_year)
+
+    #After adding or modifying, here we check that we maintain one OFFICIAL workload per academic year per department
+    #We do so by autmatically turning all the "same year", "same dept" workloads into draft mode, except, of course, the official one
+    #we wanted to become official, if any.
+    if(supplied_status==WorkloadScenario.OFFICIAL):
+        WorkloadScenario.objects.filter(academic_year = supplied_acad_year).filter(dept = supplied_dept.get()).exclude(id=id_involved)\
+                                    .update(status=WorkloadScenario.DRAFT)
     
 # Helper method to compute the workload table by professor
 # It queries the database and returns a list of dictonaries

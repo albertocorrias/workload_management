@@ -424,12 +424,12 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="AddRemoveworkloadsLabel">Remove existing workload</h5>
             </div>
-            <form action="{% url 'workload_app:remove_programme_offered' dept_id %}" method="post">
-            {% csrf_token %}
+            <form action="{% url 'workload_app:department' dept_id %}" method="post">
+                  {% csrf_token %}
                   <div class="modal-body">
-                            {{ remove_prog_form }}
+                            {{ remove_wl_scenario_form }}
                             <br>
-                        <p>Note: all modules within the removed programme will be retained and become not assigned to any programme</p>
+                        <p>Please note that all teaching assignments involved in the selected workload will be removed</p>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
