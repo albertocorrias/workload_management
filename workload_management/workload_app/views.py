@@ -11,10 +11,11 @@ from django.conf import settings
 from django.db.models import F
 from django.core.files.storage import default_storage
 
+
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
                     ProgrammeEducationalObjective,PEOSLOMapping, ModuleLearningOutcome, MLOSLOMapping,Survey,\
-                    SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction
+                    SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction,UniversityStaff
 from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleForm,AddTeachingAssignmentForm,\
                    RemoveTeachingAssignmentForm,ScenarioForm,RemoveScenarioForm,EditTeachingAssignmentForm,\
                    EditModuleAssignmentForm, RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
@@ -885,6 +886,11 @@ def faculty_report(request):
     return HttpResponse(template.render(context, request))
 
 def department(request,department_id):
+    if (request.user.is_authenticated):
+        print('**************************************************************')
+        print(request.user.username)
+        usr = UniversityStaff.objects.filter(user__username = request.user.username).get()
+        print(usr.department)
 
     if (Department.objects.filter(id = department_id).count() == 0):
             #This should really never happen, but just in case the user enters some random number...

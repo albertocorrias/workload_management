@@ -656,4 +656,13 @@ class CorrectiveAction(models.Model):
 
 class UniversityStaff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    #The department of this staff
     department = models.ForeignKey(Department, null=True, on_delete=models.SET_NULL)
+    #The faculty of this staff
+    faculty = models.ForeignKey(Faculty, null=True, on_delete=models.SET_NULL)
+    #The lecturer associated. Used only for users in group "lecturers"
+    lecturer = models.ForeignKey(Lecturer, null=True, on_delete=models.SET_NULL, blank=True)
+
+#department admin qPB7UaRSw)M^]a6
+#faculty admin qPB7UaRSw)M^]a6
+#lecturer (contador) qPB7UaRSw)M^]a6
