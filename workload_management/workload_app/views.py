@@ -885,22 +885,8 @@ def faculty_report(request):
     }
     return HttpResponse(template.render(context, request))
 
-def DetermineUserHomePage(user_id):
-    usr = UniversityStaff.objects.filter(id = user_id).get()
-    if (usr.user.is_superuser == True):
-        return 'workloads_index/'
-    if (usr.user.groups('DepartmentAdminStaff').exists()):
-        dept_id = usr.user.deprtment.id
-        return 'department/' + str(dept_id)
-    if (usr.user.groups('FacultyAdminStaff').exists()):
-        return 'workloads_index/'
-    if (usr.user.groups('Lecturer').exists()):
-        lec_id = usr.user.lecturer.id
-        return 'lecturer/' + str(lec_id)
-
 def department(request,department_id):
     if (request.user.is_authenticated):
-        print('**************************************************************')
         print(request.user.username)
         usr = UniversityStaff.objects.filter(user__username = request.user.username).get()
         print(usr.department)
