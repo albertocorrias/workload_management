@@ -7,7 +7,7 @@ from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME, accreditation_outcome_type
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
                                 ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse,\
-                                ProgrammeEducationalObjective, EmploymentTrack, ServiceRole, Lecturer, TeachingAssignment
+                                ProgrammeEducationalObjective, EmploymentTrack, ServiceRole, Lecturer, TeachingAssignment, UniversityStaff
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                                         CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
                                                         CalculateAllInforAboutOneSLO, DisplayOutcomeValidity,IsOutcomeValidForYear, CalculateAttentionScoresSummaryTable
@@ -15,10 +15,13 @@ from workload_app.helper_methods_accreditation import CalculateTableForSLOSurvey
 
 class TestAccreditationReport(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
-    
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
+
     def test_outcome_validity(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')

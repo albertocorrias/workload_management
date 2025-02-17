@@ -5,15 +5,17 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, Academicyear,WorkloadScenario,EmploymentTrack,ServiceRole,\
-    ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure, CorrectiveAction
+    ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure, CorrectiveAction, UniversityStaff
 
 
 class TestModulePage(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
-    
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
     def test_module_page(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')

@@ -4,15 +4,17 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, Department,EmploymentTrack,ServiceRole,Academicyear
+from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
 
 
 class TestLecturer(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
-    
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
     def test_add_lecturer_method(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
@@ -25,7 +27,7 @@ class TestLecturer(TestCase):
         def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
 
         new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen')
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 

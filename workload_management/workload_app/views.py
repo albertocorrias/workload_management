@@ -405,7 +405,7 @@ def add_professor(request, workloadscenario_id):
     if request.method =='POST':
         form = ProfessorForm(request.POST)
         if (form.is_valid()):
-            supplied_prof_name = request.POST['name'];
+            supplied_prof_name = request.POST['name']
             supplied_prof_appointment = request.POST['fraction_appointment']
             supplied_employment_track_id = request.POST['employment_track']
             supplied_service_role_id = request.POST['service_role']
@@ -477,11 +477,11 @@ def add_module(request,workloadscenario_id):
     if request.method =='POST':
         form = ModuleForm(request.POST, dept_id = department.id)      
         if form.is_valid():
-            supplied_module_code = form.cleaned_data['module_code'];
-            supplied_module_title = form.cleaned_data['module_title'];
-            supplied_type = form.cleaned_data['module_type'];
-            supplied_sem_offered = form.cleaned_data['semester_offered'];
-            supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups'];
+            supplied_module_code = form.cleaned_data['module_code']
+            supplied_module_title = form.cleaned_data['module_title']
+            supplied_type = form.cleaned_data['module_type']
+            supplied_sem_offered = form.cleaned_data['semester_offered']
+            supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups']
             supplied_programme_belongs_to = form.cleaned_data['primary_programme']
             supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
             supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
@@ -574,7 +574,7 @@ def remove_module(request,workloadscenario_id):
 
 def manage_module_type(request, department_id):
     if request.method =='POST':
-        form = ModuleTypeForm(request.POST);
+        form = ModuleTypeForm(request.POST)
         if form.is_valid():  
             supplied_type_name = form.cleaned_data['type_name']
             new_type = ModuleType.objects.create(type_name = supplied_type_name, department=Department.objects.filter(id=department_id).get())
@@ -885,12 +885,26 @@ def faculty_report(request):
     }
     return HttpResponse(template.render(context, request))
 
+def DetermineUserHomePage(user_id):
+    usr = UniversityStaff.objects.filter(id = user_id).get()
+    if (usr.user.is_superuser == True):
+        return 'workloads_index/'
+    if (usr.user.groups('DepartmentAdminStaff').exists()):
+        dept_id = usr.user.deprtment.id
+        return 'department/' + str(dept_id)
+    if (usr.user.groups('FacultyAdminStaff').exists()):
+        return 'workloads_index/'
+    if (usr.user.groups('Lecturer').exists()):
+        lec_id = usr.user.lecturer.id
+        return 'lecturer/' + str(lec_id)
+
 def department(request,department_id):
     if (request.user.is_authenticated):
         print('**************************************************************')
         print(request.user.username)
         usr = UniversityStaff.objects.filter(user__username = request.user.username).get()
         print(usr.department)
+        print(usr.user.groups.all())
 
     if (Department.objects.filter(id = department_id).count() == 0):
             #This should really never happen, but just in case the user enters some random number...

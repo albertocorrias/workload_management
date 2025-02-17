@@ -663,6 +663,6 @@ class UniversityStaff(models.Model):
     #The lecturer associated. Used only for users in group "lecturers"
     lecturer = models.ForeignKey(Lecturer, null=True, on_delete=models.SET_NULL, blank=True)
 
-#department admin qPB7UaRSw)M^]a6
+#department admin EQ-fnqS48ru~Gm:
 #faculty admin qPB7UaRSw)M^]a6
 #lecturer (contador) qPB7UaRSw)M^]a6

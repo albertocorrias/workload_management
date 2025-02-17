@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,\
                                 ModuleType,Department, EmploymentTrack, ServiceRole, Faculty,Academicyear, \
-                                ProgrammeOffered, SubProgrammeOffered
+                                ProgrammeOffered, SubProgrammeOffered, UniversityStaff
 from workload_app.global_constants import MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL, DEFAULT_TRACK_NAME, ShortenString,\
     CalculateNumHoursBasedOnWeeklyInfo,csv_file_type, DEFAULT_DEPARTMENT_NAME,requested_table_type
 from workload_app.helper_methods import CalculateTotalModuleHours, RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
@@ -20,9 +20,12 @@ def create_lecturer(lec_name, appt,adj):
 
 class testHelperMethods(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
 
     def test_workload_tables(self):
         '''This test creates 3 profs and assign them to 3 modules. 

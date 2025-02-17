@@ -3,15 +3,18 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department,EmploymentTrack,ServiceRole,Academicyear
+from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
 from workload_app.global_constants import DEFAULT_WORKLOAD_NAME,CalculateNumHoursBasedOnWeeklyInfo
 
 class TestTeachingAssignments(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
-
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
+        
     def test_add_delete_teaching_assignment(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
@@ -491,7 +494,7 @@ class TestTeachingAssignments(TestCase):
 
     def test_edit_module_assignments_zero_hours(self):
         ''' This test is similar to the one above, but tests the edit_module_assignment method instead 
-             and tets the case where the use inputs zero hours (the expected behaviour 
+             and tests the case where the use inputs zero hours (the expected behaviour 
              is that the assignment should be removed '''
 
         self.setup_user()
@@ -568,7 +571,7 @@ class TestTeachingAssignments(TestCase):
         
     def test_edit_module_assignments_zero_hours_multiple_scenarios(self):
         ''' This test is similar to the one above, it also tests the edit_module_assignment method
-             and tets the case where the use inputs zero hours (the expected behaviour 
+             and tests the case where the use inputs zero hours (the expected behaviour 
              is that the assignment should be removed). However it does so in the presence of other 
              lecturers in inactive scenario. This test was added after discovering a bug in these circumastances  '''
 

@@ -3,15 +3,17 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.models import Department, Faculty
+from workload_app.models import Department, Faculty, UniversityStaff
 from workload_app.global_constants import  DEFAULT_FACULTY_NAME, DEFAULT_FACULTY_ACRONYM
 
 class TestFaculty(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
-
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
     def test_add_remove_faculty(self):
 
         self.setup_user()

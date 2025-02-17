@@ -4,14 +4,17 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping, Academicyear, Survey
+from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ProgrammeEducationalObjective,PEOSLOMapping, Academicyear, Survey,UniversityStaff
 
 
 class TestAccreditation(TestCase):
     def setup_user(self):
-        #The tets client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
+        #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
         self.client = Client(HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
+        self.user.is_superuser = True
+        self.user.save()
+        uni_user = UniversityStaff.objects.create(user = self.user, department=None,faculty=None)
     
     def test_add_remove_slo_and_peo(self):
         self.setup_user()
