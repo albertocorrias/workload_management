@@ -1,4 +1,4 @@
-from .models import Department, UniversityStaff, Module
+from .models import Department, UniversityStaff, Module,TeachingAssignment
 
 def DetermineUserHomePage(user_id,error_text = "ERROR"):
     usr = UniversityStaff.objects.filter(id = user_id).get()
@@ -49,5 +49,11 @@ def CanUserAdminThisModule(user_id, module_code):
             faculty_id = usr.faculty.id
             fac_id = module_department_id = Module.objects.filter(module_code = module_code).first().scenario_ref.dept.faculty.id #We take the first instance of such module
             if (faculty_id == fac_id):
-                return True        
+                return True
+        if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
+            if usr.lecturer is None: return False #Must be assigned a lecturer
+            lec_id = usr.lecturer.id
+            #we return true only if the lecturer has been assigned to teach the module, at least once...
+            if (TeachingAssignment.objects.filter(assigned_module__module_code = module_code).filter(assigned_lecturer__id = lec_id).exists()):
+                return True
     return False

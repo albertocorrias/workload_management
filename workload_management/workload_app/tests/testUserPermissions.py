@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User, Group
 from decimal import *
 
-from workload_app.models import Faculty, Department, Module, ModuleType, WorkloadScenario,UniversityStaff, Academicyear, Lecturer, EmploymentTrack, ServiceRole
+from workload_app.models import Faculty, Department, Module, ModuleType, WorkloadScenario,UniversityStaff, Academicyear, Lecturer, EmploymentTrack, ServiceRole,TeachingAssignment
 from workload_app.helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule
 
 class TestUserPermissions(TestCase):
@@ -28,6 +28,7 @@ class TestUserPermissions(TestCase):
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
         module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
+        module_2 = Module.objects.create(module_code = mod_code+"_2", module_title="second module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
         lecturer_1 = Lecturer.objects.create(name="lecturer_1", fraction_appointment = 0.7, employment_track=track_1, workload_scenario = scenario_1, service_role = service_role_1)
         self.assertEqual(CanUserAdminThisDepartment(uni_super_user.id, new_dept.id+1258), False) #coverage of wrong dept number
         self.assertEqual(CanUserAdminThisModule(uni_super_user.id, module_code = mod_code+'hello'), False) #coverage of wrong module code
@@ -82,7 +83,7 @@ class TestUserPermissions(TestCase):
         #Create dept admin group
         lec_user_group = Group.objects.create(name = 'LecturerStaff')
         lec_user.groups.add(lec_user_group)
-        #Create a uni dept admin user
+        #Create a uni lecturer user
         uni_lec_user = UniversityStaff.objects.create(user = lec_user, department=None,faculty=None,lecturer=None)
         self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), custom_error_message)#Still no lecturer assigned
         uni_lec_user.faculty = new_fac
@@ -91,12 +92,24 @@ class TestUserPermissions(TestCase):
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
-        #####################
-        ##TBC here
-        ####################
-
+        #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
+        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours=39, workload_scenario=scenario_1)
+        self.assertEqual(TeachingAssignment.objects.all().count(),1)
+        #Now lecturer 1 should be able to admin module 1 but not module 2...
+        self.assertEqual(CanUserAdminThisModule(uni_lec_user.id, mod_code), True)
+        self.assertEqual(CanUserAdminThisModule(uni_lec_user.id, mod_code+"_2"), False)
+        #... while faculy and dept admin shuld be able to admin both
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), True)
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), True)
+        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code), True)
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code+"_2"), True)
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code+"_2"), True)
+        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code+"_2"), True)
+        #Check that the lecturer can't manage departments
+        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept.id), False)
+        
         #test faculty and department mismatch
-        #Create one mor efacultya nd one more dpet      
+        #Create one more faculty and one more dpet      
         new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac_2', faculty_acronym = 'CDE_2')
         new_dept_2 = Department.objects.create(department_name = 'test_dept_2', department_acronym = 'BME_2', faculty = new_fac_2)
         uni_dept_admin.faculty = new_fac_2
@@ -112,3 +125,5 @@ class TestUserPermissions(TestCase):
 
         self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept.id), False)#Can't manage old dept
         self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept_2.id), True)#Can  manage new dept_2
+        #And th e lecturer can't acces the new dept 2
+        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept_2.id), False)
