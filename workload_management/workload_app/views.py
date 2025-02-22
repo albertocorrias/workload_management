@@ -171,7 +171,6 @@ def lecturer_page(request,lecturer_id):
         }
         return HttpResponse(template.render(context, request))
     lec_name = lecturer_qs.get().name
-    print(lec_name)
     summary_wl_table = CalculateProfessorIndividualWorkload(lec_name)
     chart_data = CalculateProfessorChartData(lec_name)
 

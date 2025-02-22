@@ -4,7 +4,8 @@ from django.test.client import Client
 from django.contrib.auth.models import User, Group
 from decimal import *
 
-from workload_app.models import Faculty, Department, Module, ModuleType, WorkloadScenario,UniversityStaff, Academicyear, Lecturer, EmploymentTrack, ServiceRole,TeachingAssignment
+from workload_app.models import Faculty, Department, Module, ModuleType, WorkloadScenario,UniversityStaff, \
+    Academicyear, Lecturer, EmploymentTrack, ServiceRole,TeachingAssignment,ProgrammeOffered
 from workload_app.helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule
 
 class TestUserPermissions(TestCase):
@@ -127,3 +128,50 @@ class TestUserPermissions(TestCase):
         self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept_2.id), True)#Can  manage new dept_2
         #And th e lecturer can't acces the new dept 2
         self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept_2.id), False)
+
+    def testSuperUserPageAccess(self):
+        sup_user = User.objects.create_user('new_super_user', 'test@user.com', 'test_super_user_password')
+        sup_user.is_superuser = True
+        sup_user.save()
+        uni_super_user = UniversityStaff.objects.create(user = sup_user, department=None,faculty=None)
+        self.client.login(username='new_super_user', password='test_super_user_password')
+
+        #Create fauclty, dept, programmes and modules
+        new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
+        new_dept = Department.objects.create(department_name = 'test_dept', department_acronym = 'BME', faculty = new_fac)
+        new_prog = ProgrammeOffered.objects.create(programme_name = "new_prog",primary_dept=new_dept)
+        #Create modules
+        mod_code = "BN2102"
+        acad_year_1 = Academicyear.objects.create(start_year=2021)
+        scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
+        service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
+        module_1 = Module.objects.create(module_code = mod_code, module_title="First module", \
+                                         scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1,\
+                                        primary_programme = new_prog)
+        module_2 = Module.objects.create(module_code = mod_code+"_2", module_title="second module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
+        lecturer_1 = Lecturer.objects.create(name="lecturer_1", fraction_appointment = 0.7, employment_track=track_1, workload_scenario = scenario_1, service_role = service_role_1)
+        #Workload sceanrio page access
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["name_of_active_scenario"],"scenario_1")
+        #module pages
+        response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
+        self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(response.context["module_title"], "First module")
+        self.assertEqual(response.context["module_code"], mod_code)
+        response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code+"_2"}))
+        self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(response.context["module_title"], "second module")
+        self.assertEqual(response.context["module_code"], mod_code+"_2")
+        #Department page
+        response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["dept_name"], "test_dept")
+        #Accreditation page
+        response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["programme_name"], "new_prog")
+        #Lecturer page
+        
