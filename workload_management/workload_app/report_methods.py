@@ -16,7 +16,7 @@ def GetLastNYears(num_years):
 #Helper method to calculate the report table
 #It returns a list with as many rows as modules that "prof_name" 
 # was assigned to in any of the last 5 years, plus two extra summary lists
-# Each item in the list is a list with (except the two extra summatry lists)
+# Each item in the list is a list with (except the two extra summary lists)
 # Position 0: module code
 # Position 1: module title
 # Position 2: total assigned hours to prof_name in workloads in the year (this year -5)
@@ -24,9 +24,9 @@ def GetLastNYears(num_years):
 # Position 4: total assigned hours to prof_name in workloads in the year (this year -3)
 # Position 5: total assigned hours to prof_name in workloads in the year (this year -4)
 # Position 6: total assigned hours to prof_name in workloads in the year (this year -1)
-#The two extra summatyt lists 
+#The two extra summary lists 
 # First list: total hours for each of the last five years
-# tFTE of teh prof for each of the last five years
+# tFTE of the prof for each of the last five years
 def CalculateProfessorIndividualWorkload(prof_name):    
     ret = [];
     time_info = GetLastNYears(5)
@@ -61,9 +61,9 @@ def CalculateProfessorIndividualWorkload(prof_name):
     total_years = [0] * (len(years)+2)
     tFTEs = [0] * (len(years)+2)
     total_years[0] = "Total"
-    total_years[1] = " "
+    total_years[1] = ""
     tFTEs[0]  = "tFTE"
-    tFTEs[1]  = " "
+    tFTEs[1]  = ""
     for idx, year in enumerate(years):
         for row in ret:
             total_years[idx+2] = total_years[idx+2] + row[idx+2] #+2 for module code and title (see above)
