@@ -177,6 +177,8 @@ class TestUserPermissions(TestCase):
                                                                         likert_labels = def_labels["slo_survey_labels_object"],\
                                                                         survey_type = Survey.SurveyType.MLO,\
                                                                         max_respondents = 100)       
+
+    
         ####################
         ##SUPER  USER ACCESS
         ####################  
@@ -230,4 +232,21 @@ class TestUserPermissions(TestCase):
         self.assertEqual(response.context["module_code"], mod_code)
 
         self.client.logout()
+
+        #Groups to be tested mirroring real db
+        #superuser (done above)
+        #DepartmentAdminStaff
+	    #FacultyAdminStaff
+	    #LecturerStaff
+
+        dept_admins =  Group.objects.create(name="DepartmentAdminStaff")
+        fac_admins =  Group.objects.create(name="FacultyAdminStaff")
+        lecturers = Group.objects.create(name="LecturerStaff")
+
+        dept_admin = User.objects.create_user('new_dept_admin', 'test@dept_user.com', 'dept_super_user_password')
+        dept_admin.is_superuser = False
+        dept_admin.groups.add(dept_admins)
+        dept_admin.save()
+        uni_dept_admin = UniversityStaff.objects.create(user = dept_admin, department=new_dept,faculty=new_fac)
+
 
