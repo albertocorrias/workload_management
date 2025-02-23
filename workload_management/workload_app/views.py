@@ -1704,72 +1704,73 @@ def accreditation(request,programme_id):
         return HttpResponse(template.render(context, request))
 
 def accreditation_report(request,programme_id, start_year,end_year):
-    #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
-    big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
-    attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year)
+    if request.method == 'GET':
+        #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
+        big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
+        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year)
 
-    slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
-    slo_identifiers = []
-    all_slo_data_for_plot = []
-    all_slo_ids = []
-    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
-        all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year) 
-        slo_survey_measures = all_slo_info["slo_surveys"] #A list of all the slo survey measures. This one is ready for HTML
-        mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
-        mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
-        mlo_slo_mapping_table_rows = all_slo_info["mlo_mapping_for_slo"] 
+        slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
+        slo_identifiers = []
+        all_slo_data_for_plot = []
+        all_slo_ids = []
+        for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
+            all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year) 
+            slo_survey_measures = all_slo_info["slo_surveys"] #A list of all the slo survey measures. This one is ready for HTML
+            mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
+            mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
+            mlo_slo_mapping_table_rows = all_slo_info["mlo_mapping_for_slo"] 
+            
+            slo_measures_data_plot = all_slo_info["slo_measures_plot_data"]
+            years_for_tables = []
+            for year in range(start_year, end_year+1):
+                years_for_tables.append(year)
+            slo_info = {
+                'slo_id' : slo.id,
+                'slo_desc' : slo.slo_short_description,
+                'slo_full_description' : slo.slo_description,
+                'slo_letter' : slo.letter_associated,
+                'mlo_mappings' : mlo_slo_mapping_table_rows,
+                'slo_surveys' : slo_survey_measures,
+                'mlo_direct_measures' : mlo_direct_measures_table_rows,
+                'colspan_param' : end_year - start_year + 2,
+                'years_for_tables' : years_for_tables,
+                'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows,
+                'slo_measures_plot_data' : slo_measures_data_plot #unused here?
+            }
+            slo_measures.append(slo_info)
+            slo_identifiers.append(slo.slo_short_description)
+            all_slo_data_for_plot.append(slo_measures_data_plot)
+            all_slo_ids.append(slo.id)
         
-        slo_measures_data_plot = all_slo_info["slo_measures_plot_data"]
-        years_for_tables = []
-        for year in range(start_year, end_year+1):
-            years_for_tables.append(year)
-        slo_info = {
-            'slo_id' : slo.id,
-            'slo_desc' : slo.slo_short_description,
-            'slo_full_description' : slo.slo_description,
-            'slo_letter' : slo.letter_associated,
-            'mlo_mappings' : mlo_slo_mapping_table_rows,
-            'slo_surveys' : slo_survey_measures,
-            'mlo_direct_measures' : mlo_direct_measures_table_rows,
-            'colspan_param' : end_year - start_year + 2,
-            'years_for_tables' : years_for_tables,
-            'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows,
-            'slo_measures_plot_data' : slo_measures_data_plot #unused here?
-        }
-        slo_measures.append(slo_info)
-        slo_identifiers.append(slo.slo_short_description)
-        all_slo_data_for_plot.append(slo_measures_data_plot)
-        all_slo_ids.append(slo.id)
-    
 
-    #all_direct_data
-    for row in attention_scores_table:
-        row['zipped_direct'] = zip(row['attention_scores_direct'], row['colours_direct'])
-        row['zipped_mlo_surveys'] = zip(row['attention_scores_mlo_surveys'], row['colours_mlo_surveys'])
-        row['zipped_slo_surveys'] = zip(row['attention_scores_slo_surveys'], row['colours_slo_surveys'])
-                                   
-    years_to_display = range(start_year,end_year+1)
-    template = loader.get_template('workload_app/accreditation_report.html')
-    context = {
-        'programme_id' : programme_id,
-        'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
-        'start_year' : str(start_year)+'/'+str(start_year+1),
-        'end_year' : str(end_year)+'/'+str(end_year+1),
-        'slo_measures' : slo_measures, 
-        'years_to_display' : years_to_display,
-        'num_years_colspan' : len(years_to_display),
-        'overall_colpsan' : len(years_to_display)+2,
-        'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
-        'attention_scores_table' : attention_scores_table,
-        'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
-        'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
-        'number_of_slo_plus_one' : len(slo_measures)+1,
-        'number_of_slo' : len(slo_measures),
-        'slo_identifiers' : slo_identifiers,
-        'all_slo_data_for_plot' : all_slo_data_for_plot,
-        'all_slo_ids' : all_slo_ids
-    }
-    return HttpResponse(template.render(context, request))
+        #all_direct_data
+        for row in attention_scores_table:
+            row['zipped_direct'] = zip(row['attention_scores_direct'], row['colours_direct'])
+            row['zipped_mlo_surveys'] = zip(row['attention_scores_mlo_surveys'], row['colours_mlo_surveys'])
+            row['zipped_slo_surveys'] = zip(row['attention_scores_slo_surveys'], row['colours_slo_surveys'])
+                                    
+        years_to_display = range(start_year,end_year+1)
+        template = loader.get_template('workload_app/accreditation_report.html')
+        context = {
+            'programme_id' : programme_id,
+            'programme_name' : ProgrammeOffered.objects.filter(id = programme_id).get().programme_name,
+            'start_year' : str(start_year)+'/'+str(start_year+1),
+            'end_year' : str(end_year)+'/'+str(end_year+1),
+            'slo_measures' : slo_measures, 
+            'years_to_display' : years_to_display,
+            'num_years_colspan' : len(years_to_display),
+            'overall_colpsan' : len(years_to_display)+2,
+            'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
+            'attention_scores_table' : attention_scores_table,
+            'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
+            'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
+            'number_of_slo_plus_one' : len(slo_measures)+1,
+            'number_of_slo' : len(slo_measures),
+            'slo_identifiers' : slo_identifiers,
+            'all_slo_data_for_plot' : all_slo_data_for_plot,
+            'all_slo_ids' : all_slo_ids
+        }
+        return HttpResponse(template.render(context, request))
 
 def input_module_survey_results(request,module_code,survey_id):
     survey_qs  =Survey.objects.filter(id = survey_id)
@@ -2031,88 +2032,88 @@ def input_programme_survey_results(request,programme_id,survey_id):
         return HttpResponse(template.render(context, request))
 
 def survey_results(request,survey_id):
+    if request.method=="GET":
+        survey_labels = []
+        back_address = '/workload_app/'
+        back_text = 'Back to '
+        survey_obj = Survey.objects.filter(id = survey_id).get()
+        #WE are visualizaing here. The labels are taken from the survey object
+        survey_labels = survey_obj.likert_labels.GetListOfLabels()
 
-    survey_labels = []
-    back_address = '/workload_app/'
-    back_text = 'Back to '
-    survey_obj = Survey.objects.filter(id = survey_id).get()
-    #WE are visualizaing here. The labels are taken from the survey object
-    survey_labels = survey_obj.likert_labels.GetListOfLabels()
-
-    if survey_obj.survey_type == Survey.SurveyType.MLO:
-        #This is an MLO Survey
-        existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
-        back_id = ''
-        if (existing_responses_qs.count() > 0):
-            back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
-        elif ('module_code' in request.session.keys()): 
-            back_id = request.session['module_code']
-        if(back_id != ''):
-            back_address += 'module/'+ str(back_id)
-            back_text += 'module page'
-        else:#No responses, not in any session, back to programme page
+        if survey_obj.survey_type == Survey.SurveyType.MLO:
+            #This is an MLO Survey
+            existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
+            back_id = ''
+            if (existing_responses_qs.count() > 0):
+                back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
+            elif ('module_code' in request.session.keys()): 
+                back_id = request.session['module_code']
+            if(back_id != ''):
+                back_address += 'module/'+ str(back_id)
+                back_text += 'module page'
+            else:#No responses, not in any session, back to programme page
+                back_id = survey_obj.programme_associated.id
+                back_address += 'accreditation/' + str(back_id)
+                back_text += 'accreditation page'
+        
+        if survey_obj.survey_type == Survey.SurveyType.SLO :
+            #this is a SLO survey
             back_id = survey_obj.programme_associated.id
             back_address += 'accreditation/' + str(back_id)
             back_text += 'accreditation page'
-    
-    if survey_obj.survey_type == Survey.SurveyType.SLO :
-        #this is a SLO survey
-        back_id = survey_obj.programme_associated.id
-        back_address += 'accreditation/' + str(back_id)
-        back_text += 'accreditation page'
-    if survey_obj.survey_type == Survey.SurveyType.PEO :
-        #this is a PEO survey
-        back_id = survey_obj.programme_associated.id
-        back_address += 'accreditation/' + str(back_id)
-        back_text += 'accreditation page' 
+        if survey_obj.survey_type == Survey.SurveyType.PEO :
+            #this is a PEO survey
+            back_id = survey_obj.programme_associated.id
+            back_address += 'accreditation/' + str(back_id)
+            back_text += 'accreditation page' 
 
-    question_texts = []
-    shorter_question_texts = []
-    srv_results = []
-    percentages = []
-    cumulative_percenatges = []
-    total_responses_per_question = []
-    questions_nps = []
-    questions_nps_messages = []
-    questions_perc_positive = []
-    questions_perc_non_negative = []
-    for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
-        question_texts.append(response.question_text)
-        shorter_question_texts.append(ShortenString(response.question_text,25))
+        question_texts = []
+        shorter_question_texts = []
+        srv_results = []
+        percentages = []
+        cumulative_percenatges = []
+        total_responses_per_question = []
+        questions_nps = []
+        questions_nps_messages = []
+        questions_perc_positive = []
+        questions_perc_non_negative = []
+        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
+            question_texts.append(response.question_text)
+            shorter_question_texts.append(ShortenString(response.question_text,25))
 
-        resp_feat = response.CalculateRepsonsesProprties()
-        srv_results.append(resp_feat["responses"])
-        percentages.append(resp_feat["percentages"])
-        cumulative_percenatges.append(resp_feat["cumulative_percentages"])
-        total_responses_per_question.append(resp_feat["all_respondents"])
-        questions_nps.append(resp_feat["nps"])
-        questions_nps_messages.append(resp_feat["nps_message"])
-        questions_perc_positive.append(resp_feat["percentage_positive"])
-        questions_perc_non_negative.append(resp_feat["percentage_non_negative"])
-    all_survey_details = CalculateSurveyDetails(survey_id)
-    template = loader.get_template('workload_app/survey_results.html')
+            resp_feat = response.CalculateRepsonsesProprties()
+            srv_results.append(resp_feat["responses"])
+            percentages.append(resp_feat["percentages"])
+            cumulative_percenatges.append(resp_feat["cumulative_percentages"])
+            total_responses_per_question.append(resp_feat["all_respondents"])
+            questions_nps.append(resp_feat["nps"])
+            questions_nps_messages.append(resp_feat["nps_message"])
+            questions_perc_positive.append(resp_feat["percentage_positive"])
+            questions_perc_non_negative.append(resp_feat["percentage_non_negative"])
+        all_survey_details = CalculateSurveyDetails(survey_id)
+        template = loader.get_template('workload_app/survey_results.html')
 
-    #transpose percentages for the overall stacked chart data
-    overall_plot_data = list(map(list, zip(*percentages)))
+        #transpose percentages for the overall stacked chart data
+        overall_plot_data = list(map(list, zip(*percentages)))
 
-    context = {
-        'survey_details' : all_survey_details,
-        'average_response_rate' : all_survey_details["average_response_rate"],
-        'question_texts' : question_texts,
-        'shorter_question_texts' : shorter_question_texts,
-        'labels' : survey_labels,
-        'bar_chart_data' : srv_results,
-        'percentages' : percentages,
-        'overall_plot_data' : overall_plot_data,
-        'cumulative_percentages' : cumulative_percenatges,
-        'total_responses_per_question' : total_responses_per_question,
-        'questions_nps' : questions_nps,
-        'questions_nps_messages' : questions_nps_messages,
-        'questions_perc_positive' : questions_perc_positive,
-        'questions_perc_non_negative' : questions_perc_non_negative,
-        'back_address' : back_address,
-        'back_text' : back_text
-    }
-    return HttpResponse(template.render(context, request))
+        context = {
+            'survey_details' : all_survey_details,
+            'average_response_rate' : all_survey_details["average_response_rate"],
+            'question_texts' : question_texts,
+            'shorter_question_texts' : shorter_question_texts,
+            'labels' : survey_labels,
+            'bar_chart_data' : srv_results,
+            'percentages' : percentages,
+            'overall_plot_data' : overall_plot_data,
+            'cumulative_percentages' : cumulative_percenatges,
+            'total_responses_per_question' : total_responses_per_question,
+            'questions_nps' : questions_nps,
+            'questions_nps_messages' : questions_nps_messages,
+            'questions_perc_positive' : questions_perc_positive,
+            'questions_perc_non_negative' : questions_perc_non_negative,
+            'back_address' : back_address,
+            'back_text' : back_text
+        }
+        return HttpResponse(template.render(context, request))
 
 
