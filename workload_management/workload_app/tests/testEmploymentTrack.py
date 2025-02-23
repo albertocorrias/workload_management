@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import Lecturer, WorkloadScenario,EmploymentTrack, ServiceRole, UniversityStaff
+from workload_app.models import Lecturer, WorkloadScenario,EmploymentTrack, ServiceRole, UniversityStaff, Faculty
 
 
 class TestEmploymentTrack(TestCase):
@@ -27,11 +27,11 @@ class TestEmploymentTrack(TestCase):
 
         self.assertEqual(EmploymentTrack.objects.all().count(),1) #Test the default creation of default employment track
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         #Test the POST now
         new_track_name = 'test_track'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page' ,  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
         
         self.assertEqual(EmploymentTrack.objects.all().count(),2) #The default plus the new one
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
@@ -41,7 +41,7 @@ class TestEmploymentTrack(TestCase):
 
         #Remove the track we just added
         new_track = EmploymentTrack.objects.filter(track_name = new_track_name)
-        self.client.post(reverse('workload_app:remove_employment_track'),{'select_track_to_remove':new_track.get().id})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'select_track_to_remove':new_track.get().id})
         self.assertEqual(EmploymentTrack.objects.all().count(),1) #Only the default one should be there
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
         self.assertEqual(EmploymentTrack.objects.filter(track_name = new_track_name).count(),0)
@@ -49,14 +49,14 @@ class TestEmploymentTrack(TestCase):
 
         #Try deleting the default track (should not be possible)
         def_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
-        self.client.post(reverse('workload_app:remove_employment_track'),{'select_track_to_remove':def_track.get().id})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'select_track_to_remove':def_track.get().id})
         self.assertEqual(EmploymentTrack.objects.all().count(),1) #default track should still be there
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1) #default track should still be there
     
     def test_edit_existing_track(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         self.assertEqual(EmploymentTrack.objects.all().count(),0)
         #Test the GET
         response = self.client.get(reverse('workload_app:workloads_index'))
@@ -69,7 +69,7 @@ class TestEmploymentTrack(TestCase):
         #Test the POST now
         track_name = 'test_track'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':track_name,'track_adjustment' : str(track_adj), 'is_adjunct' : False,'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':track_name,'track_adjustment' : str(track_adj), 'is_adjunct' : False,'fresh_record': True})
         self.assertEqual(EmploymentTrack.objects.all().count(),2) #Default plus one
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
         self.assertEqual(EmploymentTrack.objects.filter(track_name = track_name).count(),1)
@@ -78,7 +78,7 @@ class TestEmploymentTrack(TestCase):
         track_id = EmploymentTrack.objects.filter(track_name = track_name).get().id
         #Now edit the adjustment
         track_adj_after_change = 0.8
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':track_name,\
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':track_name,\
                                                                         'track_adjustment' : str(track_adj_after_change), \
                                                                          'fresh_record': False,
                                                                          'is_adjunct' : False,
@@ -93,7 +93,7 @@ class TestEmploymentTrack(TestCase):
 
         #Now edit the name
         new_name = "hello"
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_name,\
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_name,\
                                                                         'track_adjustment' : str(track_adj_after_change), \
                                                                          'fresh_record': False,
                                                                          'is_adjunct' : False,
@@ -108,7 +108,7 @@ class TestEmploymentTrack(TestCase):
         self.assertEqual(EmploymentTrack.objects.filter(is_adjunct = False).count(),2)
 
         #Now edit the is_adjunct flag
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_name,\
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_name,\
                                                                         'track_adjustment' : str(track_adj_after_change), \
                                                                          'fresh_record': False,
                                                                          'is_adjunct': True,
@@ -125,7 +125,7 @@ class TestEmploymentTrack(TestCase):
 
         #Coverage. Create new employment track from scratch, as adjunct
         another_new_name = 'this one is adjunct'
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':another_new_name,\
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':another_new_name,\
                                                                         'track_adjustment' : str(track_adj_after_change), \
                                                                          'fresh_record': True,
                                                                          'is_adjunct': True,
@@ -145,7 +145,7 @@ class TestEmploymentTrack(TestCase):
     def test_no_duplicate_names(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         self.assertEqual(EmploymentTrack.objects.all().count(),0)
         #Test the GET
         response = self.client.get(reverse('workload_app:workloads_index'))
@@ -157,20 +157,20 @@ class TestEmploymentTrack(TestCase):
         #Test the POST now
         track_name = 'test_track'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
         self.assertEqual(EmploymentTrack.objects.all().count(),2) #Default plus one
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
         self.assertEqual(EmploymentTrack.objects.filter(track_name = track_name).count(),1)
 
         #Try adding another one with the same name
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':track_name,'track_adjustment' : str(0.3), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':track_name,'track_adjustment' : str(0.3), 'fresh_record': True})
         self.assertEqual(EmploymentTrack.objects.all().count(),2) # NO CHANGE. Still two tracks 
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
         self.assertEqual(EmploymentTrack.objects.filter(track_name = track_name).count(),1)
 
         #Now we ligitinamtely add another one
         new_name = "hello"
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_name,'track_adjustment' : str(0.75), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_name,'track_adjustment' : str(0.75), 'fresh_record': True})
         self.assertEqual(EmploymentTrack.objects.all().count(),3) # One more. Three tracks now
         self.assertEqual(EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME).count(),1)
         self.assertEqual(EmploymentTrack.objects.filter(track_name = track_name).count(),1)
@@ -178,7 +178,7 @@ class TestEmploymentTrack(TestCase):
 
         #Now try editing the new one and give it the name of the existing one
         new_track_id = EmploymentTrack.objects.filter(track_name = new_name).get().id
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':track_name,\
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':track_name,\
                                                                         'track_adjustment' : str(0.75), \
                                                                          'fresh_record': False,
                                                                          'employment_track_id': str(new_track_id)})
@@ -192,7 +192,7 @@ class TestEmploymentTrack(TestCase):
     def test_add_remove_track_with_lecturer(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -200,7 +200,7 @@ class TestEmploymentTrack(TestCase):
         #Add one track
         new_track_name = 'test_track'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
         new_track = EmploymentTrack.objects.filter(track_name = new_track_name)
 
         def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
@@ -213,7 +213,7 @@ class TestEmploymentTrack(TestCase):
         self.assertEqual(Lecturer.objects.all().filter(employment_track__track_name=new_track_name).count(),1)
 
         #Now remove the new track (in which the lecturer is in)
-        self.client.post(reverse('workload_app:remove_employment_track'),{'select_track_to_remove':new_track.get().id})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'select_track_to_remove':new_track.get().id})
         #Expected behaviour: lecturer still there, switched to default track
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),1)
@@ -226,7 +226,7 @@ class TestEmploymentTrack(TestCase):
     def test_edit_lecturer_change_track(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -235,14 +235,14 @@ class TestEmploymentTrack(TestCase):
         #Add one track
         new_track_name = 'test_track'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name,'track_adjustment' : str(track_adj), 'fresh_record': True})
         new_track = EmploymentTrack.objects.filter(track_name = new_track_name)
         self.assertEqual(EmploymentTrack.objects.all().count(),2)
         
         #Add another
         new_track_name_2 = 'test_track_2'
         track_adj_2 = 9
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name_2,'track_adjustment' : str(track_adj_2), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name_2,'track_adjustment' : str(track_adj_2), 'fresh_record': True})
         new_track_2 = EmploymentTrack.objects.filter(track_name = new_track_name_2)
         self.assertEqual(EmploymentTrack.objects.all().count(),3)
         self.assertEqual(EmploymentTrack.objects.filter(track_name=new_track_name_2).count(),1)
@@ -265,7 +265,7 @@ class TestEmploymentTrack(TestCase):
     def test_add_remove_track_with_lecturer_multiple_scen(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
@@ -279,8 +279,8 @@ class TestEmploymentTrack(TestCase):
         new_track_name = 'test_track'
         new_track_name_2 = 'test_track_2'
         track_adj = 0.5
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name,'track_adjustment' : str(track_adj),'fresh_record': True})
-        self.client.post(reverse('workload_app:manage_employment_track'),{'track_name':new_track_name_2,'track_adjustment' : str(track_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name,'track_adjustment' : str(track_adj),'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'track_name':new_track_name_2,'track_adjustment' : str(track_adj), 'fresh_record': True})
         new_track = EmploymentTrack.objects.filter(track_name = new_track_name)
         new_track_2 = EmploymentTrack.objects.filter(track_name = new_track_name_2)
 
@@ -309,7 +309,7 @@ class TestEmploymentTrack(TestCase):
         self.assertEqual(Lecturer.objects.all().filter(employment_track__track_name=new_track_name).count(),3)
 
         #Now remove the new track (in which 3 lecturers, in 2 scenarios are in)
-        self.client.post(reverse('workload_app:remove_employment_track'),{'select_track_to_remove':new_track.get().id})
+        self.client.post(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}),{'select_track_to_remove':new_track.get().id})
         #Expected behaviour: lecturer still there, switched to default track
         self.assertEqual(Lecturer.objects.all().count(),4)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),2)

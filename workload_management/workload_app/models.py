@@ -72,6 +72,9 @@ class EmploymentTrack(models.Model):
     # Whether or not this is employed as external person (adjunct).
     is_adjunct = models.BooleanField(default=False, null=True)
 
+    # The faculty this employment track is associated with
+    faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,null=True,default=1)
+
     def __str__(self):
         return self.track_name
     
@@ -96,6 +99,9 @@ class ServiceRole(models.Model):
 
     #Whether this is the default service role with the default adjustment
     is_default = models.BooleanField(default=True, null=True)
+
+    # The faculty this service role is associated with
+    faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,null=True)
 
     def __str__(self):
         return self.role_name

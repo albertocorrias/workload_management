@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,\
                                 ModuleType,Department, EmploymentTrack, ServiceRole, Faculty,Academicyear, \
-                                ProgrammeOffered, SubProgrammeOffered, UniversityStaff
+                                ProgrammeOffered, SubProgrammeOffered, UniversityStaff, Faculty
 from workload_app.global_constants import MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL, DEFAULT_TRACK_NAME, ShortenString,\
     CalculateNumHoursBasedOnWeeklyInfo,csv_file_type, DEFAULT_DEPARTMENT_NAME,requested_table_type
 from workload_app.helper_methods import CalculateTotalModuleHours, RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
@@ -41,10 +41,10 @@ class testHelperMethods(TestCase):
         first_scen = WorkloadScenario.objects.create(label=first_label);
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         #create two tracks
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0)
-        track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 0.0)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, faculty=new_fac)
+        track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 0.0, faculty=new_fac)
 
         normal_lecturer = Lecturer.objects.create(name="normal_lecturer", fraction_appointment = 0.7  )
         educator_track = Lecturer.objects.create(name="educator_track", fraction_appointment = 1.0, employment_track=track_1)
@@ -378,13 +378,14 @@ class testHelperMethods(TestCase):
         self.assertAlmostEqual(obtained_summary_data["total_tFTE_for_workload"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_department_tFTE"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_module_hours_for_dept"],Decimal(0))#
-        self.assertAlmostEqual(obtained_summary_data["total_hours_for_workload"],Decimal(0));
-        self.assertAlmostEqual(obtained_summary_data["expected_hours_per_tFTE"],Decimal(0));
-        
+        self.assertAlmostEqual(obtained_summary_data["total_hours_for_workload"],Decimal(0))
+        self.assertAlmostEqual(obtained_summary_data["expected_hours_per_tFTE"],Decimal(0))
+
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         #Now create a realistic database
         #create two tracks
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
-        track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 3.0, is_adjunct = True)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False, faculty=new_fac)
+        track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 3.0, is_adjunct = True, faculty=new_fac)
 
         normal_lecturer = Lecturer.objects.create(name="normal_lecturer", fraction_appointment = 0.7  )
         educator_track = Lecturer.objects.create(name="educator_track", fraction_appointment = 1.0, employment_track=track_1)
@@ -555,14 +556,14 @@ class testHelperMethods(TestCase):
     def testCalculateModuleTableOverYears(self):
         calc = CalculateSingleModuleInformationTable("BN301")
         self.assertEqual(len(calc),0)
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         acad_year_2 = Academicyear.objects.create(start_year=2022)
         dept_name = 'test_dept'
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False, faculty=new_fac)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
         mod_type_1 = ModuleType.objects.create(type_name = "one type")
         programme_1 = ProgrammeOffered.objects.create(programme_name = "B. Eng", primary_dept = test_dept)
@@ -712,7 +713,7 @@ class testHelperMethods(TestCase):
         pg_prog_name ='PG'
         pg_prog = ProgrammeOffered.objects.create(programme_name = pg_prog_name, primary_dept = test_dept)
         self.assertEqual(ProgrammeOffered.objects.all().count(), 2)
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         #Create an academic year
         test_acad_year = Academicyear.objects.create(start_year = 2023)
         #Create a Workload scenario
@@ -720,7 +721,7 @@ class testHelperMethods(TestCase):
         wl_scen = WorkloadScenario.objects.create(label = test_scenario_name, dept = test_dept, academic_year = test_acad_year,\
                                                    status = WorkloadScenario.OFFICIAL)
         #Create some lecturers
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False, faculty=new_fac)
         test_svc_role = ServiceRole.objects.create(role_name = "test", role_adjustment = 2.0)
         normal_lecturer = Lecturer.objects.create(name="normal_lecturer", fraction_appointment = 0.7, service_role = test_svc_role, workload_scenario = wl_scen)
         educator_track = Lecturer.objects.create(name="educator_track", fraction_appointment = 1.0, service_role = test_svc_role, employment_track=track_1,workload_scenario = wl_scen)
@@ -999,7 +1000,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(EmploymentTrack.objects.all().count(), 0)
         tbl = CalculateEmploymentTracksTable()
         self.assertEqual(len(tbl),0)
-        EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2)
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
+        EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2,faculty=new_fac)
         self.assertEqual(EmploymentTrack.objects.all().count(), 1)
         tbl = CalculateEmploymentTracksTable()
         self.assertEqual(len(tbl),1)

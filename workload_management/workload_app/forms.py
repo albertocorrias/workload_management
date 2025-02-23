@@ -228,7 +228,7 @@ class ServiceRoleForm(forms.ModelForm):
     role_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
-        model = ServiceRole;
+        model = ServiceRole
         fields = ['role_name', 'role_adjustment']
         labels = {'role_name' : _('Title of the service role (e.g., Head of department)'),
                   'role_adjustment' : _('Multiplier for teaching expectations (e.g., 0 for no expectations, 2 for double, etc)')}
@@ -246,7 +246,12 @@ class ServiceRoleForm(forms.ModelForm):
                 raise ValidationError(_('Invalid service role name: it alreday exists'), code='invalid')
 
 class RemoveServiceRoleForm(forms.Form):
-    select_service_role_to_remove = forms.ModelChoiceField(label = 'Select the service role to remove', queryset=ServiceRole.objects.all())
+    def __init__(self, *args, **kwargs):
+        faculty_id = kwargs.pop('faculty_id')
+        super(RemoveServiceRoleForm, self).__init__(*args, **kwargs)
+        #Make user select service roles only for this faculty
+        self.fields['select_service_role_to_remove'] = forms.ModelChoiceField(label = 'Select the service role to remove',\
+             queryset=ServiceRole.objects.filter(faculty__id = faculty_id))
 
 class ProgrammeOfferedForm(forms.ModelForm):
     
@@ -272,9 +277,7 @@ class ProgrammeOfferedForm(forms.ModelForm):
             if (ProgrammeOffered.objects.filter(programme_name = programme_name).filter(primary_dept=dept_offering).exists()):
                 raise ValidationError(_('Invalid programme name: it alreday exists'), code='invalid')
 
-
 class RemoveProgrammeForm(forms.Form):
-
     def __init__(self, *args, **kwargs):
         dept_id = kwargs.pop('department_id')
         super(RemoveProgrammeForm, self).__init__(*args, **kwargs)
@@ -322,7 +325,7 @@ class EmplymentTrackForm(forms.ModelForm):
                   'is_adjunct' : _('Whether or not this position refers to adjunct (not employed by the University) staff')}
     
     def clean(self):
-        cleaned_data = super().clean();
+        cleaned_data = super().clean()
         track_name  = cleaned_data.get("track_name")
         #if it is a fesh record, we must make sure no duplicate names 
         if (cleaned_data.get("fresh_record") == True):
@@ -334,7 +337,12 @@ class EmplymentTrackForm(forms.ModelForm):
                 raise ValidationError(_('Invalid employment track name: it alreday exists'), code='invalid')
 
 class RemoveEmploymentTrackForm(forms.Form):
-    select_track_to_remove = forms.ModelChoiceField(label = 'Select the track to remove', queryset=EmploymentTrack.objects.all())
+    def __init__(self, *args, **kwargs):
+        faculty_id = kwargs.pop('faculty_id')
+        super(RemoveEmploymentTrackForm, self).__init__(*args, **kwargs)
+        #Make user select employment tracks only for this faculty
+        self.fields['select_track_to_remove'] = forms.ModelChoiceField(label = 'Select the track to remove',\
+             queryset=EmploymentTrack.objects.filter(faculty__id = faculty_id))
 
 class SLOForm(forms.ModelForm):
 

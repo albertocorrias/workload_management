@@ -90,6 +90,115 @@ def scenario_view(request, workloadscenario_id):
     }
     return HttpResponse(template.render(context, request))
 
+def school_page(request,faculty_id):
+    fac_qs = Faculty.objects.filter(id = faculty_id)
+    if (fac_qs.count() != 1):#This should never happen, but just in case user puts in some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'form_errors': "Requested faculty does not exist",
+                'return_label': 'Back to school page',
+                'return_page' : 'school_page/'+str(faculty_id),
+        }
+        return HttpResponse(template.render(context, request))
+    fac_obj = fac_qs.get()
+    if request.method =='POST':
+
+        form = EmplymentTrackForm(request.POST)
+        if form.is_valid():  
+            supplied_track_name = form.cleaned_data['track_name']
+            supplied_track_adj = form.cleaned_data['track_adjustment']
+            supplied_is_adjunct_flag = form.cleaned_data['is_adjunct']
+            if (request.POST['fresh_record'] == 'False'):
+                #This is an edit
+                supplied_id = form.cleaned_data['employment_track_id']
+                EmploymentTrack.objects.filter(id = int(supplied_id)).update(track_name = supplied_track_name,\
+                    track_adjustment = float(supplied_track_adj), is_adjunct = supplied_is_adjunct_flag)
+            else:
+                #This is a new track
+                new_track = EmploymentTrack.objects.create(track_name = supplied_track_name, \
+                                                           track_adjustment = float(supplied_track_adj),is_adjunct = supplied_is_adjunct_flag,\
+                                                           faculty =  fac_obj)
+                new_track.save()
+        
+        form = ServiceRoleForm(request.POST)
+        if form.is_valid():  
+            supplied_role_name = form.cleaned_data['role_name']
+            supplied_role_adj = form.cleaned_data['role_adjustment']
+            
+            if (request.POST['fresh_record'] == 'False'):
+                supplied_id = form.cleaned_data['role_id']
+                #This is an edit
+                ServiceRole.objects.filter(id = int(supplied_id)).update(role_name = supplied_role_name, role_adjustment = float(supplied_role_adj))               
+            else:
+                #This is a new role
+                new_role = ServiceRole.objects.create(role_name = supplied_role_name, role_adjustment = float(supplied_role_adj), faculty = fac_obj)
+                new_role.save()
+        
+        form = RemoveServiceRoleForm(request.POST, faculty_id = faculty_id)
+        if form.is_valid():  
+            selected_role = form.cleaned_data['select_service_role_to_remove']
+            if (selected_role.role_name != DEFAULT_SERVICE_ROLE_NAME):#If user wants to delete the default, we do nothing
+                default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
+                if (default_role.count() == 0): #If, for some reason, the default role is not there, create one (this should be impossible...)
+                    ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
+                    default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)               
+                #Turn all lecturers of the removed service role to the default one
+                Lecturer.objects.filter(service_role__role_name=selected_role).update(service_role = default_role.get().id)
+                ServiceRole.objects.filter(role_name=selected_role).delete()
+        
+        form = RemoveEmploymentTrackForm(request.POST, faculty_id=faculty_id)
+        if form.is_valid():  
+            selected_track = form.cleaned_data['select_track_to_remove']
+            if (selected_track.track_name != DEFAULT_TRACK_NAME):#If user wants to delete the default, we do nothing
+                default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
+                if (default_track.count() == 0): #If, for some reason, the default track is not there, create one (this should be impossible...)
+                    EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, track_adjustment = 1.0)
+                    default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
+
+                #Turn all lecturers of that track to the default track
+                Lecturer.objects.filter(employment_track__track_name=selected_track).update(employment_track = default_track.get().id)
+                EmploymentTrack.objects.filter(track_name=selected_track).delete()
+        
+        #trigger a GET
+        return HttpResponseRedirect(reverse('workload_app:school_page',  kwargs={'faculty_id': faculty_id}))
+    else: #This is a get
+        overall_table = CalculateWorkloadsIndexTable(faculty_id = faculty_id)
+
+        scenario_form = ScenarioForm(initial = {'fresh_record' : True})
+        remove_scenario_form = RemoveScenarioForm(dept_id=-1) #-1 indicates no dept restrictions
+        
+        #Dept forms
+        dept_form = DepartmentForm(initial = {'fresh_record' : True})
+        remove_dept_form = RemoveDepartmentForm()
+
+        employment_track_form = EmplymentTrackForm(initial = {'fresh_record' : True})
+        remove_employment_track_form = RemoveEmploymentTrackForm(faculty_id=faculty_id)
+
+        service_role_form = ServiceRoleForm(initial = {'fresh_record' : True})
+        remove_service_role_form = RemoveServiceRoleForm(faculty_id = faculty_id)
+
+        tracks_table = CalculateEmploymentTracksTable(faculty_id = faculty_id)
+        roles_table = CalculateServiceRolesTable(faculty_id = faculty_id)
+    
+        department_table = CalculateDepartmentTable(faculty_id=faculty_id)
+
+        template = loader.get_template('workload_app/school_page.html')
+        context = { 'faculty_id' : faculty_id,
+                    'school_name' : fac_obj.faculty_name,
+                    'overall_table' : overall_table,
+                    'tracks_table' : tracks_table,
+                    'roles_table' : roles_table,
+                    'department_table' : department_table,
+                    'dept_form': dept_form.as_p(),
+                    'remove_dept_form':remove_dept_form.as_p(),
+                    'employment_track_form': employment_track_form.as_p(),
+                    'remove_employment_track_form' : remove_employment_track_form.as_p(),
+                    'service_role_form' : service_role_form.as_p(),
+                    'remove_service_role_form' : remove_service_role_form.as_p(),
+                    'scenario_form':scenario_form.as_p(),
+                    'remove_scenario_form':remove_scenario_form.as_p(),
+                    }
+        return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
 
@@ -127,33 +236,18 @@ def workloads_index(request):
     #Faculty forms
     fac_form = FacultyForm()
     remove_fac_form = RemoveFacultyForm()
-
-    employment_track_form = EmplymentTrackForm(initial = {'fresh_record' : True})
-    remove_employment_track_form = RemoveEmploymentTrackForm()
-
-    service_role_form = ServiceRoleForm(initial = {'fresh_record' : True})
-    remove_service_role_form = RemoveServiceRoleForm()
-
-    tracks_table = CalculateEmploymentTracksTable()
-    roles_table = CalculateServiceRolesTable()
  
     department_table = CalculateDepartmentTable()
     faculty_table = CalculateFacultiesTable()
 
     template = loader.get_template('workload_app/workloads_index.html')
     context = {'overall_table' : overall_table,
-                'tracks_table' : tracks_table,
-                'roles_table' : roles_table,
                 'department_table' : department_table,
                 'faculty_table' : faculty_table,
                 'dept_form': dept_form.as_p(),
                 'fac_form' : fac_form.as_p(),
                 'remove_fac_form' : remove_fac_form.as_p(),
                 'remove_dept_form':remove_dept_form.as_p(),
-                'employment_track_form': employment_track_form.as_p(),
-                'remove_employment_track_form' : remove_employment_track_form.as_p(),
-                'service_role_form' : service_role_form.as_p(),
-                'remove_service_role_form' : remove_service_role_form.as_p(),
                'scenario_form':scenario_form.as_p(),
                'remove_scenario_form':remove_scenario_form.as_p(),
                 }
@@ -691,95 +785,6 @@ def remove_faculty(request):
                 #Then delete the faculty
                 Faculty.objects.filter(faculty_name=selected_faculty).delete()
 
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-def manage_employment_track(request):
-    if request.method =='POST':
-        form = EmplymentTrackForm(request.POST);
-        if form.is_valid():  
-            supplied_track_name = form.cleaned_data['track_name']
-            supplied_track_adj = form.cleaned_data['track_adjustment']
-            supplied_is_adjunct_flag = form.cleaned_data['is_adjunct']
-            if (request.POST['fresh_record'] == 'False'):
-                #This is an edit
-                supplied_id = form.cleaned_data['employment_track_id']
-                EmploymentTrack.objects.filter(id = int(supplied_id)).update(track_name = supplied_track_name,\
-                    track_adjustment = float(supplied_track_adj), is_adjunct = supplied_is_adjunct_flag)
-            else:
-                #This is a new track
-                new_track = EmploymentTrack.objects.create(track_name = supplied_track_name, track_adjustment = float(supplied_track_adj),is_adjunct = supplied_is_adjunct_flag)
-                new_track.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-def remove_employment_track(request):
-    if request.method =='POST':
-        form = RemoveEmploymentTrackForm(request.POST);
-        if form.is_valid():  
-            selected_track = form.cleaned_data['select_track_to_remove']
-            if (selected_track.track_name != DEFAULT_TRACK_NAME):#If user wants to delete the default, we do nothing
-                default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
-                if (default_track.count() == 0): #If, for some reason, the default track is not there, create one (this should be impossible...)
-                    EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, track_adjustment = 1.0)
-                    default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
-
-                #Turn all lecturers of that track to the default track
-                Lecturer.objects.filter(employment_track__track_name=selected_track).update(employment_track = default_track.get().id)
-                EmploymentTrack.objects.filter(track_name=selected_track).delete()
-            
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-def manage_service_role(request):
-    if request.method =='POST':
-        form = ServiceRoleForm(request.POST);
-        if form.is_valid():  
-            supplied_role_name = form.cleaned_data['role_name']
-            supplied_role_adj = form.cleaned_data['role_adjustment']
-            
-            if (request.POST['fresh_record'] == 'False'):
-                supplied_id = form.cleaned_data['role_id']
-                #This is an edit
-                ServiceRole.objects.filter(id = int(supplied_id)).update(role_name = supplied_role_name, role_adjustment = float(supplied_role_adj))               
-            else:
-                #This is a new role
-                new_role = ServiceRole.objects.create(role_name = supplied_role_name, role_adjustment = float(supplied_role_adj))
-                new_role.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'));  
-
-def remove_service_role(request):
-    if request.method =='POST':
-        form = RemoveServiceRoleForm(request.POST);
-        if form.is_valid():  
-            selected_role = form.cleaned_data['select_service_role_to_remove']
-            if (selected_role.role_name != DEFAULT_SERVICE_ROLE_NAME):#If user wants to delete the default, we do nothing
-                default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
-                if (default_role.count() == 0): #If, for some reason, the default role is not there, create one (this should be impossible...)
-                    ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
-                    default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
-                
-                #Turn all lecturers of the removed service role to the default one
-                Lecturer.objects.filter(service_role__role_name=selected_role).update(service_role = default_role.get().id)
-                ServiceRole.objects.filter(role_name=selected_role).delete()
-            
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:workloads_index'))
 

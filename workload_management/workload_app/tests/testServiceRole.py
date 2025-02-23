@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_SERVICE_ROLE_NAME,DEFAULT_TRACK_NAME
-from workload_app.models import Lecturer, ServiceRole,WorkloadScenario, EmploymentTrack, UniversityStaff
+from workload_app.models import Lecturer, ServiceRole,WorkloadScenario, EmploymentTrack, UniversityStaff,Faculty
 
 
 class TestServiceRole(TestCase):
@@ -26,11 +26,11 @@ class TestServiceRole(TestCase):
 
         self.assertEqual(ServiceRole.objects.all().count(),1) #Test the default creation of default service role
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         #Test the POST now
         new_role_name = 'test_role'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page' ,  kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
         
         self.assertEqual(ServiceRole.objects.all().count(),2) #The default plus the new one
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
@@ -39,7 +39,7 @@ class TestServiceRole(TestCase):
 
         #Remove the role we just added
         new_role = ServiceRole.objects.filter(role_name = new_role_name)
-        self.client.post(reverse('workload_app:remove_service_role'),{'select_service_role_to_remove':new_role.get().id})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'select_service_role_to_remove':new_role.get().id})
         self.assertEqual(ServiceRole.objects.all().count(),1) #Only the default one should be there
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
         self.assertEqual(ServiceRole.objects.filter(role_name = new_role_name).count(),0)
@@ -47,7 +47,7 @@ class TestServiceRole(TestCase):
 
         #Try deleting the default role (should not be possible)
         def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
-        self.client.post(reverse('workload_app:remove_service_role'),{'select_service_role_to_remove':def_role.get().id})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'select_service_role_to_remove':def_role.get().id})
         self.assertEqual(ServiceRole.objects.all().count(),1) #default track should still be there
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1) #default role should still be there
 
@@ -59,14 +59,14 @@ class TestServiceRole(TestCase):
         #Test the GET
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         self.assertEqual(ServiceRole.objects.all().count(),1) #Test the default creation of default service role
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
 
         #Test the POST now
         new_role_name = 'test_role'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
         
         self.assertEqual(ServiceRole.objects.all().count(),2) #The default plus the new one
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
@@ -76,7 +76,7 @@ class TestServiceRole(TestCase):
         #Edit the existing one, change role adjustment
         new_role_id = ServiceRole.objects.filter(role_name = new_role_name).get().id
         new_role_adj = 0.8
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(new_role_adj),\
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(new_role_adj),\
                                                                    'fresh_record': False, 'role_id' : new_role_id})
         self.assertEqual(ServiceRole.objects.all().count(),2) #The default plus the new one
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
@@ -92,14 +92,15 @@ class TestServiceRole(TestCase):
         #Test the GET
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
+        
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         self.assertEqual(ServiceRole.objects.all().count(),1) #Test the default creation of default service role
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
 
         #Test the POST now
         new_role_name = 'test_role'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
         
         self.assertEqual(ServiceRole.objects.all().count(),2) #The default plus the new one
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
@@ -108,7 +109,7 @@ class TestServiceRole(TestCase):
 
         #Try adding another one with the same name
         new_role_adj = 0.8
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(new_role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(new_role_adj), 'fresh_record': True})
         self.assertEqual(ServiceRole.objects.all().count(),2) #The default plus the new one
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
         self.assertEqual(ServiceRole.objects.filter(role_name = new_role_name).count(),1)
@@ -118,7 +119,7 @@ class TestServiceRole(TestCase):
         #Now add another one, valid addition
         valid_name = 'new_valid_addition'
         new_adj = 0.8
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':valid_name,'role_adjustment' : str(new_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':valid_name,'role_adjustment' : str(new_adj), 'fresh_record': True})
         self.assertEqual(ServiceRole.objects.all().count(),3) #The default plus two new ones
         self.assertEqual(ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME).count(),1)
         self.assertEqual(ServiceRole.objects.filter(role_name = new_role_name).count(),1)
@@ -128,7 +129,7 @@ class TestServiceRole(TestCase):
 
         #Now edit the one just added (valid_name), trying to give it the same name as "new_role_name"
         id_of_valid = ServiceRole.objects.filter(role_name = valid_name).get().id
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(new_adj), \
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(new_adj), \
                                  'fresh_record': False,
                                  'role_id' : str(id_of_valid)})
         #Nothing should have changed
@@ -145,13 +146,14 @@ class TestServiceRole(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
+        new_scen = WorkloadScenario.objects.create(label='test_scen')
         def_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
         #Add one service role
         new_role_name = 'test_role'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id} ),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
         new_role = ServiceRole.objects.filter(role_name = new_role_name)
 
         self.assertEqual(Lecturer.objects.all().count(),0)
@@ -163,7 +165,7 @@ class TestServiceRole(TestCase):
         self.assertEqual(Lecturer.objects.all().filter(service_role__role_name=new_role_name).count(),1)
 
         #Now remove the new role (in which the lecturer is in)
-        self.client.post(reverse('workload_app:remove_service_role'),{'select_service_role_to_remove':new_role.get().id})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'select_service_role_to_remove':new_role.get().id})
         #Expected behaviour: lecturer still there, switched to default role
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),1)
@@ -179,29 +181,30 @@ class TestServiceRole(TestCase):
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
+        new_scen = WorkloadScenario.objects.create(label='test_scen')
         def_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
+        
         #Add one track
         #Add one service role
         new_role_name = 'test_role'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
         new_role = ServiceRole.objects.filter(role_name = new_role_name)
         self.assertEqual(ServiceRole.objects.all().count(),2)
         
         #Add another
         new_role_name_2 = 'test_role_2'
         role_adj_2 = 9
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name_2,'role_adjustment' : str(role_adj_2), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name_2,'role_adjustment' : str(role_adj_2), 'fresh_record': True})
         new_role_2 = ServiceRole.objects.filter(role_name = new_role_name_2)
         self.assertEqual(ServiceRole.objects.all().count(),3)
         self.assertEqual(ServiceRole.objects.filter(role_name=new_role_name_2).count(),1)
 
         self.assertEqual(Lecturer.objects.all().count(),0)
         #Add a lecturer on this service role
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',   \
-                                                                 'employment_track': def_track.get().id, 'service_role' : new_role.get().id,\
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',  'employment_track': def_track.get().id, 'service_role' : new_role.get().id,\
                                                                  'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),1)
@@ -218,6 +221,7 @@ class TestServiceRole(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         def_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
 
         response = self.client.get(reverse('workload_app:workloads_index'))
@@ -225,14 +229,14 @@ class TestServiceRole(TestCase):
         
         new_scen_label = 'test_scen'
         new_scen_label_2 = 'test_scen_2'
-        new_scen = WorkloadScenario.objects.create(label=new_scen_label);
-        new_scen_2 = WorkloadScenario.objects.create(label=new_scen_label_2);
+        new_scen = WorkloadScenario.objects.create(label=new_scen_label)
+        new_scen_2 = WorkloadScenario.objects.create(label=new_scen_label_2)
         #Add two roles
         new_role_name = 'test_role'
         new_role_name_2 = 'test_role_2'
         role_adj = 0.5
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
-        self.client.post(reverse('workload_app:manage_service_role'),{'role_name':new_role_name_2,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'role_name':new_role_name,'role_adjustment' : str(role_adj), 'fresh_record': True})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id} ),{'role_name':new_role_name_2,'role_adjustment' : str(role_adj), 'fresh_record': True})
         new_role = ServiceRole.objects.filter(role_name = new_role_name)
         new_role_2 = ServiceRole.objects.filter(role_name = new_role_name_2)
 
@@ -261,7 +265,7 @@ class TestServiceRole(TestCase):
         self.assertEqual(Lecturer.objects.all().filter(service_role__role_name=new_role_name).count(),3)
 
         #Now remove the new track (in which 3 lecturers, in 2 scenarios are in)
-        self.client.post(reverse('workload_app:remove_service_role'),{'select_service_role_to_remove':new_role.get().id})
+        self.client.post(reverse('workload_app:school_page', kwargs={'faculty_id': new_fac.id}),{'select_service_role_to_remove':new_role.get().id})
         #Expected behaviour: all lecturers still there, but switched to default service role
         self.assertEqual(Lecturer.objects.all().count(),4)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),2)

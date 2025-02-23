@@ -13,9 +13,12 @@ from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as workloads in the database
 #Each item contains name and other info on the workload
-def CalculateWorkloadsIndexTable():    
-    ret = [];
-    for wl_scen in WorkloadScenario.objects.all().order_by('label'):
+def CalculateWorkloadsIndexTable(faculty_id = -1):    
+    ret = []
+    queryset = WorkloadScenario.objects.all()
+    if (faculty_id>0):
+        queryset = WorkloadScenario.objects.filter(dept__faculty__id = faculty_id)
+    for wl_scen in queryset.order_by('label'):
         summary_data = CalculateSummaryData(wl_scen.id)
         item = {"wl_name" : wl_scen.label,
                 "wl_id" : wl_scen.id,
@@ -34,9 +37,12 @@ def CalculateWorkloadsIndexTable():
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as employment tracks in the database
 #Each item contains name, teaching adjustment of the track, and necessary forms for editing
-def CalculateEmploymentTracksTable():    
-    ret = [];
-    for empl_track in EmploymentTrack.objects.all().order_by('track_name'):
+def CalculateEmploymentTracksTable(faculty_id = -1):    
+    ret = []
+    queryset = EmploymentTrack.objects.all()
+    if (faculty_id>0):
+        queryset = EmploymentTrack.objects.filter(faculty__id = faculty_id)
+    for empl_track in queryset.order_by('track_name'):
         if (empl_track.track_name != DEFAULT_TRACK_NAME):#Wed o not show the ugly "no track" in the table. Also do not want user to edit it
             item = {"track_name" : empl_track.track_name,
                     "no_space_track_name" : RegularizeName(empl_track.track_name),
@@ -52,9 +58,12 @@ def CalculateEmploymentTracksTable():
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as service roles in the database
 #Each item contains name, teaching adjustment of the role, and necessary forms for editing
-def CalculateServiceRolesTable():    
-    ret = [];
-    for svc_role in ServiceRole.objects.all().order_by('role_name'):
+def CalculateServiceRolesTable(faculty_id=-1):    
+    ret = []
+    queryset = ServiceRole.objects.all()
+    if (faculty_id>0):
+        queryset = ServiceRole.objects.filter(faculty__id = faculty_id)
+    for svc_role in queryset.order_by('role_name'):
         if (svc_role.role_name != DEFAULT_SERVICE_ROLE_NAME):
             item = {"role_name" : svc_role.role_name,\
                     "no_space_role_name" : RegularizeName(svc_role.role_name),\
@@ -64,26 +73,29 @@ def CalculateServiceRolesTable():
                                                                         'fresh_record' : False,\
                                                                         'role_id' : svc_role.id}) }
             ret.append(item)
-    return ret;  
+    return ret
 
 #Helper method to calculate the table of module types
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as module typess in the database
 #Each item contains name and other info on the type
 def CalculateModuleTypeTable(department_id):    
-    ret = [];
+    ret = []
     for mod_tp in ModuleType.objects.filter(department__id=department_id).order_by('type_name'):
         item = {"type_name" : mod_tp.type_name}
         ret.append(item)
-    return ret;  
+    return ret
 
 #Helper method to calculate the table of departments
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as departments in the database
 #Each item contains name and acronym of the department, form and other useful info
-def CalculateDepartmentTable():    
-    ret = [];
-    for dept in Department.objects.all().order_by('department_name'):
+def CalculateDepartmentTable(faculty_id=-1):    
+    ret = []
+    queryset = Department.objects.all()
+    if (faculty_id>0):
+        queryset = Department.objects.filter(faculty__id = faculty_id)
+    for dept in queryset.order_by('department_name'):
         item = {"department_name" : dept.department_name,
                 "department_acronym" : dept.department_acronym,
                 "dept_id" : dept.id,
@@ -95,14 +107,14 @@ def CalculateDepartmentTable():
                                                              'fresh_record' : False, 'dept_id' : dept.id})
                 }    
         ret.append(item)
-    return ret;  
+    return ret
 
 #Helper method to calculate the table of faculties/schools
 #It returns a list of items, where each item is a dictionary.
 #There are as many items as faculties in the database
 #Each item contains name and acronym of the aculty
 def CalculateFacultiesTable():    
-    ret = [];
+    ret = []
     for fac in Faculty.objects.all().order_by('faculty_name'):
         item = {"faculty_name" : fac.faculty_name,
                 "faculty_acronym" : fac.faculty_acronym,
@@ -112,7 +124,7 @@ def CalculateFacultiesTable():
                                                          'fresh_record' : False, 'fac_id' : fac.id})
                 }      
         ret.append(item)
-    return ret;  
+    return ret 
 
 ###################################
 # A helper method that takes in a form (assumed valid)
