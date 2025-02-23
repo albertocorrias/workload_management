@@ -31,7 +31,7 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
                 "expected_hrs" : summary_data["expected_hours_per_tFTE"]
                 }
         ret.append(item)
-    return ret;    
+    return ret
 
 #Helper method to calculate the table of employment tracks
 #It returns a list of items, where each item is a dictionary.
@@ -52,7 +52,7 @@ def CalculateEmploymentTracksTable(faculty_id = -1):
                                                                     'fresh_record' : False,
                                                                     'employment_track_id' : empl_track.id})}
             ret.append(item)
-    return ret;    
+    return ret
 
 #Helper method to calculate the table of service roles
 #It returns a list of items, where each item is a dictionary.
@@ -212,7 +212,7 @@ def HandleScenarioForm(form,department_id):
 # "add_assignment_for_prof_form": a form to add new teaching assignment to the prof
 # "num_assigns_for_prof": the number of assignment for the prof. Includes both counted and not counted
 def CalculateDepartmentWorkloadTable(workloadscenario_id):
-    ret = [];
+    ret = []
     total_assigned_hours = 0
     total_workload_FTE = 0
     for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
@@ -267,7 +267,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
         ret.append(item)
 
     #Now that we calculated total tFTE and total hours, we re-loop to assign expectations and balance
-    index = 0;
+    index = 0
     for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
         #Update expectation
         expectation = total_assigned_hours * ret[index]['prof_tfte']/total_workload_FTE
@@ -277,7 +277,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
         #Store the difference, just for ease of HTML displaying later
         ret[index]['prof_balance'] = balance
         ret[index]['prof_hex_code'] = DetermineColorBasedOnBalance(balance)
-        index = index + 1;
+        index = index + 1
     
     return ret
 
@@ -318,7 +318,7 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
                 not_counted_formatted_string += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
                 total_hours_assigned_for_this_mod_not_counted += assign.number_of_hours
 
-            assign_counter = assign_counter + 1;
+            assign_counter = assign_counter + 1
 
         if (assign_counter==0): formatted_string = "No lecturer assigned  " #Note the two spaces at the end
         if (formatted_string == ''): formatted_string = '  '
@@ -476,8 +476,8 @@ def CalculateSummaryData(workload_scenario_id):
             'total_adjunct_tFTE' : total_adjunct_tFTE,
             'total_number_of_adjuncts' : total_number_of_adjuncts,
             'total_hours_not_counted' : total_hours_not_counted
-            };
-    return ret;
+            }
+    return ret
 
 #This method helps calculating the table for a given workload scenario
 #and a given programme offered by the dept. You need to pass in the workload scenario Id and the programme ID.
@@ -772,7 +772,7 @@ def RegularizeName(name):
     ret = name.replace(" ", "")
     ret = ret.replace(",", "")
     ret = ret.replace("/", "")
-    return ret;
+    return ret
 
 def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FILE):
     '''
@@ -812,8 +812,8 @@ def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FI
     ret = {
         "errors" : False
     }
-    first_info = [];#Name of prof or module code for modules
-    second_info = [];#Appointment (0 to 1) or module title for modules
+    first_info = []#Name of prof or module code for modules
+    second_info = []#Appointment (0 to 1) or module title for modules
 
     try:
         with open(filename, 'r') as csv_file:
@@ -865,4 +865,4 @@ def CalculateTotalModuleHours(num_tut_groups, mod_type):
         ret = num_tut_groups*3*13+2*13
     if (mod_type.type_name =="Design module"):    
         ret = num_tut_groups*1*13+2*13
-    return ret;
+    return ret
