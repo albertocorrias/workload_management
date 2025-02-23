@@ -299,7 +299,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
 # "add_assignment_for_mod_form" : A form to add a fresh assignment to this module
 # "num_assigns_for_module" : The total number of teachinga ssignments for this module (includes counted and not counted)
 def CalculateModuleWorkloadTable(workloadscenario_id):
-    ret = [];
+    ret = []
     department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
 
     for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
@@ -307,7 +307,7 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
         assignment_for_this_mod = TeachingAssignment.objects.filter(assigned_module__module_code = mod.module_code).filter(workload_scenario__id = workloadscenario_id)
         total_hours_assigned_for_this_mod = 0
         total_hours_assigned_for_this_mod_not_counted = 0
-        assign_counter = 0;
+        assign_counter = 0
         formatted_string = ''
         not_counted_formatted_string = ''
         for assign in assignment_for_this_mod:
@@ -379,17 +379,19 @@ def CalculateSummaryData(workload_scenario_id):
 
     hours_prog = []
     labels_prog = []
+    dept_id = WorkloadScenario.objects.filter(id = workload_scenario_id).get().dept.id
     for assign in all_teaching_assignments:
         mod_involved = assign.assigned_module
         prof_involved = assign.assigned_lecturer
         
         if (mod_involved.module_type is not None):
-            if (mod_involved.module_type.type_name not in labels):
-                labels.append(mod_involved.module_type.type_name)
-                counts.append(assign.number_of_hours)
-            else:#the type is alreday there, must be in the labels array
-                indx = labels.index(mod_involved.module_type.type_name)
-                counts[indx] = counts[indx] + assign.number_of_hours
+            if (mod_involved.module_type.department.id == dept_id):
+                if (mod_involved.module_type.type_name not in labels):
+                    labels.append(mod_involved.module_type.type_name)
+                    counts.append(assign.number_of_hours)
+                else:#the type is alreday there, must be in the labels array
+                    indx = labels.index(mod_involved.module_type.type_name)
+                    counts[indx] = counts[indx] + assign.number_of_hours
         else:
             if (DEFAULT_MODULE_TYPE_NAME not in labels):
                 labels.append(DEFAULT_MODULE_TYPE_NAME)
