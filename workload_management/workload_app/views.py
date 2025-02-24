@@ -40,9 +40,14 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
+from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty, CanUserAdminUniversity
 
 def scenario_view(request, workloadscenario_id):
 
+    dept_id = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept.id
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,dept_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    
     #Name of this scenario (this will be displayed)
     name_of_active_scenario = WorkloadScenario.objects.filter(id = workloadscenario_id).get().label
     department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
@@ -101,6 +106,8 @@ def school_page(request,faculty_id):
         }
         return HttpResponse(template.render(context, request))
     fac_obj = fac_qs.get()
+    if request.user.is_authenticated == False or CanUserAdminThisFaculty(request.user.id,faculty_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
     if request.method =='POST':
 
         form = EmplymentTrackForm(request.POST)
@@ -201,7 +208,9 @@ def school_page(request,faculty_id):
         return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
-
+    if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    
     #If no Faculty, create a default one
     if (Faculty.objects.all().count() == 0):
         Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
@@ -890,11 +899,8 @@ def faculty_report(request):
     return HttpResponse(template.render(context, request))
 
 def department(request,department_id):
-    if (request.user.is_authenticated):
-        print(request.user.username)
-        usr = UniversityStaff.objects.filter(user__username = request.user.username).get()
-        print(usr.department)
-        print(usr.user.groups.all())
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
 
     if (Department.objects.filter(id = department_id).count() == 0):
             #This should really never happen, but just in case the user enters some random number...
@@ -1364,8 +1370,12 @@ def accreditation(request,programme_id):
         }
         return HttpResponse(template.render(context, request))
 
+
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
     department_id = programme.primary_dept.id
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    
     if request.method =='POST':
         slo_form = SLOForm(request.POST)
         if (slo_form.is_valid()):
@@ -1709,6 +1719,11 @@ def accreditation(request,programme_id):
         return HttpResponse(template.render(context, request))
 
 def accreditation_report(request,programme_id, start_year,end_year):
+    programme = ProgrammeOffered.objects.filter(id = programme_id).get()
+    department_id = programme.primary_dept.id
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
         big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
@@ -1894,6 +1909,11 @@ def input_programme_survey_results(request,programme_id,survey_id):
     #USe the labels stored in the Survey object (the programme ones may have changed in the meanwhile, but behaviour is that existing surveys don't change)
     labels = survey_obj.likert_labels.GetListOfLabels()
     full_labels = survey_obj.likert_labels.GetFullListOfLabels()#this one includes "empty" unused ones
+
+    programme = ProgrammeOffered.objects.filter(id = programme_id).get()
+    department_id = programme.primary_dept.id
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
+        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
     
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.SLO:

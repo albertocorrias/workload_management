@@ -7,7 +7,7 @@ import datetime
 
 from workload_app.models import Faculty, Department, Module, ModuleType, WorkloadScenario,UniversityStaff, \
     Academicyear, Lecturer, EmploymentTrack, ServiceRole,TeachingAssignment,ProgrammeOffered,StudentLearningOutcome, Survey,ModuleLearningOutcome
-from workload_app.helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule
+from workload_app.helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty, CanUserAdminUniversity
 from workload_app.helper_methods_survey import DetermineSurveyLabelsForProgramme
 
 class TestUserPermissions(TestCase):
@@ -18,10 +18,12 @@ class TestUserPermissions(TestCase):
         sup_user.is_superuser = True
         sup_user.save()
         uni_super_user = UniversityStaff.objects.create(user = sup_user, department=None,faculty=None)
-        self.assertEqual(DetermineUserHomePage(uni_super_user.id), 'workloads_index/')
+        self.assertEqual(DetermineUserHomePage(uni_super_user.id), '/workloads_index/')
 
         #Create fauclty, dept and module
         new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
+        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac2', faculty_acronym = 'CDE2')
+
         new_dept = Department.objects.create(department_name = 'test_dept', department_acronym = 'BME', faculty = new_fac)
         #Create a module
         mod_code = "BN2102"
@@ -52,8 +54,10 @@ class TestUserPermissions(TestCase):
         #Now assign the faculty
         uni_fac_admin.faculty = new_fac
         uni_fac_admin.save()
-        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = custom_error_message), "workloads_index/")
+        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = custom_error_message), "/school_page/"+str(new_fac.id))
         self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept.id), True)#Now assigned proper faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin.id, new_fac.id), True)#can admin its own faculty...
+        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin.id, new_fac_2.id), False)#but not the otehr one...
 
         dept_admin = User.objects.create_user('new_dept_admin_user', 'test@duser.com', 'test_dept_admin_user_password')
         dept_admin.is_superuser = False
@@ -72,12 +76,14 @@ class TestUserPermissions(TestCase):
         uni_dept_admin.save()
         uni_dept_admin.department = new_dept
         uni_dept_admin.save()
-        self.assertEqual(DetermineUserHomePage(uni_dept_admin.id, error_text = custom_error_message), 'department/'+str(new_dept.id))
+        self.assertEqual(DetermineUserHomePage(uni_dept_admin.id, error_text = custom_error_message), '/department/'+str(new_dept.id))
         self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin.id, new_dept.id), True)#Now assigned proper dept
 
         self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), True)
         self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), True)
         self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code), True)
+        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin.id, new_fac.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin.id, new_fac_2.id), False)#dept admin can't manage faculty
 
         #Create a lecturer user
         lec_user = User.objects.create_user('new_lecturer_user', 'test@luser.com', 'test_lec_user_password')
@@ -95,6 +101,7 @@ class TestUserPermissions(TestCase):
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
+        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours=39, workload_scenario=scenario_1)
         self.assertEqual(TeachingAssignment.objects.all().count(),1)
@@ -104,12 +111,19 @@ class TestUserPermissions(TestCase):
         #... while faculy and dept admin shuld be able to admin both
         self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), True)
         self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), True)
+        self.assertEqual(CanUserAdminUniversity(uni_fac_admin.id), False)
         self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code), True)
+        self.assertEqual(CanUserAdminUniversity(uni_super_user.id), True)
+        
         self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code+"_2"), True)
         self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code+"_2"), True)
         self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code+"_2"), True)
-        #Check that the lecturer can't manage departments
+        self.assertEqual(CanUserAdminUniversity(uni_dept_admin.id), False)
+        #Check that the lecturer can't manage departments or faculties
         self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept.id), False)
+        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user.id, new_fac.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user.id, new_fac_2.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminUniversity(uni_lec_user.id), False)
         
         #test faculty and department mismatch
         #Create one more faculty and one more dpet      
@@ -134,14 +148,19 @@ class TestUserPermissions(TestCase):
     def testSuperUserPageAccess(self):
         #Create fauclty, dept, programmes and modules
         new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
+        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac2', faculty_acronym = 'CDE2')
         new_dept = Department.objects.create(department_name = 'test_dept', department_acronym = 'BME', faculty = new_fac)
+        new_dept_2 = Department.objects.create(department_name = 'test_dept2', department_acronym = 'BME2', faculty = new_fac_2)
         new_prog = ProgrammeOffered.objects.create(programme_name = "new_prog",primary_dept=new_dept)
+        new_prog_2 = ProgrammeOffered.objects.create(programme_name = "new_prog2",primary_dept=new_dept_2)
+
         def_labels = DetermineSurveyLabelsForProgramme(new_prog.id)#This will set the labels by default in the programme object
         #Create modules
         mod_code = "BN2102"
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         acad_year_2 = Academicyear.objects.create(start_year=2022)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
+        scenario_2 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept_2, status = WorkloadScenario.OFFICIAL)
         mod_type_1 = ModuleType.objects.create(type_name = "one type")
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
@@ -176,7 +195,16 @@ class TestUserPermissions(TestCase):
                                                                         programme_associated = new_prog,\
                                                                         likert_labels = def_labels["slo_survey_labels_object"],\
                                                                         survey_type = Survey.SurveyType.MLO,\
-                                                                        max_respondents = 100)       
+                                                                        max_respondents = 100)
+        #This one is for Prog_2 of Dept_2 of faculty_2
+        slo_survey_2 = Survey.objects.create(survey_title = "first slo survey", opening_date = datetime.datetime(2012, 5, 17),\
+                                                                        closing_date = datetime.datetime(2013, 5, 17),\
+                                                                        cohort_targeted = acad_year_1,\
+                                                                        programme_associated = new_prog_2,\
+                                                                        likert_labels = def_labels["slo_survey_labels_object"],\
+                                                                        survey_type = Survey.SurveyType.SLO,\
+                                                                        max_respondents = 100)
+        
 
     
         ####################
@@ -239,14 +267,87 @@ class TestUserPermissions(TestCase):
 	    #FacultyAdminStaff
 	    #LecturerStaff
 
-        dept_admins =  Group.objects.create(name="DepartmentAdminStaff")
+        
         fac_admins =  Group.objects.create(name="FacultyAdminStaff")
+        dept_admins =  Group.objects.create(name="DepartmentAdminStaff")
         lecturers = Group.objects.create(name="LecturerStaff")
 
-        dept_admin = User.objects.create_user('new_dept_admin', 'test@dept_user.com', 'dept_super_user_password')
-        dept_admin.is_superuser = False
-        dept_admin.groups.add(dept_admins)
-        dept_admin.save()
-        uni_dept_admin = UniversityStaff.objects.create(user = dept_admin, department=new_dept,faculty=new_fac)
+        fac_admin = User.objects.create_user('new_fac_admin', 'test@fac_user.com', 'fac_super_user_password')
+        fac_admin.is_superuser = False
+        fac_admin.groups.add(fac_admins)
+        fac_admin.save()
+        uni_fac_admin = UniversityStaff.objects.create(user = fac_admin, department=new_dept,faculty=new_fac)
+        self.client.login(username='new_fac_admin', password='fac_super_user_password')
+        
+        #Workloads index page access - NO ACCESS - should re-direct
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 302) #re-direct
+        #Faculty  page access
+        response = self.client.get(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["school_name"],new_fac.faculty_name)
+        #Try with another faculty - SHOULD BE NO ACCESS
+        response = self.client.get(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac_2.id}))
+        self.assertEqual(response.status_code, 302) #Re-direct - no access
 
+        #Workload scenario page access
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["name_of_active_scenario"],"scenario_1")
+        #Try with another workload scenario of another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
+        self.assertEqual(response.status_code, 302) #RE_DIRECT
 
+        #module pages  access
+        response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
+        self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(response.context["module_title"], "First module")
+        self.assertEqual(response.context["module_code"], mod_code)
+        response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code+"_2"}))
+        self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(response.context["module_title"], "second module")
+        self.assertEqual(response.context["module_code"], mod_code+"_2")
+
+        #Department page  access
+        response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["dept_name"], "test_dept")
+        #Try with another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
+        response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept_2.id}))
+        self.assertEqual(response.status_code, 302) #Re-direct
+
+        #Accreditation page  access
+        response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["programme_name"], "new_prog")
+        #Accreditation of programme of ANOTHE dept of ANOTHER faculty - NO access
+        response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog_2.id}))
+        self.assertEqual(response.status_code, 302) #Re-direct        
+
+        #accreditation report page access
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["programme_name"], "new_prog")
+        #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021}))
+        self.assertEqual(response.status_code, 302) #Re-direct    
+        
+        #Lecturer page access 
+        response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["lec_name"], "lecturer_1")
+        #Survey results page access
+        response = self.client.get(reverse('workload_app:survey_results', kwargs={'survey_id': slo_survey_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        #Programme survey input page access
+        response = self.client.get(reverse('workload_app:input_programme_survey_results', kwargs={'programme_id': new_prog.id, 'survey_id': slo_survey_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["programme_id"], new_prog.id)
+        #Programme survey input of ANOTHER programme of ANOTHER FACULTY - NO ACCESS
+        response = self.client.get(reverse('workload_app:input_programme_survey_results', kwargs={'programme_id': new_prog_2.id, 'survey_id': slo_survey_2.id}))
+        self.assertEqual(response.status_code, 302) #No issues
+        
+        #Module survey input page access
+        response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code, 'survey_id': mlo_survey_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(response.context["module_code"], mod_code)
