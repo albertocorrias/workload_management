@@ -2,59 +2,16 @@
 <html>
 {% load static %}
 
-  <head>
-    <meta charset="utf-8">
-    <title>Workload Management App</title>          
-  </head>
+<head>
+  <meta charset="utf-8">
+  <title>Workload Management App</title>
+  {% include './headers.html' %}
+</head>
   <body>
     {% include './top_bar.html' %}
-    <div class="container">
-        <div style="text-align:center;">
-          <!-- Trigger the modal with a button, just in case it doesn't show for whatever reason (e.g., the script below fails)-->
-          <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#ErrorsModal">Show Errors</button>
-        </div>
-        
-      <!-- Modal -->
-      <div class="modal fade" id="ErrorsModal" role="dialog">
-        <div class="modal-dialog">
-        
-          <!-- Modal content-->
-          <div class="modal-content">
-            <div class="modal-header">
-              <h4 class="modal-title">Errors encountered:</h4>
-            </div>
-            <div class="modal-body">
-                  {{ form_errors }}
-            </div>
-            <div class="modal-footer">            
-              <a href="/workload_app/{{ return_page }}" class="btn btn-outline-success" role="button">
-                 {{ return_label }}</a>
-                </button>
-            </div>
-          </div>
-          
-        </div>
-      </div>
-      
-    </div>
-    
-    <!-- J query (needed for default appearance of modal) -->
-    <script src="{% static  'jquery/jquery-3.5.1.js' %}"></script>
-    <!-- CSS -->
-    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style.css' %}">
-    <!-- JavaScript -->
-    <script src="{% static   'bootstrap-5.1.1-dist/js/bootstrap.min.js' %}"></script>
-
-
-    <script>
-        $(window).on('load', function()
-                {
-                    $('#ErrorsModal').modal('show');
-                });
-    </script>   
-    
-  
+    <div class="overall_container">
+      {{ error_message }}
+    </div>  
   </body>
 </html>
 

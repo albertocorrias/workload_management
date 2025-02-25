@@ -62,7 +62,7 @@ class TestModulePage(TestCase):
         #Cover the case of non-existent module code
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': "BN301TT"}))
         self.assertEqual(response.status_code, 200) #no issues, simply the error page is shown
-        self.assertContains(response,"There are no modules")
+        self.assertEqual(('error_message' in response.context), True)
 
     def test_add_remove_mlo(self):
         

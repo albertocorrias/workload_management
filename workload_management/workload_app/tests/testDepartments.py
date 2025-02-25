@@ -246,6 +246,9 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.filter(department_name = new_name_tried).count(), 0)
 
     def testDepartmentSummaryViewAndAddNewScenario(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
         this_year = datetime.datetime.now().year
         #Create a Dept affiliated to a faculty
         dept_name = 'test_dept'

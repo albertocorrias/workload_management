@@ -40,13 +40,18 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
-from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty, CanUserAdminUniversity
+from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty, CanUserAdminUniversity, CanUserAdminThisLecturer
 
+##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
 
     dept_id = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept.id
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,dept_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,dept_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     
     #Name of this scenario (this will be displayed)
     name_of_active_scenario = WorkloadScenario.objects.filter(id = workloadscenario_id).get().label
@@ -56,7 +61,7 @@ def scenario_view(request, workloadscenario_id):
     edit_active_scenario_form = ScenarioForm(initial = {'fresh_record' : False, 'scenario_id' : workloadscenario_id,\
                                                         'label' : name_of_active_scenario,
                                                         'dept' : department,
-                                                         'status' : status,
+                                                        'status' : status,
                                                         'academic_year' : acad_year}).as_p()
 
     workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id)
@@ -100,14 +105,20 @@ def school_page(request,faculty_id):
     if (fac_qs.count() != 1):#This should never happen, but just in case user puts in some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
-                'form_errors': "Requested faculty does not exist",
-                'return_label': 'Back to school page',
-                'return_page' : 'school_page/'+str(faculty_id),
+                'error_message': "Requested faculty does not exist"
         }
         return HttpResponse(template.render(context, request))
+    
+    
     fac_obj = fac_qs.get()
-    if request.user.is_authenticated == False or CanUserAdminThisFaculty(request.user.id,faculty_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    if request.user.is_authenticated == False or CanUserAdminThisFaculty(request.user.id,faculty_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
+    
+    
     if request.method =='POST':
 
         form = EmplymentTrackForm(request.POST)
@@ -208,8 +219,13 @@ def school_page(request,faculty_id):
         return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
-    if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+
+    if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     
     #If no Faculty, create a default one
     if (Faculty.objects.all().count() == 0):
@@ -268,11 +284,17 @@ def lecturer_page(request,lecturer_id):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
-            'form_errors': 'No such lecturer exists',
-            'return_label': 'Back to index of workloads',
-            'return_page' : 'workloads_index/',
+                'error_message': "No such lecturer exists"
         }
         return HttpResponse(template.render(context, request))
+    
+    if request.user.is_authenticated == False or CanUserAdminThisLecturer(request.user.id,lecturer_id  = lecturer_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
+    
     lec_name = lecturer_qs.get().name
     summary_wl_table = CalculateProfessorIndividualWorkload(lec_name)
     chart_data = CalculateProfessorChartData(lec_name)
@@ -285,593 +307,6 @@ def lecturer_page(request,lecturer_id):
         'chart_data' : chart_data
     }
     return HttpResponse(template.render(context, request))       
-
-def add_assignment(request,workloadscenario_id):
-    if request.method =='POST':
-        id_of_prof_involved = request.POST['select_lecturer']
-        id_of_mod_involved = request.POST['select_module']
-        manual_radio_button_status = request.POST['manual_hours_yes_no']
-        counted_or_not_radio_button_status = request.POST['counted_towards_workload']
-        selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
-        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = selected_scen.id)
-        if form.is_valid():
-            selected_prof_name = form.cleaned_data['select_lecturer']
-            selected_module = form.cleaned_data['select_module']
-
-            selected_module = Module.objects.filter(id = id_of_mod_involved).filter(scenario_ref__id = workloadscenario_id).get()
-            selected_prof =  Lecturer.objects.filter(name = selected_prof_name).filter(workload_scenario__id = workloadscenario_id).get()
-            count_in_wl = True
-            if (counted_or_not_radio_button_status == 'no'): count_in_wl = False
-            #Check if an assignment for the same module and same prof alreday exists (if so, we just add the hours)
-            possible_existing_objects = TeachingAssignment.objects.filter(assigned_module = selected_module)\
-                                                                  .filter(assigned_lecturer = selected_prof)\
-                                                                  .filter(workload_scenario__id=workloadscenario_id)\
-                                                                  .filter(counted_towards_workload = count_in_wl)
-            if (possible_existing_objects.count() > 0):
-                num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];#TODO This is bad here, must chack if manual hours were given or not
-                existing_hrs = possible_existing_objects.values().get()
-                total_number_of_hours = num_hrs + existing_hrs['number_of_hours'] #Just add the hours
-                possible_existing_objects.update(number_of_hours=int(total_number_of_hours))
-            else:#Here the count is zero: an assignment to the same prof, same mod does not exist, finally create the assignment object
-                
-                if manual_radio_button_status == 'no' :
-                    supplied_weekly_lecture_hours = form.cleaned_data["enter_number_of_weekly_lecture_hours"]
-                    supplied_weekly_tutorial_hours = form.cleaned_data["enter_number_of_weekly_tutorial_hours"]
-                    supplied_num_tutorial_groups = form.cleaned_data["enter_number_of_tutorial_groups"]
-                    supplied_weeks_assigned = form.cleaned_data["enter_number_of_weeks_assigned"]
-                    #Calculation of hours based on weekly info
-                    num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                    TeachingAssignment.objects.create(assigned_module=selected_module,\
-                                                      assigned_lecturer=selected_prof,\
-                                                      number_of_hours=int(num_hrs),\
-                                                      number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                                      number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                                      number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                                      number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                                      assigned_manually = False,\
-                                                      counted_towards_workload = count_in_wl,\
-                                                      workload_scenario= selected_scen)
-                else:
-                    num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];
-                    TeachingAssignment.objects.create(assigned_module=selected_module,\
-                                                      assigned_lecturer=selected_prof,\
-                                                      number_of_hours=int(num_hrs),\
-                                                      assigned_manually = True,\
-                                                      counted_towards_workload = count_in_wl,\
-                                                      workload_scenario= selected_scen)
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'scenario_view/'+str(workloadscenario_id),
-                'return_label' : 'Back to workload view'
-            }
-            return HttpResponse(template.render(context, request))      
-
-    #Re-load workload scenario page (trigger a get)
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
-
-
-def remove_assignment(request, workloadscenario_id):
-    if request.method =='POST':
-        form = RemoveTeachingAssignmentForm(request.POST, workloadscenario_id = workloadscenario_id)
-        if (form.is_valid()):
-            TeachingAssignment.objects.filter(id=request.POST.get('select_teaching_assignment_to_remove')).delete()
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
-
-
-def edit_lecturer_assignments(request, prof_id):
-    prof_involved = Lecturer.objects.filter(id = prof_id).get()
-    scenario_id = prof_involved.workload_scenario.id
-
-    if request.method =='POST':    
-        form = EditTeachingAssignmentForm(request.POST,prof_id = prof_id)
-        if form.is_valid():
-            for mod in Module.objects.filter(scenario_ref__id = scenario_id):
-                mod_code = mod.module_code
-                if mod_code in form.cleaned_data.keys():
-                    if Module.objects.filter(module_code = mod_code).exists():
-                        assign = TeachingAssignment.objects.filter(assigned_module__module_code=mod_code)\
-                                            .filter(assigned_lecturer__id=prof_id)
-                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+mod_code]
-                        counted_in_wl = True
-                        if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
-
-                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
-                            supplied_number_of_hours = form.cleaned_data['total_hours'+mod_code]
-                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
-                                supplied_number_of_hours = 0;
-                            if (int(supplied_number_of_hours) > 0):
-                                assign.update(number_of_hours=int(supplied_number_of_hours),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:#If zero or negative, remove the assignment
-                                assign.delete();
-                        else:#Assigned by week. We need to do the calculation
-                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+mod_code]
-                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
-                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+mod_code]
-                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
-                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+mod_code]
-                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
-                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+mod_code]
-                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
-                            
-                            #Calculation of hours based on weekly info
-                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                                
-                            if num_hrs > 0:
-                                assign.update( number_of_hours=int(num_hrs),\
-                                               number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                               number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                               number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                               number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:
-                                assign.delete()
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
-
-def edit_module_assignments(request, module_id):
-    module_involved = Module.objects.filter(id=module_id).get()
-    scenario_id = module_involved.scenario_ref.id
-    if request.method =='POST':
-        
-        form = EditModuleAssignmentForm(request.POST,module_id = module_id)
-        if form.is_valid():
-            for prof in Lecturer.objects.filter(workload_scenario__id = scenario_id):
-                prof_name = prof.name
-                if prof_name in form.cleaned_data.keys():
-                    
-                    if Lecturer.objects.filter(name = prof_name).exists():
-                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+prof_name]
-                        counted_in_wl = True
-                        if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
-
-                        assign = TeachingAssignment.objects.filter(assigned_module__id=module_id)\
-                                                .filter(assigned_lecturer__name=prof_name)\
-                                                .filter(workload_scenario__id=scenario_id)
-                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
-                            supplied_number_of_hours = form.cleaned_data['total_hours'+prof_name]
-                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
-                                supplied_number_of_hours = 0;
-                            if (int(supplied_number_of_hours) > 0):
-                                assign.update(number_of_hours=int(supplied_number_of_hours),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:
-                                assign.delete();
-                        else:#Assigned by week. We need to do the calculation
-                            
-                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+prof_name]
-                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
-                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+prof_name]
-                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
-                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+prof_name]
-                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
-                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+prof_name]
-                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
-                            #Calculation of hours based on weekly info
-                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                            int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                                
-                            if num_hrs > 0:
-                                assign.update( number_of_hours=int(num_hrs),\
-                                                number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                                number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                                number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                                number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                                counted_towards_workload = counted_in_wl)
-                            else:#0 hours, delete the assignment
-                                assign.delete()         
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
-
-def manage_scenario(request):
-    if request.method =='POST':
-        form = ScenarioForm(request.POST)
-        if form.is_valid():
-            #This is from the workloads index page. We capture the required dept
-            supplied_dept_name = form.cleaned_data['dept']
-            supplied_dept = Department.objects.filter(department_name = supplied_dept_name)
-            #Call the helpert o create what's needed
-            HandleScenarioForm(form,supplied_dept.get().id)
-        else:#Invalid data, send to error page
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
-            }
-            return HttpResponse(template.render(context, request))
-
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-def remove_scenario(request):
-    if request.method =='POST':
-        form = RemoveScenarioForm(request.POST, dept_id=-1)
-        if form.is_valid():
-            selected_scenario_label = form.cleaned_data['select_scenario_to_remove'];
-            how_many_scenarios = WorkloadScenario.objects.all().count()
-            
-            if (how_many_scenarios>1):
-                #Remove relevant teaching assignment
-                TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
-                #Remove the selected scenario.
-                WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
-                    
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-    
-def add_professor(request, workloadscenario_id):
-    if request.method =='POST':
-        form = ProfessorForm(request.POST)
-        if (form.is_valid()):
-            supplied_prof_name = request.POST['name']
-            supplied_prof_appointment = request.POST['fraction_appointment']
-            supplied_employment_track_id = request.POST['employment_track']
-            supplied_service_role_id = request.POST['service_role']
-            
-            active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
-            empl_track = EmploymentTrack.objects.filter(id = supplied_employment_track_id).get()
-            serv_role = ServiceRole.objects.filter(id = supplied_service_role_id).get()
-            if (request.POST['fresh_record'] == 'False'):
-                Lecturer.objects.filter(name=supplied_prof_name).filter(workload_scenario=active_scen).update(name=supplied_prof_name,\
-                                                                                                fraction_appointment=float(supplied_prof_appointment), \
-                                                                                                employment_track = empl_track,
-                                                                                                service_role = serv_role)
-            else :
-                if (Lecturer.objects.filter(name = supplied_prof_name).filter(workload_scenario__id = active_scen.id).exists()):
-                    template = loader.get_template('workload_app/errors_page.html')
-                    context = {
-                        'form_errors': 'Invalid lecturer name. It already exists in the ' + active_scen.label + ' workload',
-                        'return_label' : 'Back to workload view',
-                        'return_page' : 'scenario_view/'+str(workloadscenario_id)
-                    }
-                    return HttpResponse(template.render(context, request))           
-                else:#we can safely add, no duplicates within the same workload
-                    Lecturer.objects.create(name=supplied_prof_name,fraction_appointment=float(supplied_prof_appointment), \
-                                                                                        workload_scenario = active_scen,\
-                                                                                        employment_track = empl_track,
-                                                                                        service_role = serv_role)
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label' : 'Back to workload view',
-                'return_page' : 'scenario_view/'+str(workloadscenario_id),
-            }
-            return HttpResponse(template.render(context, request))
-    
-    #Otherwise just go back to workload view
-    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get();
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': selected_scen.id}))
-
-def remove_professor(request,workloadscenario_id):
-    if request.method =='POST':
-        form = RemoveProfessorForm(request.POST, workloadscenario_id = workloadscenario_id)
-        if (form.is_valid()):
-            selected_prof_name = form.cleaned_data['select_professor_to_remove']
-            wipe_out = form.cleaned_data['wipe_out_from_table']
-            TeachingAssignment.objects.filter(assigned_lecturer__name = selected_prof_name, workload_scenario__id = workloadscenario_id).delete()
-            if (wipe_out==True):                
-                #Remove the prof from the list
-                Lecturer.objects.filter(name=selected_prof_name, workload_scenario__id = workloadscenario_id).delete()
-            #else, nothing, the lecturer remains on the list
-                
-        
-        else:#invalid form
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'scenario_view/'+str(workloadscenario_id),
-                'return_label' : 'Back to workload view'
-            }
-            return HttpResponse(template.render(context, request))
-    
-    
-    #Otherwise just go back to workload view
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
-
-def add_module(request,workloadscenario_id):
-    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
-    
-    if request.method =='POST':
-        form = ModuleForm(request.POST, dept_id = department.id)      
-        if form.is_valid():
-            supplied_module_code = form.cleaned_data['module_code']
-            supplied_module_title = form.cleaned_data['module_title']
-            supplied_type = form.cleaned_data['module_type']
-            supplied_sem_offered = form.cleaned_data['semester_offered']
-            supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups']
-            supplied_programme_belongs_to = form.cleaned_data['primary_programme']
-            supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
-            supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
-            supplied_secondary_programme_belongs_to = form.cleaned_data['secondary_programme']
-            supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
-            supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
-
-            supplied_hours = 0;
-            if (form.cleaned_data['total_hours']):
-                supplied_hours = form.cleaned_data['total_hours']
-            else:
-                supplied_hours = CalculateTotalModuleHours(supplied_n_tutorial_groups, supplied_type)
-            
-            if (request.POST['fresh_record'] == 'False'):
-                #This is an update
-                Module.objects.filter(module_code=supplied_module_code).filter(scenario_ref__id=workloadscenario_id).update(module_code=supplied_module_code, \
-                                         module_title=supplied_module_title, \
-                                         total_hours=supplied_hours, \
-                                         module_type =  supplied_type,\
-                                         semester_offered = supplied_sem_offered,\
-                                         number_of_tutorial_groups = supplied_n_tutorial_groups,\
-                                         primary_programme = supplied_programme_belongs_to,\
-                                         compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
-                                         students_year_of_study = supplied_students_year_of_study,\
-                                         secondary_programme = supplied_secondary_programme_belongs_to,\
-                                         sub_programme = supplied_sub_programme_belongs_to,\
-                                         secondary_sub_programme = supplied_secondary_sub_programme_belongs_to);                  
-                                
-            else:
-                #Create a new module
-                active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
-                #if it is a fesh record, we must make sure no duplicate names in this scenario
-                if (Module.objects.filter(module_code = supplied_module_code).filter(scenario_ref__id = workloadscenario_id).exists()):
-                    template = loader.get_template('workload_app/errors_page.html')
-                    context = {
-                        'form_errors': 'Invalid module code. It already exists in the ' + active_scen.label + ' workload',
-                        'return_page' : 'scenario_view/'+str(workloadscenario_id),
-                        'return_label' : 'Back to workload view'
-                    }
-                    return HttpResponse(template.render(context, request))   
-                else: #We can safely add, no duplicate in this workload scenario   
-                    new_mod = Module.objects.create(module_code=supplied_module_code, \
-                                                module_title=supplied_module_title, \
-                                                scenario_ref = active_scen,\
-                                                total_hours = supplied_hours,\
-                                                module_type = supplied_type,\
-                                                semester_offered = supplied_sem_offered,\
-                                                number_of_tutorial_groups = supplied_n_tutorial_groups,\
-                                                primary_programme = supplied_programme_belongs_to,\
-                                                compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
-                                                students_year_of_study = supplied_students_year_of_study,\
-                                                secondary_programme = supplied_secondary_programme_belongs_to,\
-                                                sub_programme = supplied_sub_programme_belongs_to,\
-                                                secondary_sub_programme = supplied_secondary_sub_programme_belongs_to)
-                    new_mod.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'scenario_view/'+str(workloadscenario_id),
-                'return_label' : 'Back to workload view'
-            }
-            return HttpResponse(template.render(context, request))
-        
-    #Otherwise just go back to workload view or department view, depending where we come from
-    if ("department" in request.META["HTTP_REFERER"]):#The edit module form appears in two pages, the workload page and the "department" page
-        dept_id = WorkloadScenario.objects.filter(id=workloadscenario_id).get().dept.id
-        return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
-    else:
-        return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
-
-def remove_module(request,workloadscenario_id):
-    if request.method =='POST':
-        form = RemoveModuleForm(request.POST,workloadscenario_id = workloadscenario_id)
-        if form.is_valid():  
-            selected_module = form.cleaned_data['select_module_to_remove'];
-            wipe_out = form.cleaned_data['wipe_from_table']
-            #Extract module code
-            selected_module_code = selected_module.__str__().split()[0];#see __str__ method of Module model, code is at the first position
-            
-            #Remove only the teaching assignments in this scenario
-            TeachingAssignment.objects.filter(assigned_module__module_code = selected_module_code, workload_scenario__id = workloadscenario_id).delete();
-            if (wipe_out==form.REMOVE_COMPLETELY):
-                #Remove the module from the list
-                Module.objects.filter(module_code=selected_module_code, scenario_ref__id = workloadscenario_id).delete()             
-            #Else, module stays there because wipe is false
-            
-    #Otherwise just go back to workload view
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
-
-def manage_module_type(request, department_id):
-    if request.method =='POST':
-        form = ModuleTypeForm(request.POST)
-        if form.is_valid():  
-            supplied_type_name = form.cleaned_data['type_name']
-            new_type = ModuleType.objects.create(type_name = supplied_type_name, department=Department.objects.filter(id=department_id).get())
-            new_type.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'department/'+str(department_id),
-                'return_label' : 'Back to Department page'
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
-
-def remove_module_type(request, department_id):
-    if request.method =='POST':
-        form = RemoveModuleTypeForm(request.POST,department_id=department_id)
-        if form.is_valid():  
-            ModuleType.objects.filter(id=request.POST.get('select_module_type_to_remove')).delete()
-            
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
-
-
-def manage_department(request):
-    if request.method =='POST':
-        form = DepartmentForm(request.POST)
-        if form.is_valid():  
-            supplied_dept_name = form.cleaned_data['department_name']
-            supplied_dept_acr = form.cleaned_data['department_acronym']
-            supplied_faculty = form.cleaned_data['faculty']
-            fac_obj = Faculty.objects.filter(faculty_name=supplied_faculty).get()
-            if (request.POST['fresh_record'] == 'False'):
-                #This is an edit
-                supplied_id = form.cleaned_data['dept_id']
-                if (supplied_id != Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get().id):#No messing with default dept
-                    Department.objects.filter(id = int(supplied_id)).update(department_name = supplied_dept_name, \
-                                                                        department_acronym = supplied_dept_acr, \
-                                                                        faculty = fac_obj)
-            else:#New dept
-                new_dept = Department.objects.create(department_name = supplied_dept_name, department_acronym = supplied_dept_acr, faculty = fac_obj)
-                new_dept.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-
-def remove_department(request):
-    if request.method =='POST':
-        form = RemoveDepartmentForm(request.POST);
-        if form.is_valid():  
-            selected_department = form.cleaned_data['select_department_to_remove']
-            if (selected_department.department_name != DEFAULT_DEPARTMENT_NAME):#If user wants to delete the default, we do nothing
-                default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
-                if (default_dept.count() == 0): #If, for some reason, the default dept is not there, create one (this should be impossible...)
-                    Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
-                    default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
-
-                #Turn all workload scenarios of that department to the default department    
-                WorkloadScenario.objects.filter(dept__department_name=selected_department).update(dept = default_dept.get().id)
-                Department.objects.filter(department_name=selected_department).delete()
-            
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'));   
-
-def manage_faculty(request):
-    if request.method =='POST':
-        form = FacultyForm(request.POST);
-        if form.is_valid():  
-            supplied_fac_name = form.cleaned_data['faculty_name']
-            supplied_fac_acr = form.cleaned_data['faculty_acronym']
-
-            if (request.POST['fresh_record'] == 'False'):
-                #This is an edit
-                supplied_id = form.cleaned_data['fac_id']
-                if (supplied_id != Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id):#No messing with default faculty
-                    Faculty.objects.filter(id = int(supplied_id)).update(faculty_name = supplied_fac_name, \
-                                                                         faculty_acronym = supplied_fac_acr)
-            else:#New faculty
-                new_fac = Faculty.objects.create(faculty_name = supplied_fac_name, faculty_acronym = supplied_fac_acr)
-                new_fac.save()
-        else:#Invalid data
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
-            }
-            return HttpResponse(template.render(context, request))
-
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-def remove_faculty(request):
-    if request.method =='POST':
-        form = RemoveFacultyForm(request.POST)
-        if form.is_valid():  
-            selected_faculty = form.cleaned_data['select_faculty_to_remove']
-            if (selected_faculty.faculty_name != DEFAULT_FACULTY_NAME):#If user wants to delete the default, we do nothing
-                default_fac = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
-                if (default_fac.count() == 0): #If, for some reason, the default faculty is not there, create one (this should be impossible...)
-                    Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
-                    default_fac = Department.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
-
-                #Turn all department of that faculy to the default faculty
-                Department.objects.filter(faculty__faculty_name=selected_faculty).update(faculty = default_fac.get().id)
-                #Then delete the faculty
-                Faculty.objects.filter(faculty_name=selected_faculty).delete()
-
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
-
-
-def manage_programme_offered(request, dept_id):
-    if request.method =='POST':
-        form = ProgrammeOfferedForm(request.POST);
-        if form.is_valid():  
-            supplied_prog_name = form.cleaned_data['programme_name']
-            supplied_dept = form.cleaned_data['primary_dept']
-            dept_obj = Department.objects.filter(department_name=supplied_dept).get()
-            if (request.POST['fresh_record'] == 'False'):
-                supplied_id = form.cleaned_data['prog_id']
-                #This is an edit
-                ProgrammeOffered.objects.filter(id = int(supplied_id)).update(programme_name = supplied_prog_name, primary_dept = dept_obj)
-                
-            else:
-                #This is a new programme
-                new_prog = ProgrammeOffered.objects.create(programme_name = supplied_prog_name, primary_dept = dept_obj)
-                new_prog.save()
-                
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'department/'+str(dept_id),
-                'return_label' : 'Back to Department page'
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}));
-
-def manage_subprogramme_offered(request, dept_id):
-    if request.method =='POST':
-        form = SubProgrammeOfferedForm(request.POST, department_id = dept_id)
-        if form.is_valid():
-            supplied_sub_prog_name = form.cleaned_data['sub_programme_name']
-            supplied_main_programme = form.cleaned_data['main_programme']
-            main_prog_obj = ProgrammeOffered.objects.filter(programme_name=supplied_main_programme).get()
-            if (request.POST['fresh_record'] == 'False'):
-                supplied_id = form.cleaned_data['sub_prog_id']
-                #This is an edit
-                SubProgrammeOffered.objects.filter(id = int(supplied_id)).update(sub_programme_name = supplied_sub_prog_name, main_programme = main_prog_obj)
-            else:
-                #This is a new subprogramme
-                new_prog = SubProgrammeOffered.objects.create(sub_programme_name = supplied_sub_prog_name, main_programme = main_prog_obj)
-                new_prog.save()
-        else:
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': form.errors,
-                'return_page' : 'department/'+str(dept_id),
-                'return_label' : 'Back to Department page'
-            }
-            return HttpResponse(template.render(context, request))
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
-
-def remove_programme_offered(request, dept_id):
-    if request.method =='POST':
-        form = RemoveProgrammeForm(request.POST, department_id = dept_id)
-        if form.is_valid():
-            supplied_prog_name = form.cleaned_data['select_programme_to_remove']
-            ProgrammeOffered.objects.filter(primary_dept__id=dept_id).filter(programme_name=supplied_prog_name).delete()
-
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
-
-def remove_subprogramme_offered(request, dept_id):
-    if request.method =='POST':
-        form = RemoveSubProgrammeForm(request.POST, department_id = dept_id)
-        if form.is_valid():
-            supplied_subprog_name = form.cleaned_data['select_subprogramme_to_remove']
-            #Note we delete only subprogrammes from the same departemnt as the programmes they are linked to
-            SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id).filter(sub_programme_name=supplied_subprog_name.sub_programme_name).delete()
-
-    #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
 
 def faculty_report(request):
     time_info  = GetLastNYears(5)
@@ -899,174 +334,183 @@ def faculty_report(request):
     return HttpResponse(template.render(context, request))
 
 def department(request,department_id):
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
 
     if (Department.objects.filter(id = department_id).count() == 0):
-            #This should really never happen, but just in case the user enters some random number...
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'form_errors': 'No such department exists',
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
+        #This should really never happen, but just in case the user enters some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "No such department exists"
+        }
+        return HttpResponse(template.render(context, request))
+
+    if request.method =='POST':
+        new_wl_form = ScenarioForm(request.POST)
+        if(new_wl_form.is_valid()):
+            HandleScenarioForm(new_wl_form,department_id)
+
+        remove_wl_form =  RemoveScenarioForm(request.POST, dept_id=department_id)
+        if remove_wl_form.is_valid():
+            selected_scenario_label = remove_wl_form.cleaned_data['select_scenario_to_remove']
+            how_many_scenarios = WorkloadScenario.objects.all().count()
+            if (how_many_scenarios>1):
+                #Remove relevant teaching assignment
+                TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
+                #Remove the selected scenario.
+                WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
+
+        acad_year_form = SelectAcademicYearForm(request.POST)
+        if (acad_year_form.is_valid()):
+            academic_year_requested = acad_year_form.cleaned_data["select_academic_year"]
+            #Store info in the session
+            request.session['acad_year_requested'] =  academic_year_requested.start_year
+
+        #Trigger a GET
+        return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
+
+    else: #GET request
+        
+        start_year=0 #It simply won't find anything with this year
+        if ('acad_year_requested' in request.session.keys()): 
+            start_year = request.session['acad_year_requested']
+        
+        #The table with all the programmes offered by the Department
+        dept_obj = Department.objects.filter(id = department_id).get()
+        dept_name = dept_obj.department_name
+        prog_form = ProgrammeOfferedForm(initial={'fresh_record': True})
+        sub_prog_form = SubProgrammeOfferedForm(department_id = dept_obj.id,initial={'fresh_record': True})
+        prog_offered = []
+        for prg in ProgrammeOffered.objects.filter(primary_dept=department_id):
+            item = {
+                "programme_name" : prg.programme_name,
+                "programme_id" : prg.id,
+                "programme_edit_form" : ProgrammeOfferedForm(initial = {'fresh_record' : False, \
+                                                                        'prog_id' : prg.id, 
+                                                                        'dept_id' : department_id,\
+                                                                        'programme_name' : prg.programme_name,
+                                                                        'primary_dept' : department_id}),
+                "sub_programmes" : [],
+                "n_subprogrammes_rowspan" : 0,#used for rowspan
+                "n_subprogrammes" : 0
             }
-            return HttpResponse(template.render(context, request))
-    else:
-        if request.method =='POST':
-            new_wl_form = ScenarioForm(request.POST)
-            if(new_wl_form.is_valid()):
-                HandleScenarioForm(new_wl_form,department_id)
-
-            remove_wl_form =  RemoveScenarioForm(request.POST, dept_id=department_id)
-            if remove_wl_form.is_valid():
-                selected_scenario_label = remove_wl_form.cleaned_data['select_scenario_to_remove']
-                how_many_scenarios = WorkloadScenario.objects.all().count()
-                if (how_many_scenarios>1):
-                    #Remove relevant teaching assignment
-                    TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
-                    #Remove the selected scenario.
-                    WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
-
-            acad_year_form = SelectAcademicYearForm(request.POST)
-            if (acad_year_form.is_valid()):
-                academic_year_requested = acad_year_form.cleaned_data["select_academic_year"]
-                #Store info in the session
-                request.session['acad_year_requested'] =  academic_year_requested.start_year
-
-            #Trigger a GET
-            return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
-
-        else: #GET request
             
-            start_year=0 #It simply won't find anything with this year
-            if ('acad_year_requested' in request.session.keys()): 
-                start_year = request.session['acad_year_requested']
+            for sub_prg in SubProgrammeOffered.objects.filter(main_programme=prg):
+                item["sub_programmes"].append(sub_prg.sub_programme_name)
             
-            #The table with all the programmes offered by the Department
-            dept_obj = Department.objects.filter(id = department_id).get()
-            dept_name = dept_obj.department_name
-            prog_form = ProgrammeOfferedForm(initial={'fresh_record': True})
-            sub_prog_form = SubProgrammeOfferedForm(department_id = dept_obj.id,initial={'fresh_record': True})
-            prog_offered = []
+            item["n_subprogrammes_rowspan"] = max(1,len(item["sub_programmes"])) #IF no subprogrammes, we have one here (used as colspan)
+            item["n_subprogrammes"] = len(item["sub_programmes"])
+            prog_offered.append(item)
+        
+        wl_form = ScenarioForm(initial = {'dept' : department_id, 'fresh_record' : True})
+        #Here we are in the Dept page, so we assume the new workload will be created for this dept only and we hide the choice
+        wl_form.fields['dept'].widget = forms.HiddenInput()
+
+        remove_prog_form = RemoveProgrammeForm(department_id = department_id)
+        remove_sub_prog_form = RemoveSubProgrammeForm(department_id = department_id)
+        remove_wl_scenario_form = RemoveScenarioForm(dept_id=department_id)
+        #Table with all the workloads for this Department
+        dept_wls = []
+        this_year = datetime.datetime.now().year
+        for start_year_dept in range(this_year-6,this_year+5):
+            item = {
+                "academic_year" : str(start_year_dept)+'/'+str(start_year_dept+1),
+                "official_wl_ids" : [],
+                "draft_wl_ids" : [],
+            }
+            for wl in WorkloadScenario.objects.filter(dept = department_id).filter(academic_year__start_year = start_year_dept):
+                if (wl.status==WorkloadScenario.OFFICIAL):
+                    item["official_wl_ids"].append(wl.id)
+                else:
+                    item["draft_wl_ids"].append(wl.id)
+            dept_wls.append(item)
+
+        mod_type_form = ModuleTypeForm()
+        remove_mod_type_form = RemoveModuleTypeForm(department_id=department_id)
+        module_type_table = CalculateModuleTypeTable(department_id)  
+
+        #Generate the report for the year
+        if (start_year == 0 ):
+            acad_year_form = SelectAcademicYearForm()
+        else:
+            acad_year_form = SelectAcademicYearForm(initial={'select_academic_year' : Academicyear.objects.filter(start_year = start_year).get().id})
+
+        scen_qs = WorkloadScenario.objects.filter(dept = department_id).filter(status=WorkloadScenario.OFFICIAL).filter(academic_year__start_year = start_year)
+        scenario_id = ''
+        academic_year = ''
+        tables_for_year=[]
+        workload_there=False
+        no_show_message = "" #This is the message to be displayed if there are no tables to be shown for one reason or another.
+        if (scen_qs.count()==1):         
+            workload_there=True
+            scen  = scen_qs.get()
+            scenario_id = scen.id
+            academic_year = scen.academic_year.__str__()
+            something_to_show = False
+            index = 0
             for prg in ProgrammeOffered.objects.filter(primary_dept=department_id):
-                item = {
-                    "programme_name" : prg.programme_name,
-                    "programme_id" : prg.id,
-                    "programme_edit_form" : ProgrammeOfferedForm(initial = {'fresh_record' : False, \
-                                                                            'prog_id' : prg.id, 
-                                                                            'dept_id' : department_id,\
-                                                                            'programme_name' : prg.programme_name,
-                                                                            'primary_dept' : department_id}),
-                    "sub_programmes" : [],
-                    "n_subprogrammes_rowspan" : 0,#used for rowspan
-                    "n_subprogrammes" : 0
-                }
-                
-                for sub_prg in SubProgrammeOffered.objects.filter(main_programme=prg):
-                    item["sub_programmes"].append(sub_prg.sub_programme_name)
-                
-                item["n_subprogrammes_rowspan"] = max(1,len(item["sub_programmes"])) #IF no subprogrammes, we have one here (used as colspan)
-                item["n_subprogrammes"] = len(item["sub_programmes"])
-                prog_offered.append(item)
-            
-            wl_form = ScenarioForm(initial = {'dept' : department_id, 'fresh_record' : True})
-            #Here we are in the Dept page, so we assume the new workload will be created for this dept only and we hide the choice
-            wl_form.fields['dept'].widget = forms.HiddenInput()
+                hourly_table = CalculateModuleHourlyTableForProgramme(scen.id, prg.id, requested_table_type.PROGRAMME)
+                if(hourly_table["mods_present"] > 0):
+                    tables_for_prog = {
+                        "prog_id" : prg.id,
+                        "table_with_hours" : '',
+                        "table_with_mod_types" : '',
+                        "hourly_tables_with_subprogrammes" : [],
+                        "colour_scheme" : COLOUR_SCHEMES[index%len(COLOUR_SCHEMES)]
+                    }
+                    index = index + 1
+                    tables_for_prog["table_with_hours"] = hourly_table
+                    tables_for_prog["table_with_mod_types"] = CalculateModuleTypesTableForProgramme(scen.id,prg.id)
+                    
+                    for sub_prg in SubProgrammeOffered.objects.filter(main_programme = prg):
+                        sub_prg_table = CalculateModuleHourlyTableForProgramme(scen.id, sub_prg.id, requested_table_type.SUB_PROGRAMME)
+                        tables_for_prog["hourly_tables_with_subprogrammes"].append(sub_prg_table)
 
-            remove_prog_form = RemoveProgrammeForm(department_id = department_id)
-            remove_sub_prog_form = RemoveSubProgrammeForm(department_id = department_id)
-            remove_wl_scenario_form = RemoveScenarioForm(dept_id=department_id)
-            #Table with all the workloads for this Department
-            dept_wls = []
-            this_year = datetime.datetime.now().year
-            for start_year_dept in range(this_year-6,this_year+5):
-                item = {
-                    "academic_year" : str(start_year_dept)+'/'+str(start_year_dept+1),
-                    "official_wl_ids" : [],
-                    "draft_wl_ids" : [],
-                }
-                for wl in WorkloadScenario.objects.filter(dept = department_id).filter(academic_year__start_year = start_year_dept):
-                    if (wl.status==WorkloadScenario.OFFICIAL):
-                        item["official_wl_ids"].append(wl.id)
-                    else:
-                        item["draft_wl_ids"].append(wl.id)
-                dept_wls.append(item)
+                    tables_for_year.append(tables_for_prog)
+                    something_to_show = True
+            if (something_to_show == False): no_show_message = "Note: the modules in the workload requested are not associated with any programme"
 
-            mod_type_form = ModuleTypeForm()
-            remove_mod_type_form = RemoveModuleTypeForm(department_id=department_id)
-            module_type_table = CalculateModuleTypeTable(department_id)  
+        if (workload_there == False): no_show_message = "No official workload is in the system database for the requested year"
+        if start_year == 0 : no_show_message = ""#Reset if there is requested year in the session (e.g., first landing) 
 
-            #Generate the report for the year
-            if (start_year == 0 ):
-                acad_year_form = SelectAcademicYearForm()
-            else:
-                acad_year_form = SelectAcademicYearForm(initial={'select_academic_year' : Academicyear.objects.filter(start_year = start_year).get().id})
+        template = loader.get_template('workload_app/department.html')
+        context = {
+            'workload_there' : workload_there, #whetehre or not an official workload was even found for the requested year
+            'workload_id' : scenario_id,
+            'acad_year' : academic_year,
+            'dept_id' : department_id,
+            'dept_name' : dept_name,
+            'acad_year_form' : acad_year_form,
+            'prog_offered' : prog_offered, #This is a list of dictionary items
+            'dept_wls' : dept_wls,#This is the table with workloads from recent years
+            'module_type_table' : module_type_table,
+            'mod_type_form': mod_type_form,
+            'remove_mod_type_form':remove_mod_type_form.as_p(),
+            'wl_form' : wl_form,
+            'remove_wl_scenario_form' : remove_wl_scenario_form,
+            'prog_form' : prog_form,
+            'sub_prog_form' : sub_prog_form,
+            'remove_prog_form' : remove_prog_form,
+            'remove_sub_prog_form' : remove_sub_prog_form,
+            'tables_for_year' : tables_for_year,
 
-            scen_qs = WorkloadScenario.objects.filter(dept = department_id).filter(status=WorkloadScenario.OFFICIAL).filter(academic_year__start_year = start_year)
-            scenario_id = ''
-            academic_year = ''
-            tables_for_year=[]
-            workload_there=False
-            no_show_message = "" #This is the message to be displayed if there are no tables to be shown for one reason or another.
-            if (scen_qs.count()==1):         
-                workload_there=True
-                scen  = scen_qs.get()
-                scenario_id = scen.id
-                academic_year = scen.academic_year.__str__()
-                something_to_show = False
-                index = 0
-                for prg in ProgrammeOffered.objects.filter(primary_dept=department_id):
-                    hourly_table = CalculateModuleHourlyTableForProgramme(scen.id, prg.id, requested_table_type.PROGRAMME)
-                    if(hourly_table["mods_present"] > 0):
-                        tables_for_prog = {
-                            "prog_id" : prg.id,
-                            "table_with_hours" : '',
-                            "table_with_mod_types" : '',
-                            "hourly_tables_with_subprogrammes" : [],
-                            "colour_scheme" : COLOUR_SCHEMES[index%len(COLOUR_SCHEMES)]
-                        }
-                        index = index + 1
-                        tables_for_prog["table_with_hours"] = hourly_table
-                        tables_for_prog["table_with_mod_types"] = CalculateModuleTypesTableForProgramme(scen.id,prg.id)
-                        
-                        for sub_prg in SubProgrammeOffered.objects.filter(main_programme = prg):
-                            sub_prg_table = CalculateModuleHourlyTableForProgramme(scen.id, sub_prg.id, requested_table_type.SUB_PROGRAMME)
-                            tables_for_prog["hourly_tables_with_subprogrammes"].append(sub_prg_table)
-
-                        tables_for_year.append(tables_for_prog)
-                        something_to_show = True
-                if (something_to_show == False): no_show_message = "Note: the modules in the workload requested are not associated with any programme"
-
-            if (workload_there == False): no_show_message = "No official workload is in the system database for the requested year"
-            if start_year == 0 : no_show_message = ""#Reset if there is requested year in the session (e.g., first landing) 
-
-            template = loader.get_template('workload_app/department.html')
-            context = {
-                'workload_there' : workload_there, #whetehre or not an official workload was even found for the requested year
-                'workload_id' : scenario_id,
-                'acad_year' : academic_year,
-                'dept_id' : department_id,
-                'dept_name' : dept_name,
-                'acad_year_form' : acad_year_form,
-                'prog_offered' : prog_offered, #This is a list of dictionary items
-                'dept_wls' : dept_wls,#This is the table with workloads from recent years
-                'module_type_table' : module_type_table,
-                'mod_type_form': mod_type_form,
-                'remove_mod_type_form':remove_mod_type_form.as_p(),
-                'wl_form' : wl_form,
-                'remove_wl_scenario_form' : remove_wl_scenario_form,
-                'prog_form' : prog_form,
-                'sub_prog_form' : sub_prog_form,
-                'remove_prog_form' : remove_prog_form,
-                'remove_sub_prog_form' : remove_sub_prog_form,
-                'tables_for_year' : tables_for_year,
-
-                'no_show_message' : no_show_message
-            }
-            return HttpResponse(template.render(context, request))
+            'no_show_message' : no_show_message
+        }
+        return HttpResponse(template.render(context, request))
 
 def module(request, module_code):
 
+    if request.user.is_authenticated == False or CanUserAdminThisModule(request.user.id,module_code  = module_code, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     #First figure out the programme name this module may belong to
     #This is useful in multiple parts below
     prog = None
@@ -1184,9 +628,7 @@ def module(request, module_code):
             #This should really never happen, but just in case the user enters some random number...
             template = loader.get_template('workload_app/errors_page.html')
             context = {
-                'form_errors': "There are no modules with the " + module_code + " code in the database.",
-                'return_label': 'Back to index of workloads',
-                'return_page' : 'workloads_index/',
+                'error_message': "There are no modules with the " + module_code + " code in the database.",
             }
             return HttpResponse(template.render(context, request))
         
@@ -1364,17 +806,19 @@ def accreditation(request,programme_id):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
-            'form_errors': 'No such programme exists in the database',
-            'return_label': 'Back to index of workloads',
-            'return_page' : 'workloads_index/',
+                'error_message': "No such programme exists in the database"
         }
         return HttpResponse(template.render(context, request))
 
 
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
     department_id = programme.primary_dept.id
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     
     if request.method =='POST':
         slo_form = SLOForm(request.POST)
@@ -1721,8 +1165,12 @@ def accreditation(request,programme_id):
 def accreditation_report(request,programme_id, start_year,end_year):
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
     department_id = programme.primary_dept.id
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
@@ -1798,11 +1246,17 @@ def input_module_survey_results(request,module_code,survey_id):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
-            'form_errors': 'No such survey exists in the database',
-            'return_label': 'Back to module page',
-            'return_page' : 'module/'+module_code,
+                'error_message': "No such survey exists in the database"
         }
         return HttpResponse(template.render(context, request))
+    
+    if request.user.is_authenticated == False or CanUserAdminThisModule(request.user.id,module_code=module_code, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
+    
     survey_obj = survey_qs.get()#Should be safe after the if above
     labels = survey_obj.likert_labels.GetListOfLabels()#USe the labels stored in the survey upon creation (not the programme ones which may have changed)
     full_labels = survey_obj.likert_labels.GetFullListOfLabels()
@@ -1899,9 +1353,7 @@ def input_programme_survey_results(request,programme_id,survey_id):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
-            'form_errors': 'No such survey exists in the database',
-            'return_label': 'Back to accreditation page',
-            'return_page' : 'workloads_index/',
+                'error_message': "No such survey exissts in the database"
         }
         return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get()#Should be safe after the if above
@@ -1912,8 +1364,12 @@ def input_programme_survey_results(request,programme_id,survey_id):
 
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
     department_id = programme.primary_dept.id
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id)==False:
-        return HttpResponseRedirect(DetermineUserHomePage(request.user.id))
+    if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id, is_super_user = request.user.is_superuser)==False:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page"
+        }
+        return HttpResponse(template.render(context, request))
     
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.SLO:
@@ -2057,6 +1513,17 @@ def input_programme_survey_results(request,programme_id,survey_id):
         return HttpResponse(template.render(context, request))
 
 def survey_results(request,survey_id):
+    survey_obj = Survey.objects.filter(id=survey_id).get()
+    programme_id = survey_obj.programme_associated.id
+    department_id = ProgrammeOffered.objects.filter(id = programme_id).get().primary_dept.id
+    if (survey_obj.survey_type != Survey.SurveyType.MLO):#WE block only survey that programme-level. We allow all to see MLO survey results (but there won't be links...)
+        if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,department_id, is_super_user = request.user.is_superuser)==False:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': "Access forbidden. User has no access to this page"
+            }
+            return HttpResponse(template.render(context, request))
+    
     if request.method=="GET":
         survey_labels = []
         back_address = '/workload_app/'
@@ -2140,5 +1607,573 @@ def survey_results(request,survey_id):
             'back_text' : back_text
         }
         return HttpResponse(template.render(context, request))
+    
+
+###################
+# BElow here only handler methods that handle some of the POST requests
+###################
+
+def add_assignment(request,workloadscenario_id):
+    if request.method =='POST':
+        id_of_prof_involved = request.POST['select_lecturer']
+        id_of_mod_involved = request.POST['select_module']
+        manual_radio_button_status = request.POST['manual_hours_yes_no']
+        counted_or_not_radio_button_status = request.POST['counted_towards_workload']
+        selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
+        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = selected_scen.id)
+        if form.is_valid():
+            selected_prof_name = form.cleaned_data['select_lecturer']
+            selected_module = form.cleaned_data['select_module']
+
+            selected_module = Module.objects.filter(id = id_of_mod_involved).filter(scenario_ref__id = workloadscenario_id).get()
+            selected_prof =  Lecturer.objects.filter(name = selected_prof_name).filter(workload_scenario__id = workloadscenario_id).get()
+            count_in_wl = True
+            if (counted_or_not_radio_button_status == 'no'): count_in_wl = False
+            #Check if an assignment for the same module and same prof alreday exists (if so, we just add the hours)
+            possible_existing_objects = TeachingAssignment.objects.filter(assigned_module = selected_module)\
+                                                                  .filter(assigned_lecturer = selected_prof)\
+                                                                  .filter(workload_scenario__id=workloadscenario_id)\
+                                                                  .filter(counted_towards_workload = count_in_wl)
+            if (possible_existing_objects.count() > 0):
+                num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];#TODO This is bad here, must chack if manual hours were given or not
+                existing_hrs = possible_existing_objects.values().get()
+                total_number_of_hours = num_hrs + existing_hrs['number_of_hours'] #Just add the hours
+                possible_existing_objects.update(number_of_hours=int(total_number_of_hours))
+            else:#Here the count is zero: an assignment to the same prof, same mod does not exist, finally create the assignment object
+                
+                if manual_radio_button_status == 'no' :
+                    supplied_weekly_lecture_hours = form.cleaned_data["enter_number_of_weekly_lecture_hours"]
+                    supplied_weekly_tutorial_hours = form.cleaned_data["enter_number_of_weekly_tutorial_hours"]
+                    supplied_num_tutorial_groups = form.cleaned_data["enter_number_of_tutorial_groups"]
+                    supplied_weeks_assigned = form.cleaned_data["enter_number_of_weeks_assigned"]
+                    #Calculation of hours based on weekly info
+                    num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
+                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
+                    TeachingAssignment.objects.create(assigned_module=selected_module,\
+                                                      assigned_lecturer=selected_prof,\
+                                                      number_of_hours=int(num_hrs),\
+                                                      number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
+                                                      number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
+                                                      number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
+                                                      number_of_weeks_assigned = int(supplied_weeks_assigned),\
+                                                      assigned_manually = False,\
+                                                      counted_towards_workload = count_in_wl,\
+                                                      workload_scenario= selected_scen)
+                else:
+                    num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];
+                    TeachingAssignment.objects.create(assigned_module=selected_module,\
+                                                      assigned_lecturer=selected_prof,\
+                                                      number_of_hours=int(num_hrs),\
+                                                      assigned_manually = True,\
+                                                      counted_towards_workload = count_in_wl,\
+                                                      workload_scenario= selected_scen)
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))    
+
+    #Re-load workload scenario page (trigger a get)
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
+
+def remove_assignment(request, workloadscenario_id):
+    if request.method =='POST':
+        form = RemoveTeachingAssignmentForm(request.POST, workloadscenario_id = workloadscenario_id)
+        if (form.is_valid()):
+            TeachingAssignment.objects.filter(id=request.POST.get('select_teaching_assignment_to_remove')).delete()
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
+
+def edit_lecturer_assignments(request, prof_id):
+    prof_involved = Lecturer.objects.filter(id = prof_id).get()
+    scenario_id = prof_involved.workload_scenario.id
+
+    if request.method =='POST':    
+        form = EditTeachingAssignmentForm(request.POST,prof_id = prof_id)
+        if form.is_valid():
+            for mod in Module.objects.filter(scenario_ref__id = scenario_id):
+                mod_code = mod.module_code
+                if mod_code in form.cleaned_data.keys():
+                    if Module.objects.filter(module_code = mod_code).exists():
+                        assign = TeachingAssignment.objects.filter(assigned_module__module_code=mod_code)\
+                                            .filter(assigned_lecturer__id=prof_id)
+                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+mod_code]
+                        counted_in_wl = True
+                        if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
+
+                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
+                            supplied_number_of_hours = form.cleaned_data['total_hours'+mod_code]
+                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
+                                supplied_number_of_hours = 0;
+                            if (int(supplied_number_of_hours) > 0):
+                                assign.update(number_of_hours=int(supplied_number_of_hours),\
+                                               counted_towards_workload = counted_in_wl)
+                            else:#If zero or negative, remove the assignment
+                                assign.delete();
+                        else:#Assigned by week. We need to do the calculation
+                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+mod_code]
+                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
+                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+mod_code]
+                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
+                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+mod_code]
+                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
+                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+mod_code]
+                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
+                            
+                            #Calculation of hours based on weekly info
+                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
+                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
+                                
+                            if num_hrs > 0:
+                                assign.update( number_of_hours=int(num_hrs),\
+                                               number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
+                                               number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
+                                               number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
+                                               number_of_weeks_assigned = int(supplied_weeks_assigned),\
+                                               counted_towards_workload = counted_in_wl)
+                            else:
+                                assign.delete()
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
+
+def edit_module_assignments(request, module_id):
+    module_involved = Module.objects.filter(id=module_id).get()
+    scenario_id = module_involved.scenario_ref.id
+    if request.method =='POST':
+        
+        form = EditModuleAssignmentForm(request.POST,module_id = module_id)
+        if form.is_valid():
+            for prof in Lecturer.objects.filter(workload_scenario__id = scenario_id):
+                prof_name = prof.name
+                if prof_name in form.cleaned_data.keys():
+                    
+                    if Lecturer.objects.filter(name = prof_name).exists():
+                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+prof_name]
+                        counted_in_wl = True
+                        if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
+
+                        assign = TeachingAssignment.objects.filter(assigned_module__id=module_id)\
+                                                .filter(assigned_lecturer__name=prof_name)\
+                                                .filter(workload_scenario__id=scenario_id)
+                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
+                            supplied_number_of_hours = form.cleaned_data['total_hours'+prof_name]
+                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
+                                supplied_number_of_hours = 0;
+                            if (int(supplied_number_of_hours) > 0):
+                                assign.update(number_of_hours=int(supplied_number_of_hours),\
+                                               counted_towards_workload = counted_in_wl)
+                            else:
+                                assign.delete();
+                        else:#Assigned by week. We need to do the calculation
+                            
+                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+prof_name]
+                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
+                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+prof_name]
+                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
+                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+prof_name]
+                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
+                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+prof_name]
+                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
+                            #Calculation of hours based on weekly info
+                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
+                                                                            int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
+                                
+                            if num_hrs > 0:
+                                assign.update( number_of_hours=int(num_hrs),\
+                                                number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
+                                                number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
+                                                number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
+                                                number_of_weeks_assigned = int(supplied_weeks_assigned),\
+                                                counted_towards_workload = counted_in_wl)
+                            else:#0 hours, delete the assignment
+                                assign.delete()         
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
+
+def manage_scenario(request):
+    if request.method =='POST':
+        form = ScenarioForm(request.POST)
+        if form.is_valid():
+            #This is from the workloads index page. We capture the required dept
+            supplied_dept_name = form.cleaned_data['dept']
+            supplied_dept = Department.objects.filter(department_name = supplied_dept_name)
+            #Call the helpert o create what's needed
+            HandleScenarioForm(form,supplied_dept.get().id)
+        else:#Invalid data, send to error page
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
+
+def remove_scenario(request):
+    if request.method =='POST':
+        form = RemoveScenarioForm(request.POST, dept_id=-1)
+        if form.is_valid():
+            selected_scenario_label = form.cleaned_data['select_scenario_to_remove'];
+            how_many_scenarios = WorkloadScenario.objects.all().count()
+            
+            if (how_many_scenarios>1):
+                #Remove relevant teaching assignment
+                TeachingAssignment.objects.filter(workload_scenario__label = selected_scenario_label).delete()
+                #Remove the selected scenario.
+                WorkloadScenario.objects.filter(label=selected_scenario_label).delete()
+                    
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
+    
+def add_professor(request, workloadscenario_id):
+    if request.method =='POST':
+        form = ProfessorForm(request.POST)
+        if (form.is_valid()):
+            supplied_prof_name = request.POST['name']
+            supplied_prof_appointment = request.POST['fraction_appointment']
+            supplied_employment_track_id = request.POST['employment_track']
+            supplied_service_role_id = request.POST['service_role']
+            
+            active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
+            empl_track = EmploymentTrack.objects.filter(id = supplied_employment_track_id).get()
+            serv_role = ServiceRole.objects.filter(id = supplied_service_role_id).get()
+            if (request.POST['fresh_record'] == 'False'):
+                Lecturer.objects.filter(name=supplied_prof_name).filter(workload_scenario=active_scen).update(name=supplied_prof_name,\
+                                                                                                fraction_appointment=float(supplied_prof_appointment), \
+                                                                                                employment_track = empl_track,
+                                                                                                service_role = serv_role)
+            else :
+                if (Lecturer.objects.filter(name = supplied_prof_name).filter(workload_scenario__id = active_scen.id).exists()):
+                    template = loader.get_template('workload_app/errors_page.html')
+                    context = {
+                        'error_message': 'Invalid lecturer name. It already exists in the ' + active_scen.label + ' workload',
+                    }
+                    return HttpResponse(template.render(context, request))           
+                else:#we can safely add, no duplicates within the same workload
+                    Lecturer.objects.create(name=supplied_prof_name,fraction_appointment=float(supplied_prof_appointment), \
+                                                                                        workload_scenario = active_scen,\
+                                                                                        employment_track = empl_track,
+                                                                                        service_role = serv_role)
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    
+    #Otherwise just go back to workload view
+    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get();
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': selected_scen.id}))
+
+def remove_professor(request,workloadscenario_id):
+    if request.method =='POST':
+        form = RemoveProfessorForm(request.POST, workloadscenario_id = workloadscenario_id)
+        if (form.is_valid()):
+            selected_prof_name = form.cleaned_data['select_professor_to_remove']
+            wipe_out = form.cleaned_data['wipe_out_from_table']
+            TeachingAssignment.objects.filter(assigned_lecturer__name = selected_prof_name, workload_scenario__id = workloadscenario_id).delete()
+            if (wipe_out==True):                
+                #Remove the prof from the list
+                Lecturer.objects.filter(name=selected_prof_name, workload_scenario__id = workloadscenario_id).delete()
+            #else, nothing, the lecturer remains on the list
+                
+        
+        else:#invalid form
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    
+    
+    #Otherwise just go back to workload view
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
+def add_module(request,workloadscenario_id):
+    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
+    
+    if request.method =='POST':
+        form = ModuleForm(request.POST, dept_id = department.id)      
+        if form.is_valid():
+            supplied_module_code = form.cleaned_data['module_code']
+            supplied_module_title = form.cleaned_data['module_title']
+            supplied_type = form.cleaned_data['module_type']
+            supplied_sem_offered = form.cleaned_data['semester_offered']
+            supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups']
+            supplied_programme_belongs_to = form.cleaned_data['primary_programme']
+            supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
+            supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
+            supplied_secondary_programme_belongs_to = form.cleaned_data['secondary_programme']
+            supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
+            supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
+
+            supplied_hours = 0;
+            if (form.cleaned_data['total_hours']):
+                supplied_hours = form.cleaned_data['total_hours']
+            else:
+                supplied_hours = CalculateTotalModuleHours(supplied_n_tutorial_groups, supplied_type)
+            
+            if (request.POST['fresh_record'] == 'False'):
+                #This is an update
+                Module.objects.filter(module_code=supplied_module_code).filter(scenario_ref__id=workloadscenario_id).update(module_code=supplied_module_code, \
+                                         module_title=supplied_module_title, \
+                                         total_hours=supplied_hours, \
+                                         module_type =  supplied_type,\
+                                         semester_offered = supplied_sem_offered,\
+                                         number_of_tutorial_groups = supplied_n_tutorial_groups,\
+                                         primary_programme = supplied_programme_belongs_to,\
+                                         compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
+                                         students_year_of_study = supplied_students_year_of_study,\
+                                         secondary_programme = supplied_secondary_programme_belongs_to,\
+                                         sub_programme = supplied_sub_programme_belongs_to,\
+                                         secondary_sub_programme = supplied_secondary_sub_programme_belongs_to);                  
+                                
+            else:
+                #Create a new module
+                active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
+                #if it is a fesh record, we must make sure no duplicate names in this scenario
+                if (Module.objects.filter(module_code = supplied_module_code).filter(scenario_ref__id = workloadscenario_id).exists()):
+                    template = loader.get_template('workload_app/errors_page.html')
+                    context = {
+                        'error_message': 'Invalid module code. It already exists in the ' + active_scen.label + ' workload',
+                    }
+                    return HttpResponse(template.render(context, request))   
+                else: #We can safely add, no duplicate in this workload scenario   
+                    new_mod = Module.objects.create(module_code=supplied_module_code, \
+                                                module_title=supplied_module_title, \
+                                                scenario_ref = active_scen,\
+                                                total_hours = supplied_hours,\
+                                                module_type = supplied_type,\
+                                                semester_offered = supplied_sem_offered,\
+                                                number_of_tutorial_groups = supplied_n_tutorial_groups,\
+                                                primary_programme = supplied_programme_belongs_to,\
+                                                compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
+                                                students_year_of_study = supplied_students_year_of_study,\
+                                                secondary_programme = supplied_secondary_programme_belongs_to,\
+                                                sub_programme = supplied_sub_programme_belongs_to,\
+                                                secondary_sub_programme = supplied_secondary_sub_programme_belongs_to)
+                    new_mod.save()
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+        
+    #Otherwise just go back to workload view or department view, depending where we come from
+    if ("department" in request.META["HTTP_REFERER"]):#The edit module form appears in two pages, the workload page and the "department" page
+        dept_id = WorkloadScenario.objects.filter(id=workloadscenario_id).get().dept.id
+        return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
+    else:
+        return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
+def remove_module(request,workloadscenario_id):
+    if request.method =='POST':
+        form = RemoveModuleForm(request.POST,workloadscenario_id = workloadscenario_id)
+        if form.is_valid():  
+            selected_module = form.cleaned_data['select_module_to_remove'];
+            wipe_out = form.cleaned_data['wipe_from_table']
+            #Extract module code
+            selected_module_code = selected_module.__str__().split()[0];#see __str__ method of Module model, code is at the first position
+            
+            #Remove only the teaching assignments in this scenario
+            TeachingAssignment.objects.filter(assigned_module__module_code = selected_module_code, workload_scenario__id = workloadscenario_id).delete();
+            if (wipe_out==form.REMOVE_COMPLETELY):
+                #Remove the module from the list
+                Module.objects.filter(module_code=selected_module_code, scenario_ref__id = workloadscenario_id).delete()             
+            #Else, module stays there because wipe is false
+            
+    #Otherwise just go back to workload view
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
+def manage_module_type(request, department_id):
+    if request.method =='POST':
+        form = ModuleTypeForm(request.POST)
+        if form.is_valid():  
+            supplied_type_name = form.cleaned_data['type_name']
+            new_type = ModuleType.objects.create(type_name = supplied_type_name, department=Department.objects.filter(id=department_id).get())
+            new_type.save()
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
+
+def remove_module_type(request, department_id):
+    if request.method =='POST':
+        form = RemoveModuleTypeForm(request.POST,department_id=department_id)
+        if form.is_valid():  
+            ModuleType.objects.filter(id=request.POST.get('select_module_type_to_remove')).delete()
+            
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': department_id}))
+
+
+def manage_department(request):
+    if request.method =='POST':
+        form = DepartmentForm(request.POST)
+        if form.is_valid():  
+            supplied_dept_name = form.cleaned_data['department_name']
+            supplied_dept_acr = form.cleaned_data['department_acronym']
+            supplied_faculty = form.cleaned_data['faculty']
+            fac_obj = Faculty.objects.filter(faculty_name=supplied_faculty).get()
+            if (request.POST['fresh_record'] == 'False'):
+                #This is an edit
+                supplied_id = form.cleaned_data['dept_id']
+                if (supplied_id != Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get().id):#No messing with default dept
+                    Department.objects.filter(id = int(supplied_id)).update(department_name = supplied_dept_name, \
+                                                                        department_acronym = supplied_dept_acr, \
+                                                                        faculty = fac_obj)
+            else:#New dept
+                new_dept = Department.objects.create(department_name = supplied_dept_name, department_acronym = supplied_dept_acr, faculty = fac_obj)
+                new_dept.save()
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
+
+
+def remove_department(request):
+    if request.method =='POST':
+        form = RemoveDepartmentForm(request.POST);
+        if form.is_valid():  
+            selected_department = form.cleaned_data['select_department_to_remove']
+            if (selected_department.department_name != DEFAULT_DEPARTMENT_NAME):#If user wants to delete the default, we do nothing
+                default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
+                if (default_dept.count() == 0): #If, for some reason, the default dept is not there, create one (this should be impossible...)
+                    Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
+                    default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
+
+                #Turn all workload scenarios of that department to the default department    
+                WorkloadScenario.objects.filter(dept__department_name=selected_department).update(dept = default_dept.get().id)
+                Department.objects.filter(department_name=selected_department).delete()
+            
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'));   
+
+def manage_faculty(request):
+    if request.method =='POST':
+        form = FacultyForm(request.POST);
+        if form.is_valid():  
+            supplied_fac_name = form.cleaned_data['faculty_name']
+            supplied_fac_acr = form.cleaned_data['faculty_acronym']
+
+            if (request.POST['fresh_record'] == 'False'):
+                #This is an edit
+                supplied_id = form.cleaned_data['fac_id']
+                if (supplied_id != Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id):#No messing with default faculty
+                    Faculty.objects.filter(id = int(supplied_id)).update(faculty_name = supplied_fac_name, \
+                                                                         faculty_acronym = supplied_fac_acr)
+            else:#New faculty
+                new_fac = Faculty.objects.create(faculty_name = supplied_fac_name, faculty_acronym = supplied_fac_acr)
+                new_fac.save()
+        else:#Invalid data
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
+
+def remove_faculty(request):
+    if request.method =='POST':
+        form = RemoveFacultyForm(request.POST)
+        if form.is_valid():  
+            selected_faculty = form.cleaned_data['select_faculty_to_remove']
+            if (selected_faculty.faculty_name != DEFAULT_FACULTY_NAME):#If user wants to delete the default, we do nothing
+                default_fac = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
+                if (default_fac.count() == 0): #If, for some reason, the default faculty is not there, create one (this should be impossible...)
+                    Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
+                    default_fac = Department.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
+
+                #Turn all department of that faculy to the default faculty
+                Department.objects.filter(faculty__faculty_name=selected_faculty).update(faculty = default_fac.get().id)
+                #Then delete the faculty
+                Faculty.objects.filter(faculty_name=selected_faculty).delete()
+
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:workloads_index'))
+
+
+def manage_programme_offered(request, dept_id):
+    if request.method =='POST':
+        form = ProgrammeOfferedForm(request.POST);
+        if form.is_valid():  
+            supplied_prog_name = form.cleaned_data['programme_name']
+            supplied_dept = form.cleaned_data['primary_dept']
+            dept_obj = Department.objects.filter(department_name=supplied_dept).get()
+            if (request.POST['fresh_record'] == 'False'):
+                supplied_id = form.cleaned_data['prog_id']
+                #This is an edit
+                ProgrammeOffered.objects.filter(id = int(supplied_id)).update(programme_name = supplied_prog_name, primary_dept = dept_obj)
+                
+            else:
+                #This is a new programme
+                new_prog = ProgrammeOffered.objects.create(programme_name = supplied_prog_name, primary_dept = dept_obj)
+                new_prog.save()
+                
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}));
+
+def manage_subprogramme_offered(request, dept_id):
+    if request.method =='POST':
+        form = SubProgrammeOfferedForm(request.POST, department_id = dept_id)
+        if form.is_valid():
+            supplied_sub_prog_name = form.cleaned_data['sub_programme_name']
+            supplied_main_programme = form.cleaned_data['main_programme']
+            main_prog_obj = ProgrammeOffered.objects.filter(programme_name=supplied_main_programme).get()
+            if (request.POST['fresh_record'] == 'False'):
+                supplied_id = form.cleaned_data['sub_prog_id']
+                #This is an edit
+                SubProgrammeOffered.objects.filter(id = int(supplied_id)).update(sub_programme_name = supplied_sub_prog_name, main_programme = main_prog_obj)
+            else:
+                #This is a new subprogramme
+                new_prog = SubProgrammeOffered.objects.create(sub_programme_name = supplied_sub_prog_name, main_programme = main_prog_obj)
+                new_prog.save()
+        else:
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': form.errors
+            }
+            return HttpResponse(template.render(context, request))   
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
+
+def remove_programme_offered(request, dept_id):
+    if request.method =='POST':
+        form = RemoveProgrammeForm(request.POST, department_id = dept_id)
+        if form.is_valid():
+            supplied_prog_name = form.cleaned_data['select_programme_to_remove']
+            ProgrammeOffered.objects.filter(primary_dept__id=dept_id).filter(programme_name=supplied_prog_name).delete()
+
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
+
+def remove_subprogramme_offered(request, dept_id):
+    if request.method =='POST':
+        form = RemoveSubProgrammeForm(request.POST, department_id = dept_id)
+        if form.is_valid():
+            supplied_subprog_name = form.cleaned_data['select_subprogramme_to_remove']
+            #Note we delete only subprogrammes from the same departemnt as the programmes they are linked to
+            SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id).filter(sub_programme_name=supplied_subprog_name.sub_programme_name).delete()
+
+    #Otherwise do nothing
+    return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
 
 

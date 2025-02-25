@@ -28,7 +28,7 @@ class TestLecturerPage(TestCase):
         #Cover the case of a random lecturer_id that does not exist
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': 345}))
         self.assertEqual(response.status_code, 200) #no issue
-        self.assertEqual(response.context["form_errors"], "No such lecturer exists")
+        self.assertEqual(response.context["error_message"], "No such lecturer exists")
         
         acad_year_1 = Academicyear.objects.create(start_year=years["years"][0])
         acad_year_2 = Academicyear.objects.create(start_year=years["years"][1])
