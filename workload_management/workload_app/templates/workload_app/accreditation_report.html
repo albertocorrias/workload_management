@@ -11,10 +11,6 @@
   <body>
     {% include './top_bar.html' %}
     <div class="overall_container" id="overall_container_dept_page">
-      <div class="buttons_container">
-        <a href="/workload_app/accreditation/{{ programme_id }}" class="btn btn-outline-success" role="button">
-          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to accreditation page </a>  
-      </div><!-- end of buttons container-->
       <h1>Accreditation report for {{ programme_name }}</h1>
       <h3>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
       <hr>

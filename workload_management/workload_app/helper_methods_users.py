@@ -1,10 +1,10 @@
-from .models import Department, UniversityStaff, Module,TeachingAssignment,Faculty, Lecturer
+from .models import Department, UniversityStaff, Module,TeachingAssignment,Faculty, Lecturer, ProgrammeOffered
 
 def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
     if (UniversityStaff.objects.filter(id = user_id).exists()):
         usr = UniversityStaff.objects.filter(id = user_id).get()
         if (is_super_user == True):
-            return '/workloads_index/'
+            return '/workloads_index'
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):
             if (usr.department is None): return error_text
             dept_id = usr.department.id
@@ -100,3 +100,48 @@ def CanUserAdminThisLecturer(user_id, lecturer_id,is_super_user = False):
             if (lec_name == supplied_lec_name):
                 return True
     return False
+
+def DetermineUserMenu(user_id, is_super_user=False):
+    ret ={
+        'departments' : [],
+        'accreditations' : [],
+        'lecturers' : [],
+        'courses' : []
+    }
+    for dep in Department.objects.all():
+        dep_item = {
+            "label" : dep.department_name,
+            'url' :'/department/' + str(dep.id)
+        }
+        if (CanUserAdminThisDepartment(user_id,dept_id=dep.id,is_super_user=is_super_user)):
+            ret["departments"].append(dep_item)
+    for prog in ProgrammeOffered.objects.all():
+        prog_item = {
+            "label" : prog.programme_name,
+            'url' :'/accreditation/' + str(prog.id)
+        }
+        if (prog.primary_dept is not None):
+            dep_id = prog.primary_dept.id
+            if (CanUserAdminThisDepartment(user_id,dept_id=dep_id,is_super_user=is_super_user)):
+                ret["accreditations"].append(prog_item)
+    added_lecturers = []
+    for lec in Lecturer.objects.all():
+        if lec.name not in added_lecturers:
+            lect_item = {
+                "label" : lec.name,
+                'url' :'/lecturer_page/' +str(lec.id)
+            }
+            if (CanUserAdminThisLecturer(user_id, lecturer_id = lec.id,is_super_user = is_super_user)):
+                ret["lecturers"].append(lect_item)
+                added_lecturers.append(lec.name)
+    added_modules = []
+    for mod in Module.objects.all():
+        if mod.module_code not in added_modules:
+            mod_item = {
+                "label" : mod.module_code,
+                'url' :'/module/' + mod.module_code
+            }
+            if (CanUserAdminThisModule(user_id, module_code = mod.module_code,is_super_user=is_super_user)):
+                ret["courses"].append(mod_item)
+                added_modules.append(mod.module_code)              
+    return ret

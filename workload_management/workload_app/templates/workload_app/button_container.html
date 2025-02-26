@@ -1,9 +1,6 @@
    {% load static %}
       
     <p>
-
-    <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
-            <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>
             
     <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageProfessorModal">
       Add/Remove lecturers...
@@ -17,8 +14,6 @@
       Add/Remove teaching assignments...
     </button>
 
-    <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
-      <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit"> Go to Department programme analysis</a>
     </p><!--End of workload management-->
     
     <!-- Manage professor modal -->

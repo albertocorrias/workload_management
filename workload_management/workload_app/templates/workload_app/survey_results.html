@@ -13,11 +13,6 @@
     {% include './top_bar.html' %}
 
     <div class="overall_container" id="overall_container_dept_page">
-        <div class="buttons_container">
-            <a href="{{ back_address }}" class="btn btn-outline-success" role="button">
-              <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> {{ back_text }}</a>  
-        </div><!-- end of buttons container-->
-        <hr>
         <h1>Survey results - {{ survey_details.title }} </h1>
         <h3>Overall summary data</h3>
         <div class="overall_container">

@@ -12,14 +12,6 @@
     {% include './top_bar.html' %}
 
     <div class="overall_container" id="overall_container_dept_page">
-      <div class="buttons_container">
-        <a href="/workload_app/department/{{ department_id }}" class="btn btn-outline-success" role="button">
-          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to {{ department_name }} page</a>  
-        <a href="/workload_app/accreditation/{{ programme_id }}" class="btn btn-outline-success" role="button">
-          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to {{ programme_name }} accreditation page</a>  
-        <a href="/workload_app/workloads_index" class="btn btn-outline-success" role="button">
-          <img src="{% static 'bootstrap-icons-1.5.0/chevron-left.svg' %}" alt="edit"> Back to index of workloads</a>  
-      </div><!-- end of buttons container-->
         {% if error_message|length > 0 %}
             <div>{{ error_message }}</div>
         {% else %}
