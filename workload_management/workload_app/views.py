@@ -43,6 +43,22 @@ from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, 
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
 
+
+def post_login_landing(request):
+    myerror = "error"
+    home_page  = DetermineUserHomePage(request.user.id,request.user.is_superuser,error_text = myerror)
+    if (home_page == myerror):
+        user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page",
+                'user_menu' : user_menu,
+                'user_homepage' : home_page
+        }
+        return HttpResponse(template.render(context, request))
+    
+    return HttpResponseRedirect('/workload_app'+home_page)
+
 ##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
 

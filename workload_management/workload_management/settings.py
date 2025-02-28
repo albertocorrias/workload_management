@@ -140,8 +140,8 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
-LOGIN_REDIRECT_URL = '/workload_app/workloads_index'
-LOGOUT_REDIRECT_URL = '/workload_app/workloads_index' 
+LOGIN_REDIRECT_URL = '/workload_app/post_login_landing'
+LOGOUT_REDIRECT_URL = '/accounts/login' 
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'media/')
 MEDIA_URL = 'media/'
