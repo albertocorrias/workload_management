@@ -328,7 +328,7 @@ class PEOSLOMapping(models.Model):
     strength = models.PositiveIntegerField(validators=[MaxValueValidator(3),MinValueValidator(0)])
 
     def __str__(self):
-        return self.peo + " is mapped to " + self.slo + " with strength " + self.strength
+        return self.peo.__str__() + " is mapped to " + self.slo.__str__() + " with strength " + str(self.strength)
 
     class Meta:
         ordering = ["peo"]

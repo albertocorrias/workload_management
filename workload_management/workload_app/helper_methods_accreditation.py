@@ -578,6 +578,7 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
                                     mlo_direct_attention_score += mapping.strength/3 #3 is the highest possible
                                     
                         for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
+                            print(mod_code)
                             mod_code = mlo.module_code
                             year_delivered = srv_resp.parent_survey.cohort_targeted.start_year #The year stored in the survey object
                             for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
