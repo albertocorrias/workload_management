@@ -5,8 +5,6 @@ def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
     
     if (UniversityStaff.objects.filter(id = user_id).exists()):
         usr = UniversityStaff.objects.filter(id = user_id).get()
-        for g in usr.user.groups.all():
-            print(g.name)
         if (is_super_user == True):
             return '/workloads_index'
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):

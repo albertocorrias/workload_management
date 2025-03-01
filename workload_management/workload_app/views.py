@@ -1403,8 +1403,6 @@ def input_module_survey_results(request,module_code,survey_id):
                     survey.save(update_fields = ["original_file"]) 
 
     else: #This is a get
-        back_address = '/workload_app/module/'+str(module_code)
-        back_text = 'Back to module page'
 
         form_to_show = InputMLOSurveyForm(module_code=module_code,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,module_code))
         template = loader.get_template('workload_app/module_survey_input.html')
@@ -1418,8 +1416,6 @@ def input_module_survey_results(request,module_code,survey_id):
             form_to_show.fields["raw_file"].label = "If you wish to change the uploaded survey file, upload another one and click \"Submit changes\" below"
 
         context = {
-            'back_address' : back_address,
-            'back_text' : back_text,
             'form_to_show' : form_to_show,
             'survey_id' :survey_id,
             'module_code' : module_code,
@@ -1577,9 +1573,6 @@ def input_programme_survey_results(request,programme_id,survey_id):
 
     else:#this is a GET
         
-        back_address = '/workload_app/accreditation/'+str(programme_id)
-        back_text = 'Back to accreditation page'
-
         form_to_show = InputSLOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id,'N/A'))
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             form_to_show = InputPEOSurveyDataForm(programme_id = programme_id,survey_id = survey_id, initial = DeteremineSurveyInitialValues(survey_obj.id, 'N/A'))
@@ -1594,8 +1587,6 @@ def input_programme_survey_results(request,programme_id,survey_id):
 
         template = loader.get_template('workload_app/survey_input.html')
         context = {
-            'back_address' : back_address,
-            'back_text' : back_text,
             'form_to_show' : form_to_show,
             'programme_id' : programme_id,
             'survey_id' :survey_id,
@@ -1626,38 +1617,9 @@ def survey_results(request,survey_id):
     
     if request.method=="GET":
         survey_labels = []
-        back_address = '/workload_app/'
-        back_text = 'Back to '
         survey_obj = Survey.objects.filter(id = survey_id).get()
         #WE are visualizaing here. The labels are taken from the survey object
         survey_labels = survey_obj.likert_labels.GetListOfLabels()
-
-        if survey_obj.survey_type == Survey.SurveyType.MLO:
-            #This is an MLO Survey
-            existing_responses_qs = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id)
-            back_id = ''
-            if (existing_responses_qs.count() > 0):
-                back_id = SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).first().associated_mlo.module_code
-            elif ('module_code' in request.session.keys()): 
-                back_id = request.session['module_code']
-            if(back_id != ''):
-                back_address += 'module/'+ str(back_id)
-                back_text += 'module page'
-            else:#No responses, not in any session, back to programme page
-                back_id = survey_obj.programme_associated.id
-                back_address += 'accreditation/' + str(back_id)
-                back_text += 'accreditation page'
-        
-        if survey_obj.survey_type == Survey.SurveyType.SLO :
-            #this is a SLO survey
-            back_id = survey_obj.programme_associated.id
-            back_address += 'accreditation/' + str(back_id)
-            back_text += 'accreditation page'
-        if survey_obj.survey_type == Survey.SurveyType.PEO :
-            #this is a PEO survey
-            back_id = survey_obj.programme_associated.id
-            back_address += 'accreditation/' + str(back_id)
-            back_text += 'accreditation page' 
 
         question_texts = []
         shorter_question_texts = []
@@ -1703,8 +1665,6 @@ def survey_results(request,survey_id):
             'questions_nps_messages' : questions_nps_messages,
             'questions_perc_positive' : questions_perc_positive,
             'questions_perc_non_negative' : questions_perc_non_negative,
-            'back_address' : back_address,
-            'back_text' : back_text,
             'user_menu' : user_menu,
             'user_homepage' : user_homepage
         }

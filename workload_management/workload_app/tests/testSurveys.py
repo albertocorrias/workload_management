@@ -453,8 +453,6 @@ class TestSurveys(TestCase):
         response = self.client.get(reverse('workload_app:survey_results', kwargs={'survey_id': surv_obj.id}))
         self.assertEqual(response.status_code, 200)
         
-        self.assertEqual(response.context["back_address"],'/workload_app/module/'+module_code)
-        self.assertEqual(response.context["back_text"],'Back to module page')
         self.assertEqual(len(response.context["question_texts"]),3)#3 questions
         self.assertEqual(len(response.context["bar_chart_data"]),3)
         self.assertEqual(len(response.context["total_responses_per_question"]),3)
@@ -683,8 +681,6 @@ class TestSurveys(TestCase):
         response = self.client.get(reverse('workload_app:survey_results', kwargs={'survey_id': surv_obj.id}))
         self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(response.context["back_address"],'/workload_app/accreditation/'+str(prog_off.id))
-        self.assertEqual(response.context["back_text"],'Back to accreditation page')
         self.assertEqual(len(response.context["question_texts"]),3)#3 questions
         self.assertEqual(len(response.context["bar_chart_data"]),3)
         self.assertEqual(len(response.context["total_responses_per_question"]),3)
