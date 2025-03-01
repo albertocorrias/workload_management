@@ -3,8 +3,8 @@ from .models import Department, UniversityStaff, Module,TeachingAssignment,Facul
 def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
 
     
-    if (UniversityStaff.objects.filter(id = user_id).exists()):
-        usr = UniversityStaff.objects.filter(id = user_id).get()
+    if (UniversityStaff.objects.filter(user__id = user_id).exists()):
+        usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True):
             return '/workloads_index'
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):
@@ -22,13 +22,13 @@ def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
     return error_text
 
 def CanUserAdminUniversity(user_id,is_super_user = False):
-    usr = UniversityStaff.objects.filter(id = user_id).get()
+    #usr = UniversityStaff.objects.filter(user__id = user_id).get()
     if (is_super_user == True): return True #No questions asked. Super user can
     return False
 
 def CanUserAdminThisFaculty(user_id, fac_id, is_super_user=False):
     if Faculty.objects.filter(id = fac_id).exists():
-        usr = UniversityStaff.objects.filter(id = user_id).get()
+        usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True): return True #No questions asked. Super user can
         if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
             if usr.faculty is None: return False
@@ -39,7 +39,7 @@ def CanUserAdminThisFaculty(user_id, fac_id, is_super_user=False):
 
 def CanUserAdminThisDepartment(user_id, dept_id, is_super_user = False):
     if Department.objects.filter(id = dept_id).exists():
-        usr = UniversityStaff.objects.filter(id = user_id).get()
+        usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True): return True #No questions asked. Super user can
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
             if usr.department is None: return False
@@ -56,7 +56,7 @@ def CanUserAdminThisDepartment(user_id, dept_id, is_super_user = False):
 
 def CanUserAdminThisModule(user_id, module_code,is_super_user = False):
     if Module.objects.filter(module_code = module_code).exists():
-        usr = UniversityStaff.objects.filter(id = user_id).get()
+        usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True): return True #No questions asked. Super user can
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
             if usr.department is None: return False
@@ -80,7 +80,7 @@ def CanUserAdminThisModule(user_id, module_code,is_super_user = False):
 
 def CanUserAdminThisLecturer(user_id, lecturer_id,is_super_user = False):
     if Lecturer.objects.filter(id = lecturer_id).exists():
-        usr = UniversityStaff.objects.filter(id = user_id).get()
+        usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True): return True #No questions asked. Super user can
         supplied_lec_name = Lecturer.objects.filter(id=lecturer_id).get().name
         if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
