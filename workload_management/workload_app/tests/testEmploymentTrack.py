@@ -207,7 +207,7 @@ class TestEmploymentTrack(TestCase):
         self.assertEqual(Lecturer.objects.all().count(),0)
         #Add a lecturer on that track
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
-                                                                'service_role' : def_role.get().id, 'employment_track' : new_track.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id, 'employment_track' : new_track.get().id, 'is_external': False, 'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),1)
         self.assertEqual(Lecturer.objects.all().filter(employment_track__track_name=new_track_name).count(),1)
@@ -250,7 +250,7 @@ class TestEmploymentTrack(TestCase):
         self.assertEqual(Lecturer.objects.all().count(),0)
         #Add a lecturer on that track
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
-                                                                'service_role' : def_role.get().id, 'employment_track' : new_track.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id, 'employment_track' : new_track.get().id, 'is_external': False,'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').count(),1)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').filter(employment_track__track_name=new_track_name).count(),1)
@@ -258,7 +258,7 @@ class TestEmploymentTrack(TestCase):
 
         #Now edit the lecturer by changing his track
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
-                                                                 'service_role' : def_role.get().id, 'employment_track' : new_track_2.get().id, 'fresh_record' : False})
+                                                                 'service_role' : def_role.get().id, 'employment_track' : new_track_2.get().id, 'is_external': False,'fresh_record' : False})
         self.assertEqual(Lecturer.objects.all().filter(name='bob').filter(employment_track__track_name=new_track_name).count(),0)
         self.assertEqual(Lecturer.objects.all().filter(name='bob').filter(employment_track__track_name=new_track_name_2).count(),1)
 
@@ -288,18 +288,18 @@ class TestEmploymentTrack(TestCase):
         #Add lecturers on one track on one scenario...
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
                                                                 'workload_scenario': new_scen.id, 'employment_track' : new_track.get().id, \
-                                                                'service_role' : def_role.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id, 'is_external': False, 'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'ted','fraction_appointment' : '0.5',    \
                                                                 'workload_scenario': new_scen.id, 'employment_track' : new_track.get().id, \
-                                                                'service_role' : def_role.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id, 'is_external': False,'fresh_record' : True})
         
         #and the same lecturers to another scenario (one changed track)
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen_2.id}),{'name':'bob','fraction_appointment' : '0.5',    \
                                                                 'workload_scenario': new_scen_2.id, 'employment_track' : new_track.get().id, \
-                                                                'service_role' : def_role.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id,'is_external': False, 'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen_2.id}),{'name':'ted','fraction_appointment' : '0.5',    \
                                                                 'workload_scenario': new_scen_2.id, 'employment_track' : new_track_2.get().id, \
-                                                                'service_role' : def_role.get().id, 'fresh_record' : True})
+                                                                'service_role' : def_role.get().id, 'is_external': False,'fresh_record' : True})
         #Focus on scenario 1 now
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues

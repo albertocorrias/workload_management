@@ -24,16 +24,21 @@ class ProfessorForm(ModelForm):
     """
     
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
-    
+
     class Meta:
+        YES = True
+        NO = False
+        YES_NO_CHOICES = [(NO,'No'),(YES,'Yes')]
         model = Lecturer
-        fields = ['name', 'fraction_appointment', 'employment_track', 'service_role']
+        fields = ['name', 'fraction_appointment', 'employment_track', 'service_role', 'is_external']
         labels = {'name' : _('Name'),
                   'fraction_appointment' : _('Fractional appointment'),
                   'employment_track' : _('Select employment track'),
-                  'service_role' : _('Select service role')}
+                  'service_role' : _('Select service role'),
+                  'is_external' : _('Is this staff outside the Department?')}
         widgets = {'employment_track' : forms.Select(choices=EmploymentTrack.objects.all()),
-                   'service_role' : forms.Select(choices=ServiceRole.objects.all())}
+                   'service_role' : forms.Select(choices=ServiceRole.objects.all()),
+                   'is_external' : forms.Select(choices=YES_NO_CHOICES)}
         
     def __init__(self, *args, **kwargs):
         super(ProfessorForm, self).__init__(*args, **kwargs)
@@ -41,6 +46,8 @@ class ProfessorForm(ModelForm):
         if 'fresh_record' in self.initial: #Must check, otherwise a KeyError occurs (I suspect this is run a couple of times upon post)
             if (self.initial["fresh_record"] == False):
                 self.fields['name'].widget = forms.HiddenInput()#Hides the name alltogether
+        self.fields['is_external'].initial = self.Meta.NO
+
      
 class RemoveProfessorForm(forms.Form):
     """

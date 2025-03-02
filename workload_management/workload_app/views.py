@@ -43,7 +43,7 @@ from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, 
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
 
-from .helper_methods_demo import populate_database
+#from .helper_methods_demo import populate_database
 
 def post_login_landing(request):
     myerror = "error"
@@ -1863,7 +1863,7 @@ def manage_scenario(request):
             #This is from the workloads index page. We capture the required dept
             supplied_dept_name = form.cleaned_data['dept']
             supplied_dept = Department.objects.filter(department_name = supplied_dept_name)
-            #Call the helpert o create what's needed
+            #Call the helper to create what's needed
             HandleScenarioForm(form,supplied_dept.get().id)
         else:#Invalid data, send to error page
             template = loader.get_template('workload_app/errors_page.html')
@@ -1897,6 +1897,7 @@ def add_professor(request, workloadscenario_id):
             supplied_prof_appointment = request.POST['fraction_appointment']
             supplied_employment_track_id = request.POST['employment_track']
             supplied_service_role_id = request.POST['service_role']
+            supplied_external = request.POST['is_external']
             
             active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
             empl_track = EmploymentTrack.objects.filter(id = supplied_employment_track_id).get()
@@ -1905,7 +1906,8 @@ def add_professor(request, workloadscenario_id):
                 Lecturer.objects.filter(name=supplied_prof_name).filter(workload_scenario=active_scen).update(name=supplied_prof_name,\
                                                                                                 fraction_appointment=float(supplied_prof_appointment), \
                                                                                                 employment_track = empl_track,
-                                                                                                service_role = serv_role)
+                                                                                                service_role = serv_role,
+                                                                                                is_external = supplied_external)
             else :
                 if (Lecturer.objects.filter(name = supplied_prof_name).filter(workload_scenario__id = active_scen.id).exists()):
                     template = loader.get_template('workload_app/errors_page.html')
@@ -1917,7 +1919,8 @@ def add_professor(request, workloadscenario_id):
                     Lecturer.objects.create(name=supplied_prof_name,fraction_appointment=float(supplied_prof_appointment), \
                                                                                         workload_scenario = active_scen,\
                                                                                         employment_track = empl_track,
-                                                                                        service_role = serv_role)
+                                                                                        service_role = serv_role,
+                                                                                        is_external = supplied_external)
         else:
             template = loader.get_template('workload_app/errors_page.html')
             context = {

@@ -256,7 +256,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
             "prof_id" : prof.id,
             "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
                                                        'employment_track' : prof.employment_track.id, \
-                                                        'service_role' : prof.service_role.id, 'fresh_record' : False}),
+                                                        'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
             "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
             "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
             "num_assigns_for_prof" : TeachingAssignment.objects.filter(assigned_lecturer__id = prof.id).count()
@@ -384,7 +384,10 @@ def CalculateSummaryData(workload_scenario_id):
     for assign in all_teaching_assignments:
         mod_involved = assign.assigned_module
         prof_involved = assign.assigned_lecturer
-        
+        #make sure we don'tcount towards the workload the assignments to external profs
+        if (prof_involved.is_external == True):
+            assign.counted_towards_workload = False #no matter what was stored... 
+
         if (mod_involved.module_type is not None):
             if (mod_involved.module_type.department.id == dept_id):
                 if (mod_involved.module_type.type_name not in labels):
@@ -445,11 +448,14 @@ def CalculateSummaryData(workload_scenario_id):
     total_module_hours = 0
     total_adjunct_tFTE = 0
     total_number_of_adjuncts = 0
+    total_number_external_staff = 0
     for prof in Lecturer.objects.filter(workload_scenario__id = workload_scenario_id):
         track_adj = prof.employment_track.track_adjustment
         empl_adj = prof.service_role.role_adjustment
-        total_dept_fte = total_dept_fte + prof.fraction_appointment*track_adj*empl_adj
-
+        if (prof.is_external == False):
+            total_dept_fte = total_dept_fte + prof.fraction_appointment*track_adj*empl_adj
+        else:
+            total_number_external_staff = total_number_external_staff + 1
         if (prof.employment_track.is_adjunct == True):
             total_adjunct_tFTE = total_adjunct_tFTE + prof.fraction_appointment*track_adj*empl_adj
             total_number_of_adjuncts = total_number_of_adjuncts + 1
@@ -476,6 +482,7 @@ def CalculateSummaryData(workload_scenario_id):
             'total_module_hours_for_dept' : total_module_hours,
             'total_adjunct_tFTE' : total_adjunct_tFTE,
             'total_number_of_adjuncts' : total_number_of_adjuncts,
+            'total_number_of_external' : total_number_external_staff,
             'total_hours_not_counted' : total_hours_not_counted
             }
     return ret

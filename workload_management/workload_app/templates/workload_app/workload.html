@@ -78,7 +78,7 @@
                             <td> {{ summary_data.hours_other_sems }}</td>
                         </tr>
                         <tr style="background-color:Gainsboro;">
-                          <td><div class="not_counted_assignments"> Hours delivered but not counted (e.g., remunaretd separately)</div> </td>
+                          <td><div class="not_counted_assignments"> Hours not counted (e.g., external staff or remunerated)</div> </td>
                           <td><div class="not_counted_assignments">{{ summary_data.total_hours_not_counted }} </div></td>
                         </tr> 
                         <tr style="background-color:LightSteelBlue;">
@@ -100,6 +100,10 @@
                         <tr style="background-color:Gainsboro;">
                           <td>Total number of adjuncts</td>
                           <td>{{ summary_data.total_number_of_adjuncts|floatformat }}</td>
+                        </tr>
+                        <tr style="background-color:Gainsboro;">
+                          <td>Total number of external staff</td>
+                          <td>{{ summary_data.total_number_of_external|floatformat }}</td>
                         </tr>
                         <tr style="background-color:LightSteelBlue;">
                           <td>Expected teaching hours for 1 tFTE</td>

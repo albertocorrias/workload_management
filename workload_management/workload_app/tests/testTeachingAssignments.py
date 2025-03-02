@@ -681,7 +681,7 @@ class TestTeachingAssignments(TestCase):
         new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
 
         #Add bob as professor
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
@@ -723,7 +723,7 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(Module.objects.all().count(),2)
         
         #Now edit bob in scenario 2 (the active one) - KEY CHANNGE: appointment adjustment from 2 to 1
-        response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.get().id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : False})
+        response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.get().id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id,'is_external': False, 'fresh_record' : False})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.get().id}))
         self.assertEqual(response.status_code, 200) #No issues
         #NOw we check that bob in scenario 2 (which was edited) 
@@ -808,7 +808,7 @@ class TestTeachingAssignments(TestCase):
         new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
 
         #Add bob as professor
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False, 'fresh_record' : True})
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
@@ -898,9 +898,9 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
         #Add bob as professor
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         #Add ted as professor
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.2',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.2',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False, 'fresh_record' : True})
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
@@ -990,8 +990,8 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
         #Add bob and ted as professors
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.5',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.5',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
@@ -1090,8 +1090,8 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
         #Add bob (role 1) and ted (role 2) as professors
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.5',    'service_role' : new_role_2.id,'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scen.id}),{'name':'ted','fraction_appointment' : '0.5',    'service_role' : new_role_2.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type

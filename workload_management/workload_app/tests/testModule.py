@@ -470,9 +470,9 @@ class TestModule(TestCase):
         
         new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
         new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id,  'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id,  'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),3)
         educator_track = Lecturer.objects.filter(name = 'educator_track').get()
         normal_lecturer = Lecturer.objects.filter(name = 'normal_lecturer').get()
@@ -536,9 +536,9 @@ class TestModule(TestCase):
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
 
         #Re-add smae people, same modules to scenario 1
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',     'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',     'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),6)#3 in scen 2 and now 3 in scen 1
         educator_track_scen_1 = Lecturer.objects.filter(name = 'educator_track').filter(workload_scenario__label = scen_name_1).get()
         normal_lecturer_scen_1 = Lecturer.objects.filter(name = 'normal_lecturer').filter(workload_scenario__label = scen_name_1).get()
@@ -636,9 +636,9 @@ class TestModule(TestCase):
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
         
         #add 3 lecturers
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',     'service_role' : new_role.id, 'employment_track': new_track.id,'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id, 'employment_track': new_track.id,'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',     'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',     'service_role' : new_role.id, 'employment_track': new_track.id,'is_external': False, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',     'service_role' : new_role.id, 'employment_track': new_track.id,'is_external': False, 'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),3)
         educator_track = Lecturer.objects.filter(name = 'educator_track').get()
         normal_lecturer = Lecturer.objects.filter(name = 'normal_lecturer').get()
@@ -679,9 +679,9 @@ class TestModule(TestCase):
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
 
         #Re-add smae people, same modules to scenario 1
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',   'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'educator_track','fraction_appointment' : '1.0',    'service_role' : new_role.id, 'employment_track': new_track.id,  'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'vice_dean','fraction_appointment' : '0.5',    'service_role' : new_role.id, 'employment_track': new_track.id, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',   'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'educator_track','fraction_appointment' : '1.0',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False, 'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'vice_dean','fraction_appointment' : '0.5',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.assertEqual(Lecturer.objects.all().count(),6)#3 in scen 2 and now 3 in scen 1
         educator_track_scen_1 = Lecturer.objects.filter(name = 'educator_track').filter(workload_scenario__label = scen_name_1).get()
         normal_lecturer_scen_1 = Lecturer.objects.filter(name = 'normal_lecturer').filter(workload_scenario__label = scen_name_1).get()
