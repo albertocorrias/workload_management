@@ -119,6 +119,7 @@ def CalculateFacultiesTable():
         item = {"faculty_name" : fac.faculty_name,
                 "faculty_acronym" : fac.faculty_acronym,
                 'no_space_fac_name' : RegularizeName(fac.faculty_name),
+                "faculty_id" : fac.id,
                 "edit_fac_form" : FacultyForm(initial = {'faculty_name' : fac.faculty_name, \
                                                          'faculty_acronym' : fac.faculty_acronym, \
                                                          'fresh_record' : False, 'fac_id' : fac.id})

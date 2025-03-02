@@ -109,7 +109,7 @@
 
               {% for entry in faculty_table %}
               <tr>
-                  <td>{{ entry.faculty_name }}</td>       
+                  <td><a href="/workload_app/school_page/{{entry.faculty_id}}">{{ entry.faculty_name }}</a></td>       
                   <td>{{ entry.faculty_acronym }}</td>
                   <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_fac_name }}DetailsModal">
                     <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>

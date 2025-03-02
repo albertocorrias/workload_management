@@ -43,6 +43,7 @@ from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, 
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
 
+from .helper_methods_demo import populate_database
 
 def post_login_landing(request):
     myerror = "error"
@@ -282,7 +283,7 @@ def workloads_index(request):
     if (Academicyear.objects.all().count() == 0):
         for year in range(2000, 2050):
             Academicyear.objects.create(start_year = year)
-    
+
     overall_table = CalculateWorkloadsIndexTable()
 
     #Scenario forms

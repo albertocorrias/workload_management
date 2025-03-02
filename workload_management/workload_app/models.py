@@ -158,6 +158,9 @@ class Lecturer(models.Model):
 
     #The service role of this lecturer (e.g. head of department, director, etc)
     service_role = models.ForeignKey(ServiceRole, on_delete=models.CASCADE, default=1)
+
+    #A flag to say whether this lecturer is external to the department that the workload is associated with
+    is_external = models.BooleanField(default=False)
     
     def __str__(self):
         return self.name
