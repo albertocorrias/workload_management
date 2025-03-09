@@ -89,17 +89,22 @@ class ModuleForm(ModelForm):
     
     class Meta:
         model = Module
-        fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'primary_programme',
-                  'compulsory_in_primary_programme','students_year_of_study','secondary_programme','sub_programme', 'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
+        fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'students_year_of_study', 'primary_programme',
+                  'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
+                  'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
+                  'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
         labels = {'module_code' : _('Module Code'),
                   'module_title' : _('Module title'),
                   'module_type' : _('Type of module'),
                   'semester_offered' : _('Semester offered'),
+                  'students_year_of_study': _('Year of study of students taking this module'),
                   'primary_programme' : _('Primary  programme the module is part of'),
                   'compulsory_in_primary_programme': _('Compulsory in primary programme?'),
-                  'students_year_of_study': _('Year of study of students taking this module'),
-                  'secondary_programme' : _('Another programme the module is part of'),
-                  'sub_programme' : _('Sub-programme this module is part of'),
+                  'secondary_programme' : _('A second programme the module may be part of'),
+                  'compulsory_in_secondary_programme' : _('Compulsory in this second programme?'),
+                  'tertiary_programme' : _('A third  programme the module may be part of'),
+                  'compulsory_in_tertiary_programme' : _('Compulsory in this third programme?'),
+                  'sub_programme' : _('Sub-programme this module may be part of'),
                   'secondary_sub_programme' : _('Another sub-programme this module is also part of'),
                   'number_of_tutorial_groups' : _('Number of tutorial groups'),
                   'total_hours' : _('Total hours')
@@ -107,7 +112,9 @@ class ModuleForm(ModelForm):
 
         widgets = {
                    'semester_offered' : forms.Select(choices=Module.SEMESTER_OFFERED),
-                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE)
+                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
+                   'compulsory_in_secondary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
+                   'compulsory_in_tertiary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
                    }
         
     def __init__(self, *args, **kwargs):
@@ -115,14 +122,18 @@ class ModuleForm(ModelForm):
         super(ModuleForm, self).__init__(*args, **kwargs)
         self.fields['primary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['secondary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
+        self.fields['tertiary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['module_type'] = forms.ModelChoiceField(queryset=ModuleType.objects.filter(department__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
         self.fields['compulsory_in_primary_programme'].required=False
+        self.fields['compulsory_in_secondary_programme'].required=False
+        self.fields['compulsory_in_tertiary_programme'].required=False
         self.fields['students_year_of_study'].required=False
         self.fields['secondary_programme'].required = False
+        self.fields['tertiary_programme'].required = False
         self.fields['sub_programme'].required = False
         self.fields['secondary_sub_programme'].required = False
         #No editing of module codes of existing modules

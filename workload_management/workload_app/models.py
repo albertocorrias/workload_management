@@ -381,12 +381,11 @@ class Module(models.Model):
     #The workload scenario in which it appears
     scenario_ref = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE, default=1)
     #Total expected hours to be taught
-    total_hours = models.PositiveIntegerField(null=True);
+    total_hours = models.PositiveIntegerField(null=True)
     #The type of module
     module_type = models.ForeignKey(ModuleType, on_delete=models.SET_NULL, null=True)
-    #Whether it is compulsory in primary programme
-    compulsory_in_primary_programme = models.BooleanField(default=False)
-    #year of study of students, this is intended as the "typical stduent" accoridng to recommended schedule
+
+    #year of study of students, this is intended as the "typical stduent" according to recommended schedule
     students_year_of_study = models.PositiveIntegerField(default=0,null=True)
 
     #The semester in which it is offered
@@ -398,6 +397,15 @@ class Module(models.Model):
     primary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="primary_programme")
     #Another programme this module may be offered as part of
     secondary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="secondary_programme")
+    #Yet another programme this module may be offered as part of
+    tertiary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="tertirary_programme")
+    #Whether it is compulsory in primary programme
+    compulsory_in_primary_programme = models.BooleanField(default=False)
+    #Whether it is compulsory in secondary programme
+    compulsory_in_secondary_programme = models.BooleanField(default=False)
+    #Whether it is compulsory in tertiary programme
+    compulsory_in_tertiary_programme = models.BooleanField(default=False)
+    
     #The sub-programme this module is part of
     sub_programme = models.ForeignKey(SubProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="sub_programme")
     #Another sub-programme this module may be part of

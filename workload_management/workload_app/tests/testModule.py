@@ -47,6 +47,10 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.filter(module_title='testing').exists(),True)
         self.assertEqual(all_mods.filter(compulsory_in_primary_programme=True).count(),0)
         self.assertEqual(all_mods.filter(compulsory_in_primary_programme=False).count(),1)#Covers defaut value
+        self.assertEqual(all_mods.filter(compulsory_in_secondary_programme=True).count(),0)
+        self.assertEqual(all_mods.filter(compulsory_in_secondary_programme=False).count(),1)#Covers defaut value
+        self.assertEqual(all_mods.filter(compulsory_in_tertiary_programme=True).count(),0)
+        self.assertEqual(all_mods.filter(compulsory_in_tertiary_programme=False).count(),1)#Covers defaut value
         self.assertEqual(all_mods.filter(students_year_of_study__isnull=True).count(),1)#
         self.assertEqual(all_mods.filter(primary_programme__isnull=True).count(),1)
         self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),1)
@@ -384,6 +388,35 @@ class TestModule(TestCase):
         self.assertEqual(all_mods.filter(primary_programme__programme_name="new_prog").count(),1)
         self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),0)
         self.assertEqual(all_mods.filter(secondary_programme__programme_name="new_prog2").count(),1)
+
+        #Create another programme
+        prog_3 = ProgrammeOffered.objects.create(programme_name = "new_prog3", primary_dept = first_dept)
+        #Now edit. Assign prog_3 as tertiary programme
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, \
+        'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,\
+       'number_of_tutorial_groups' : '2', 'primary_programme' : prog_1.id, 'secondary_programme' : prog_2.id, 'tertiary_programme' : prog_3.id, 'fresh_record' : False})    
+        self.assertEqual(all_mods.filter(primary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(primary_programme__programme_name="new_prog").count(),1)
+        self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(secondary_programme__programme_name="new_prog2").count(),1)
+        self.assertEqual(all_mods.filter(tertiary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(tertiary_programme__programme_name="new_prog3").count(),1)
+
+        self.assertEqual(all_mods.filter(compulsory_in_secondary_programme=True).count(),0)
+        self.assertEqual(all_mods.filter(compulsory_in_tertiary_programme=True).count(),0)
+        #Now edit.MAke it compulsory in boths econdary and tertiary programmes
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code, \
+        'module_title' : 'hello', 'total_hours' : '10', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,\
+       'number_of_tutorial_groups' : '2', 'primary_programme' : prog_1.id, 'secondary_programme' : prog_2.id, 'tertiary_programme' : prog_3.id, \
+        'compulsory_in_secondary_programme':True,'compulsory_in_tertiary_programme':True, 'fresh_record' : False})    
+        self.assertEqual(all_mods.filter(primary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(primary_programme__programme_name="new_prog").count(),1)
+        self.assertEqual(all_mods.filter(secondary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(secondary_programme__programme_name="new_prog2").count(),1)
+        self.assertEqual(all_mods.filter(tertiary_programme__isnull=True).count(),0)
+        self.assertEqual(all_mods.filter(tertiary_programme__programme_name="new_prog3").count(),1)
+        self.assertEqual(all_mods.filter(compulsory_in_secondary_programme=True).count(),1)
+        self.assertEqual(all_mods.filter(compulsory_in_tertiary_programme=True).count(),1)
 
     def test_edit_existing_module_with_multiple_scenarios(self):
         self.setup_user()

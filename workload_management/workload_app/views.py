@@ -1971,6 +1971,9 @@ def add_module(request,workloadscenario_id):
             supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
             supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
             supplied_secondary_programme_belongs_to = form.cleaned_data['secondary_programme']
+            supplied_tertirary_programme_belongs_to = form.cleaned_data['tertiary_programme']
+            supplied_compulsory_in_secondary_programme = form.cleaned_data['compulsory_in_secondary_programme']
+            supplied_compulsory_in_tertiary_programme = form.cleaned_data['compulsory_in_tertiary_programme']
             supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
             supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
 
@@ -1992,6 +1995,9 @@ def add_module(request,workloadscenario_id):
                                          compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                          students_year_of_study = supplied_students_year_of_study,\
                                          secondary_programme = supplied_secondary_programme_belongs_to,\
+                                         tertiary_programme = supplied_tertirary_programme_belongs_to,\
+                                         compulsory_in_secondary_programme = supplied_compulsory_in_secondary_programme,\
+                                         compulsory_in_tertiary_programme = supplied_compulsory_in_tertiary_programme,\
                                          sub_programme = supplied_sub_programme_belongs_to,\
                                          secondary_sub_programme = supplied_secondary_sub_programme_belongs_to);                  
                                 
@@ -2017,6 +2023,9 @@ def add_module(request,workloadscenario_id):
                                                 compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                                 students_year_of_study = supplied_students_year_of_study,\
                                                 secondary_programme = supplied_secondary_programme_belongs_to,\
+                                                tertiary_programme = supplied_tertirary_programme_belongs_to,\
+                                                compulsory_in_secondary_programme = supplied_compulsory_in_secondary_programme,\
+                                                compulsory_in_tertiary_programme = supplied_compulsory_in_tertiary_programme,\
                                                 sub_programme = supplied_sub_programme_belongs_to,\
                                                 secondary_sub_programme = supplied_secondary_sub_programme_belongs_to)
                     new_mod.save()

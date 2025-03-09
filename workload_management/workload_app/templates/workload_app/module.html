@@ -21,9 +21,9 @@
                 <thead class="table-dark">
                 <tr>
                     <th> Year delivered</th>
-                    <th> Primary programme</th>
+                    <th> Programme(s)</th>
+                    <th> Sub-programme(s)</th>
                     <th> Year of study </th>
-                    <th> Compulsory? </th> 
                     <th> Hours</th>
                     <th> Lecturers</th>
                 </tr>
@@ -32,9 +32,9 @@
                   {% for entry in module_table %}
                       <tr>
                           <td>{{ entry.academic_year }}</td>
-                          <td> {{ entry.primary_programme }}</td>
+                          <td> {{ entry.programmes }}</td>
+                          <td> {{ entry.subprogrammes }}</td>
                           <td> {{ entry.year_of_study }}</td>
-                          <td> {{ entry.compulsory_in_primary_programme }}</td>
                           <td>{{ entry.total_hours_delivered }}</td>
                           <td>{{ entry.lecturers_involved }} </td>
                       </tr>
