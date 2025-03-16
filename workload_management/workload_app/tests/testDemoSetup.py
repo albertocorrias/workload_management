@@ -21,8 +21,8 @@ class TestHelperMethodsDemo(TestCase):
 
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        x = populate_database(42)
-        self.assertEqual(Lecturer.objects.all().count(),42)
+        x = populate_database()
+        self.assertEqual(Lecturer.objects.all().count(),40+43+20+25)
 
 
         

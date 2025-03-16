@@ -621,7 +621,7 @@ class SurveyQuestionResponse(models.Model):
                 nps = (self.n_highest_score+self.n_second_highest_score)/num_responses - (self.n_fifth_highest_score + self.n_sixth_highest_score + \
                                                                 self.n_seventh_highest_score + self.n_eighth_highest_score + self.n_eighth_highest_score + \
                                                                 self.n_tenth_highest_score)/num_responses
-                nps_message = "NPS for a 9-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
+                nps_message = "NPS for a 10-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
 
         ret = {
             'all_respondents' : num_responses,
