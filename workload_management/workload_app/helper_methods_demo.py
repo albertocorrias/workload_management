@@ -2,7 +2,7 @@ import csv
 import random
 from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
-                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear
+                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome, ModuleLearningOutcome,MLOSLOMapping
 from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModuleAssignmentForm,AddTeachingAssignmentForm,\
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
@@ -18,14 +18,19 @@ def populate_database():
         names.append(x)
     start_year = 2020
 
-    acad_year,created = Academicyear.objects.get_or_create(start_year=start_year)
+    acad_year_0,created = Academicyear.objects.get_or_create(start_year=start_year)
+    acad_year_1,created = Academicyear.objects.get_or_create(start_year=start_year+1)
+    acad_year_2,created = Academicyear.objects.get_or_create(start_year=start_year+2)
+    acad_year_3,created = Academicyear.objects.get_or_create(start_year=start_year+3)
+    acad_year_4,created = Academicyear.objects.get_or_create(start_year=start_year+4)
+    acad_year_5,created = Academicyear.objects.get_or_create(start_year=start_year+5)
+    all_acad_years = [acad_year_0,acad_year_1,acad_year_2,acad_year_3,acad_year_4,acad_year_5]
     
     #Faculty and Departments
     cde_fac, created = Faculty.objects.get_or_create(faculty_name="College of Design and Engineering", faculty_acronym="CDE")
     me_dept, created = Department.objects.get_or_create(department_name="Mechanical Engineering", department_acronym="ME", faculty = cde_fac)
     ece_dept, created = Department.objects.get_or_create(department_name="Electrical and Computer Engineering", department_acronym="ECE", faculty = cde_fac)
     bme_dept, created = Department.objects.get_or_create(department_name="Biomedical Engineering", department_acronym="BME", faculty = cde_fac)
-    chem_dept, created = Department.objects.get_or_create(department_name="Chemical Engineering", department_acronym="CHEM", faculty = cde_fac)
 
     #Module types
     fluids, created = ModuleType.objects.get_or_create(type_name="Fluids",department=me_dept)
@@ -47,12 +52,7 @@ def populate_database():
     diagnostics,created = ModuleType.objects.get_or_create(type_name="Diagnostics",department=bme_dept)
     common_bme,created = ModuleType.objects.get_or_create(type_name="Common Curriculum",department=bme_dept)
     all_bme_types = [biologics,biomechanics,medical_devices,diagnostics,common_bme]
-    #CHEM types
-    oil,created = ModuleType.objects.get_or_create(type_name="Petroleum",department=chem_dept)
-    biopharma,created = ModuleType.objects.get_or_create(type_name="Biopharma",department=chem_dept)
-    energy_systems,created = ModuleType.objects.get_or_create(type_name="Energy systems",department=chem_dept)
-    common_chem,created = ModuleType.objects.get_or_create(type_name="Common Curriculum",department=chem_dept)
-    all_chem_types = [oil,biopharma,energy_systems,common_chem]
+
 
     #Service role
     normal, created = ServiceRole.objects.get_or_create(role_name=DEFAULT_SERVICE_ROLE_NAME,role_adjustment=1,faculty=cde_fac)
@@ -82,29 +82,34 @@ def populate_database():
     bme_beng, created = ProgrammeOffered.objects.get_or_create(programme_name = 'B. Eng (EE)', primary_dept = bme_dept)
     msc_bme, created = ProgrammeOffered.objects.get_or_create(programme_name = 'M. Sc (BME)', primary_dept = bme_dept)
 
-    chem_beng, created = ProgrammeOffered.objects.get_or_create(programme_name = 'B. Eng (CHEM)', primary_dept = chem_dept)
-    chem_mse, created = ProgrammeOffered.objects.get_or_create(programme_name = 'M. Sc (CHEM)', primary_dept = chem_dept)
 
     num_lecturers_me = 40
     num_lecturers_ece = 43
     num_lecturers_bme = 20
-    num_lecturers_chem = 25
 
-    me_wl_scen = WorkloadScenario.objects.create(label="ME workload " + str(start_year)+"/"+str(start_year+1),
-                                              dept = me_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
+    all_bme_wls = []
+    all_me_wls = []
+    all_ece_wls = []
+    for acad_year in all_acad_years:
+        this_start_year = acad_year.start_year
+        me_wl_scen = WorkloadScenario.objects.create(label="ME workload " + str(this_start_year)+"/"+str(this_start_year+1),
+                                                dept = me_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
 
-    ece_wl_scen = WorkloadScenario.objects.create(label="ECE workload " + str(start_year)+"/"+str(start_year+1),
-                                              dept = ece_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
+        ece_wl_scen = WorkloadScenario.objects.create(label="ECE workload " + str(this_start_year)+"/"+str(this_start_year+1),
+                                                dept = ece_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
+        
+        bme_wl_scen = WorkloadScenario.objects.create(label="BME workload " + str(this_start_year)+"/"+str(this_start_year+1),
+                                                dept = bme_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
+        all_me_wls.append(me_wl_scen)
+        all_ece_wls.append(ece_wl_scen)
+        all_bme_wls.append(bme_wl_scen)
     
-    bme_wl_scen = WorkloadScenario.objects.create(label="BME workload " + str(start_year)+"/"+str(start_year+1),
-                                              dept = bme_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)
-    
-    chem_wl_scen = WorkloadScenario.objects.create(label="CHEM workload " + str(start_year)+"/"+str(start_year+1),
-                                              dept = chem_dept, academic_year = acad_year,status = WorkloadScenario.OFFICIAL)           
+     
     frac_appontments = [1.0,1.0,1.0,0.5,0.6,0.7]
     empl_tracks = [tenure,tenure,tenure,educator,educator,adjunct]
+
     for i in range(0,num_lecturers_me):
-        lec = Lecturer.objects.create(name = names[i],workload_scenario = me_wl_scen,\
+        lec = Lecturer.objects.create(name = names[i],workload_scenario = all_me_wls[0],\
                                     fraction_appointment = random.choice(frac_appontments),
                                     service_role = normal,
                                     employment_track = random.choice(empl_tracks),
@@ -122,8 +127,16 @@ def populate_database():
         if (i==num_lecturers_me-6): 
             lec.is_external = True
         lec.save()
+        #Now that the lecturers is created for the first wl scenario, we make copies for the other wl scenarios as well
+        for i in range (1,len(all_me_wls)):
+            wlscen = all_me_wls[i]
+            lec.pk = None
+            lec.save()
+            lec.workload_scenario = wlscen
+            lec.save()
+
     for i in range(num_lecturers_me,num_lecturers_me+num_lecturers_ece):
-        lec = Lecturer.objects.create(name = names[i],workload_scenario = ece_wl_scen,\
+        lec = Lecturer.objects.create(name = names[i],workload_scenario = all_ece_wls[0],\
                                     fraction_appointment = random.choice(frac_appontments),
                                     service_role = normal,
                                     employment_track = random.choice(empl_tracks),
@@ -141,8 +154,16 @@ def populate_database():
         if (i==num_lecturers_me+num_lecturers_ece-6): 
             lec.is_external = True
         lec.save()
+        #Now that the lecturers is created for the first wl scenario, we make copies for the other wl scenarios as well
+        for i in range (1,len(all_ece_wls)):
+            wlscen = all_ece_wls[i]
+            lec.pk = None
+            lec.save()
+            lec.workload_scenario = wlscen
+            lec.save()
+
     for i in range(num_lecturers_me+num_lecturers_ece,num_lecturers_me+num_lecturers_ece+num_lecturers_bme):
-        lec = Lecturer.objects.create(name = names[i],workload_scenario = bme_wl_scen,\
+        lec = Lecturer.objects.create(name = names[i],workload_scenario = all_bme_wls[0],\
                                     fraction_appointment = random.choice(frac_appontments),
                                     service_role = normal,
                                     employment_track = random.choice(empl_tracks),
@@ -160,25 +181,14 @@ def populate_database():
         if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme-6): 
             lec.is_external = True
         lec.save()
-    for i in range(num_lecturers_me+num_lecturers_ece+num_lecturers_bme,num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem):
-        lec = Lecturer.objects.create(name = names[i],workload_scenario = chem_wl_scen,\
-                                    fraction_appointment = random.choice(frac_appontments),
-                                    service_role = normal,
-                                    employment_track = random.choice(empl_tracks),
-                                    is_external = False)
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-1): 
-            lec.service_role = hod
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-2): 
-            lec.service_role = dy
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-3): 
-            lec.service_role = asst_dean
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-4): 
-            lec.service_role = vice_dean
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-5): 
-            lec.is_external = True
-        if (i==num_lecturers_me+num_lecturers_ece+num_lecturers_bme+num_lecturers_chem-6): 
-            lec.is_external = True
-        lec.save()
+        #Now that the lecturers is created for the first wl scenario, we make copies for the other wl scenarios as well
+        for i in range (1,len(all_bme_wls)):
+            wlscen = all_bme_wls[i]
+            lec.pk = None
+            lec.save()
+            lec.workload_scenario = wlscen
+            lec.save()
+
     
     all_semesters_offered = [Module.SEM_1, Module.SEM_2,Module.SEM_1,Module.SEM_2,Module.BOTH_SEMESTERS]
     #######
@@ -186,179 +196,187 @@ def populate_database():
     #####
     mme1103,created = Module.objects.get_or_create(module_code = "ME1103", module_title="Principles of Mechanics and Materials", students_year_of_study=1,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 90,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me2105,created = Module.objects.get_or_create(module_code = "ME2105", module_title="Principles of Mechatronics and Automation", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me2102,created = Module.objects.get_or_create(module_code = "ME2102", module_title="Engineering Innovation and Modelling", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me2116,created = Module.objects.get_or_create(module_code = "ME2116", module_title="Mechanics of Materials", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me2121,created = Module.objects.get_or_create(module_code = "ME2121", module_title="Engineering Thermodynamics and Heat Transfer", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me2104,created = Module.objects.get_or_create(module_code = "ME2104", module_title="Fluid Mechanics I", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                sub_programme = aero_spec)
     me2162,created = Module.objects.get_or_create(module_code = "ME2162", module_title="Manufacturing Processes", students_year_of_study=2,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me3112,created = Module.objects.get_or_create(module_code = "ME3112", module_title="Mechanics of Machines", students_year_of_study=3,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me3123,created = Module.objects.get_or_create(module_code = "ME3123", module_title="Applied Thermofluids", students_year_of_study=3,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me3142,created = Module.objects.get_or_create(module_code = "ME3142", module_title="Feedback Control Systems", students_year_of_study=3,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     #Some electives
     me4212,created = Module.objects.get_or_create(module_code = "ME4212", module_title="Aircraft Structures", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                 sub_programme = aero_spec)
     me4231,created = Module.objects.get_or_create(module_code = "ME4231", module_title="Aerodynamics", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                 sub_programme = aero_spec)
     me4241,created = Module.objects.get_or_create(module_code = "ME4241", module_title="Aircraft Performance and Stability", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                sub_programme = aero_spec)
     me4242,created = Module.objects.get_or_create(module_code = "ME4242", module_title="Soft Robotics", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                sub_programme = robo_spec)
     me4262,created = Module.objects.get_or_create(module_code = "ME4262", module_title="Automation in Manufacturing", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                sub_programme = robo_spec)
     me4245,created = Module.objects.get_or_create(module_code = "ME4245", module_title="Robot Mechanics and Control", students_year_of_study=4,\
                                                primary_programme = me_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered),\
                                                sub_programme = robo_spec)
 
     #RMI courses
     rb1101,created = Module.objects.get_or_create(module_code = "RB1101", module_title="Fundamentals of Robotics I", students_year_of_study=1,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 90,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     rb2101,created = Module.objects.get_or_create(module_code = "RB2101", module_title="Fundamentals of Robotics II", students_year_of_study=1,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 90,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     rb2202,created = Module.objects.get_or_create(module_code = "RB2202", module_title="Kinematics and Dynamics for Robotics", students_year_of_study=2,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))   
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))   
     rb2203,created = Module.objects.get_or_create(module_code = "RB2203", module_title="Robot Control", students_year_of_study=2,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))       
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))       
     rb2301,created = Module.objects.get_or_create(module_code = "RB2301", module_title="Robot Programming", students_year_of_study=2,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     rb2302,created = Module.objects.get_or_create(module_code = "RB2302", module_title="Fundamentals of Artificial Neural Networks", students_year_of_study=2,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     rb3301,created = Module.objects.get_or_create(module_code = "RB3301", module_title="Introduction to Machine Intelligence", students_year_of_study=3,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     rb3302,created = Module.objects.get_or_create(module_code = "RB3302", module_title="Planning and Navigation", students_year_of_study=3,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     rb3303,created = Module.objects.get_or_create(module_code = "RB3303", module_title="Robotic System Design and Applications", students_year_of_study=3,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     #some electives
     rb3201,created = Module.objects.get_or_create(module_code = "RB3201", module_title="Sensors and Actuators for Robots", students_year_of_study=3,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     rb4107,created = Module.objects.get_or_create(module_code = "RB4107", module_title="Robotics and Machine Intelligence Design Project", students_year_of_study=4,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     rb4203,created = Module.objects.get_or_create(module_code = "RB3201", module_title="Robot Learning", students_year_of_study=4,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     bn4203,created = Module.objects.get_or_create(module_code = "BN4203", module_title="Robotics in Rehabilitation", students_year_of_study=4,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
 
     #M.Sc ME courses
     me5303,created = Module.objects.get_or_create(module_code = "ME5303", module_title="Industrial Aerodynamics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5304,created = Module.objects.get_or_create(module_code = "ME5304", module_title="Experimental Fluid Mechanics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
-
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5413,created = Module.objects.get_or_create(module_code = "ME5413", module_title="Autonomous Mobile Robotics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False, secondary_programme = me_robotics, compulsory_in_secondary_programme = False,\
-                                                total_hours = 39, scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                                total_hours = 39, scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5401,created = Module.objects.get_or_create(module_code = "ME5304", module_title="Linear Systems", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5402,created = Module.objects.get_or_create(module_code = "ME5402", module_title="Advanced Robotics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5404,created = Module.objects.get_or_create(module_code = "ME5404", module_title="Neural Networks", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5418,created = Module.objects.get_or_create(module_code = "ME5418", module_title="Machine Learning in Robotics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False, secondary_programme = me_robotics, compulsory_in_secondary_programme = False,\
-                                                total_hours = 39, scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                                total_hours = 39, scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
     me5103,created = Module.objects.get_or_create(module_code = "ME5103", module_title="Plates and Shells", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5107,created = Module.objects.get_or_create(module_code = "ME5103", module_title="Vibration Theory and Applications", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5106,created = Module.objects.get_or_create(module_code = "ME5106", module_title="Engineering Acoustics", students_year_of_study=1,\
                                                primary_programme = me_msc,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
 
     #M.Sc robotics courses
     me5421,created = Module.objects.get_or_create(module_code = "ME5421", module_title="Robot Kinematics", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))   
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))   
     me5409,created = Module.objects.get_or_create(module_code = "ME5409", module_title="Robot Dynamics and Control ", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
     me5410,created = Module.objects.get_or_create(module_code = "ME5410", module_title="Materials, Sensors, Actuators and Fabrication in Robotics", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
     me5411,created = Module.objects.get_or_create(module_code = "ME5411", module_title="Robot Vision and AI", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))  
     me5401,created = Module.objects.get_or_create(module_code = "ME5401", module_title="Linear Systems", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5412,created = Module.objects.get_or_create(module_code = "ME5412", module_title="Robotics for Healthcare", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5414,created = Module.objects.get_or_create(module_code = "ME5414", module_title="Optimization Techniques for Dynamic Systems", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered))
     me5415,created = Module.objects.get_or_create(module_code = "ME5415", module_title="Advanced Soft Robotics", students_year_of_study=1,\
                                                primary_programme = me_robotics,compulsory_in_primary_programme=False,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
+                                               scenario_ref = all_me_wls[0], module_type = random.choice(all_me_types), semester_offered= random.choice(all_semesters_offered)) 
 
     #Create common modules for ME
     es2631,created = Module.objects.get_or_create(module_code = "ES2631", module_title="Critical Thinking and Writing", students_year_of_study=2,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,\
                                                secondary_programme = me_beng, compulsory_in_secondary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
     cs1010e,created = Module.objects.get_or_create(module_code = "CS1010E", module_title="Programming Methodology", students_year_of_study=1,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,\
                                                secondary_programme = me_beng, compulsory_in_secondary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
     gea1000,created = Module.objects.get_or_create(module_code = "GEA1000", module_title="Quantitative Reasoning with Data", students_year_of_study=1,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,\
                                                secondary_programme = me_beng, compulsory_in_secondary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
     dtk1234,created = Module.objects.get_or_create(module_code = "DTK1234", module_title="Design Thinking", students_year_of_study=1,\
                                                primary_programme = rmi_beng,compulsory_in_primary_programme=True,\
                                                secondary_programme = me_beng, compulsory_in_secondary_programme=True,total_hours = 39,\
-                                               scenario_ref = me_wl_scen, module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
+                                               scenario_ref = all_me_wls[0], module_type = all_me_types[-1], semester_offered= random.choice(all_semesters_offered))
+    #Now that we created all modules for one scenario, we copy them across to all scenarios
+    for i in range (1,len(all_me_wls)): #Start at 1, the 0 is already populated
+        wlscen = all_me_wls[i]
+        for mod in Module.objects.filter(scenario_ref = all_me_wls[0]):
+            mod.pk = None
+            mod.save()
+            mod.scenario_ref = wlscen
+
+
     #################
     ##ECE modules
     #################
@@ -538,9 +556,30 @@ def populate_database():
                                                secondary_programme = msc_ceg, compulsory_in_secondary_programme=False,\
                                                scenario_ref = ece_wl_scen, module_type = random.choice(all_ece_types), semester_offered= random.choice(all_semesters_offered))  
 
+    #Now that we created all modules for one scenario, we copy them across to all scenarios
+    for i in range (1,len(all_ece_wls)): #Start at 1, the 0 is already populated
+        wlscen = all_ece_wls[i]
+        for mod in Module.objects.filter(scenario_ref = all_ece_wls[0]):
+            mod.pk = None
+            mod.save()
+            mod.scenario_ref = wlscen
     #######
     #Create BME modules
     #####
+    #Create common modules for ECE
+    es2631_ece,created = Module.objects.get_or_create(module_code = "ES2631", module_title="Critical Thinking and Writing", students_year_of_study=2,\
+                                               primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = all_bme_types[-1], semester_offered= random.choice(all_semesters_offered))
+    eg_1311_ece,created = Module.objects.get_or_create(module_code = "EG13111", module_title="Design and make", students_year_of_study=1,\
+                                                primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = all_bme_types[-1], semester_offered= random.choice(all_semesters_offered))
+    gea1000_ece,created = Module.objects.get_or_create(module_code = "GEA1000", module_title="Quantitative Reasoning with Data", students_year_of_study=1,\
+                                                primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = all_bme_types[-1], semester_offered= random.choice(all_semesters_offered))
+    dtk1234_ece,created = Module.objects.get_or_create(module_code = "DTK1234", module_title="Design Thinking", students_year_of_study=1,\
+                                               primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = all_bme_types[-1], semester_offered= random.choice(all_semesters_offered))
+    #BME UG core
     bn1112,created = Module.objects.get_or_create(module_code = "BN1112", module_title="Introduction to BME design and manufacturing", students_year_of_study=1,\
                                                primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 90,\
                                                scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
@@ -571,31 +610,486 @@ def populate_database():
     bn2204,created = Module.objects.get_or_create(module_code = "BN2204", module_title="Fundamentals of Biomechanics ", students_year_of_study=3,\
                                                primary_programme = bme_beng,compulsory_in_primary_programme=True,total_hours = 39,\
                                                scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    #BME UG some electives
+    bn3301,created = Module.objects.get_or_create(module_code = "BN3301", module_title="Intordiuction to Biomeaterials", students_year_of_study=3,\
+                                               primary_programme = bme_beng,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn4206,created = Module.objects.get_or_create(module_code = "BN4206", module_title="Computational Methods in BME", students_year_of_study=4,\
+                                               primary_programme = bme_beng,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    BN4301,created = Module.objects.get_or_create(module_code = "BN4301", module_title="Intordiuction to Tissue Engineering", students_year_of_study=3,\
+                                               primary_programme = bme_beng,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    #BME MSc
+    bn5101,created = Module.objects.get_or_create(module_code = "BN5101", module_title="Bioomedical Engineering Systems", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=True,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5102,created = Module.objects.get_or_create(module_code = "BN5102", module_title="Clinical Instrumentation", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))   
+    bn5104,created = Module.objects.get_or_create(module_code = "BN5104", module_title="Quantitative Physiology Principles In Bioengineering", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))      
+    bn5201,created = Module.objects.get_or_create(module_code = "BN5201", module_title="Advanced Biomaterials", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))   
+    bn5202,created = Module.objects.get_or_create(module_code = "BN5202", module_title="Orthopaedic Biomechanics", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5203,created = Module.objects.get_or_create(module_code = "BN5203", module_title="Advanced Tissue Engineering", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5206,created = Module.objects.get_or_create(module_code = "BN5206", module_title="Computational Methods in Biomedical Engineering", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5207,created = Module.objects.get_or_create(module_code = "BN5207", module_title="Medical Imaging Systems", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5208,created = Module.objects.get_or_create(module_code = "BN5208", module_title="Biomedical Quality and Regulatory Systems", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5302,created = Module.objects.get_or_create(module_code = "BN5208", module_title="Organs in a Dish: Organoid Bioengineering", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered))
+    bn5303,created = Module.objects.get_or_create(module_code = "BN5303", module_title="Tissue Engineering for Designing Food", students_year_of_study=1,\
+                                               primary_programme = msc_bme,compulsory_in_primary_programme=False,total_hours = 39,\
+                                               scenario_ref = bme_wl_scen, module_type = random.choice(all_bme_types), semester_offered= random.choice(all_semesters_offered)) 
+    #Now that we created all modules for one scenario, we copy them across to all scenarios
+    for i in range (1,len(all_bme_wls)): #Start at 1, the 0 is already populated
+        wlscen = all_bme_wls[i]
+        for mod in Module.objects.filter(scenario_ref = all_bme_wls[0]):
+            mod.pk = None
+            mod.save()
+            mod.scenario_ref = wlscen
     
     #Now do teaching assignemnts
-    num_lecturers = [1,1,1,1,2,2,3,3]
+    num_lecturers = [1,1,1,1,2,2,3,3] #how many lecturers per class
+    for wlscen in all_ece_wls:
+        ece_profs = list(Lecturer.objects.filter(workload_scenario=wlscen))
+        for mod in Module.objects.filter(scenario_ref=wlscen):
+            num_lecs = random.choice(num_lecturers)
+            random_lec_index = random.randint(0,len(ece_profs)-1)
+            if (num_lecs + random_lec_index >= len(ece_profs)): random_lec_index -= 4
+            for i in range(0,num_lecs):
+                assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
+                                                                    assigned_lecturer=ece_profs[random_lec_index+i], \
+                                                                    assigned_manually=True,\
+                                                                    number_of_hours=int(mod.total_hours/num_lecs),\
+                                                                    workload_scenario=wlscen)
+    for wlscen in all_me_wls:
+        me_profs = list(Lecturer.objects.filter(workload_scenario=wlscen))
+        for mod in Module.objects.filter(scenario_ref=wlscen):
+            num_lecs = random.choice(num_lecturers)
+            random_lec_index = random.randint(0,len(me_profs)-1)
+            if (num_lecs + random_lec_index >= len(me_profs)): random_lec_index -= 4
+            for i in range(0,num_lecs):
+                assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
+                                                                    assigned_lecturer=ece_profs[random_lec_index+i], \
+                                                                    assigned_manually=True,\
+                                                                    number_of_hours=int(mod.total_hours/num_lecs),\
+                                                                    workload_scenario=wlscen)
+    for wlscen in all_bme_wls:
+        bme_profs = list(Lecturer.objects.filter(workload_scenario=wlscen))
+        for mod in Module.objects.filter(scenario_ref=wlscen):
+            num_lecs = random.choice(num_lecturers)
+            random_lec_index = random.randint(0,len(bme_profs)-1)
+            if (num_lecs + random_lec_index >= len(bme_profs)): random_lec_index -= 4
+            for i in range(0,num_lecs):
+                assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
+                                                                    assigned_lecturer=ece_profs[random_lec_index+i], \
+                                                                    assigned_manually=True,\
+                                                                    number_of_hours=int(mod.total_hours/num_lecs),\
+                                                                    workload_scenario=wlscen)
+    ############################
+    # Accreditation
+    ############################
 
-    ece_profs = list(Lecturer.objects.filter(workload_scenario=ece_wl_scen))
-    for mod in Module.objects.filter(scenario_ref=ece_wl_scen):
-        num_lecs = random.choice(num_lecturers)
-        random_lec_index = random.randint(0,len(ece_profs)-1)
-        if (num_lecs + random_lec_index >= len(ece_profs)): random_lec_index -= 4
-        for i in range(0,num_lecs):
-            assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
-                                                                assigned_lecturer=ece_profs[random_lec_index+i], \
-                                                                assigned_manually=True,\
-                                                                number_of_hours=int(mod.total_hours/num_lecs),\
-                                                                workload_scenario=ece_wl_scen)
-    me_profs = list(Lecturer.objects.filter(workload_scenario=me_wl_scen))
-    for mod in Module.objects.filter(scenario_ref=me_wl_scen):
-        num_lecs = random.choice(num_lecturers)
-        random_lec_index = random.randint(0,len(me_profs)-1)
-        if (num_lecs + random_lec_index >= len(me_profs)): random_lec_index -= 4
-        for i in range(0,num_lecs):
-            assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
-                                                                assigned_lecturer=ece_profs[random_lec_index+i], \
-                                                                assigned_manually=True,\
-                                                                number_of_hours=int(mod.total_hours/num_lecs),\
-                                                                workload_scenario=me_wl_scen)
- 
-    print(ece_profs)
+    ##SLO for B eng in ME
+    slo_me_a,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply the knowledge of mathematics, natural science, engineering fundamentals, and an engineering specialisation to the solution of complex engineering problems.",\
+                                                            slo_short_description = "Engineering knowledge",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'a',\
+                                                            programme = me_beng)
+    slo_me_b,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Identify, formulate, research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.",\
+                                                            slo_short_description = "Problem Analysis",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'b',\
+                                                            programme = me_beng)
+    slo_me_c,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Design solutions for complex engineering problems and design systems, components or processes that meet t h e specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations.",\
+                                                            slo_short_description = "Design/development of Solutions",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'c',\
+                                                            programme = me_beng)
+    slo_me_d,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Conduct investigations of complex problems using research-based knowledge (WK8) and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.",\
+                                                            slo_short_description = "Investigation",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'd',\
+                                                            programme = me_beng)
+    slo_me_e,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering problems, with an understanding of the limitations.",\
+                                                            slo_short_description = "Modern Tool Usage",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'e',\
+                                                            programme = me_beng)
+    slo_me_f,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal, and cultural issues and the consequent responsibilities relevant to the professional engineering practice.",\
+                                                            slo_short_description = "The engineer and Society",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'f',\
+                                                            programme = me_beng)
+    slo_me_g,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for t h e sustainable development.",\
+                                                            slo_short_description = "Environment and Sustainability",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'g',\
+                                                            programme = me_beng)
+    slo_me_h,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.",\
+                                                            slo_short_description = "Ethics",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'h',\
+                                                            programme = me_beng)
+    slo_me_i,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings.",\
+                                                            slo_short_description = "Individual and Team Work",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'i',\
+                                                            programme = me_beng)    
+    slo_me_j,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.",\
+                                                            slo_short_description = "Communication",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'j',\
+                                                            programme = me_beng)
+    slo_me_k,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Demonstrate knowledge and understanding of t h e engineering management principles and economic decision-making, and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.",\
+                                                            slo_short_description = "Project Management and Finance",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'k',\
+                                                            programme = me_beng) 
+    slo_me_l,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Recognise the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.",\
+                                                            slo_short_description = "Life-long Learning",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'l',\
+                                                            programme = me_beng)
+    all_me_slo = [slo_me_a,slo_me_b,slo_me_c,slo_me_d,slo_me_e,slo_me_f, slo_me_g,slo_me_h,slo_me_i,slo_me_j,slo_me_k,slo_me_l]
+
+    ##SLO for B eng in RMI
+    slo_rmi_a,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply the knowledge of mathematics, natural science, engineering fundamentals, and an engineering specialisation to the solution of complex engineering problems.",\
+                                                            slo_short_description = "Engineering knowledge",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'a',\
+                                                            programme = rmi_beng)
+    slo_rmi_b,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Identify, formulate, research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.",\
+                                                            slo_short_description = "Problem Analysis",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'b',\
+                                                            programme = rmi_beng)
+    slo_rmi_c,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Design solutions for complex engineering problems and design systems, components or processes that meet t h e specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations.",\
+                                                            slo_short_description = "Design/development of Solutions",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'c',\
+                                                            programme = rmi_beng)
+    slo_rmi_d,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Conduct investigations of complex problems using research-based knowledge (WK8) and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.",\
+                                                            slo_short_description = "Investigation",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'd',\
+                                                            programme = rmi_beng)
+    slo_rmi_e,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering problems, with an understanding of the limitations.",\
+                                                            slo_short_description = "Modern Tool Usage",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'e',\
+                                                            programme = rmi_beng)
+    slo_rmi_f,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal, and cultural issues and the consequent responsibilities relevant to the professional engineering practice.",\
+                                                            slo_short_description = "The engineer and Society",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'f',\
+                                                            programme = rmi_beng)
+    slo_rmi_g,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for t h e sustainable development.",\
+                                                            slo_short_description = "Environment and Sustainability",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'g',\
+                                                            programme = rmi_beng)
+    slo_rmi_h,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.",\
+                                                            slo_short_description = "Ethics",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'h',\
+                                                            programme = rmi_beng)
+    slo_rmi_i,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings.",\
+                                                            slo_short_description = "Individual and Team Work",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'i',\
+                                                            programme = rmi_beng)    
+    slo_rmi_j,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.",\
+                                                            slo_short_description = "Communication",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'j',\
+                                                            programme = rmi_beng)
+    slo_rmi_k,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Demonstrate knowledge and understanding of t h e engineering management principles and economic decision-making, and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.",\
+                                                            slo_short_description = "Project Management and Finance",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'k',\
+                                                            programme = rmi_beng) 
+    slo_rmi_l,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Recognise the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.",\
+                                                            slo_short_description = "Life-long Learning",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'l',\
+                                                            programme = rmi_beng) 
+    all_rmi_slo = [slo_rmi_a,slo_rmi_b,slo_rmi_c,slo_rmi_d,slo_rmi_e,slo_rmi_f, slo_rmi_g,slo_rmi_h,slo_rmi_i,slo_rmi_j,slo_rmi_k,slo_rmi_l]
+
+    ##SLO for B eng in EE
+    slo_ee_a,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply the knowledge of mathematics, natural science, engineering fundamentals, and an engineering specialisation to the solution of complex engineering problems.",\
+                                                            slo_short_description = "Engineering knowledge",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'a',\
+                                                            programme = ee_beng)
+    slo_ee_b,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Identify, formulate, research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.",\
+                                                            slo_short_description = "Problem Analysis",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'b',\
+                                                            programme = ee_beng)
+    slo_ee_c,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Design solutions for complex engineering problems and design systems, components or processes that meet t h e specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations.",\
+                                                            slo_short_description = "Design/development of Solutions",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'c',\
+                                                            programme = ee_beng)
+    slo_ee_d,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Conduct investigations of complex problems using research-based knowledge (WK8) and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.",\
+                                                            slo_short_description = "Investigation",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'd',\
+                                                            programme = ee_beng)
+    slo_ee_e,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering problems, with an understanding of the limitations.",\
+                                                            slo_short_description = "Modern Tool Usage",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'e',\
+                                                            programme = ee_beng)
+    slo_ee_f,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal, and cultural issues and the consequent responsibilities relevant to the professional engineering practice.",\
+                                                            slo_short_description = "The engineer and Society",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'f',\
+                                                            programme = ee_beng)
+    slo_ee_g,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for t h e sustainable development.",\
+                                                            slo_short_description = "Environment and Sustainability",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'g',\
+                                                            programme = ee_beng)
+    slo_ee_h,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.",\
+                                                            slo_short_description = "Ethics",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'h',\
+                                                            programme = ee_beng)
+    slo_ee_i,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings.",\
+                                                            slo_short_description = "Individual and Team Work",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'i',\
+                                                            programme = ee_beng)    
+    slo_ee_j,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.",\
+                                                            slo_short_description = "Communication",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'j',\
+                                                            programme = ee_beng)
+    slo_ee_k,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Demonstrate knowledge and understanding of t h e engineering management principles and economic decision-making, and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.",\
+                                                            slo_short_description = "Project Management and Finance",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'k',\
+                                                            programme = ee_beng) 
+    slo_ee_l,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Recognise the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.",\
+                                                            slo_short_description = "Life-long Learning",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'l',\
+                                                            programme = ee_beng)
+    all_ee_slo = [slo_ee_a,slo_ee_b,slo_ee_c,slo_ee_d,slo_ee_e,slo_ee_f, slo_ee_g,slo_ee_h,slo_ee_i,slo_ee_j,slo_ee_k,slo_ee_l]
+
+    ##SLO for B eng in CEG
+    slo_ceg_a,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply the knowledge of mathematics, natural science, engineering fundamentals, and an engineering specialisation to the solution of complex engineering problems.",\
+                                                            slo_short_description = "Engineering knowledge",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'a',\
+                                                            programme = ceg_beng)
+    slo_ceg_b,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Identify, formulate, research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.",\
+                                                            slo_short_description = "Problem Analysis",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'b',\
+                                                            programme = ceg_beng)
+    slo_ceg_c,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Design solutions for complex engineering problems and design systems, components or processes that meet t h e specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations.",\
+                                                            slo_short_description = "Design/development of Solutions",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'c',\
+                                                            programme = ceg_beng)
+    slo_ceg_d,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Conduct investigations of complex problems using research-based knowledge (WK8) and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.",\
+                                                            slo_short_description = "Investigation",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'd',\
+                                                            programme = ceg_beng)
+    slo_ceg_e,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering problems, with an understanding of the limitations.",\
+                                                            slo_short_description = "Modern Tool Usage",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'e',\
+                                                            programme = ceg_beng)
+    slo_ceg_f,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal, and cultural issues and the consequent responsibilities relevant to the professional engineering practice.",\
+                                                            slo_short_description = "The engineer and Society",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'f',\
+                                                            programme = ceg_beng)
+    slo_ceg_g,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for t h e sustainable development.",\
+                                                            slo_short_description = "Environment and Sustainability",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'g',\
+                                                            programme = ceg_beng)
+    slo_ceg_h,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.",\
+                                                            slo_short_description = "Ethics",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'h',\
+                                                            programme = ceg_beng)
+    slo_ceg_i,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings.",\
+                                                            slo_short_description = "Individual and Team Work",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'i',\
+                                                            programme = ceg_beng)    
+    slo_ceg_j,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.",\
+                                                            slo_short_description = "Communication",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'j',\
+                                                            programme = ceg_beng)
+    slo_ceg_k,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Demonstrate knowledge and understanding of t h e engineering management principles and economic decision-making, and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.",\
+                                                            slo_short_description = "Project Management and Finance",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'k',\
+                                                            programme = ceg_beng) 
+    slo_ceg_l,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Recognise the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.",\
+                                                            slo_short_description = "Life-long Learning",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'l',\
+                                                            programme = ceg_beng)
+    all_ceg_slo = [slo_ceg_a,slo_ceg_b,slo_ceg_c,slo_ceg_d,slo_ceg_e,slo_ceg_f, slo_ceg_g,slo_ceg_h,slo_ceg_i,slo_ceg_j,slo_ceg_k,slo_ceg_l] 
+    
+    ##SLO for B eng in BME
+    slo_bme_a,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply the knowledge of mathematics, natural science, engineering fundamentals, and an engineering specialisation to the solution of complex engineering problems.",\
+                                                            slo_short_description = "Engineering knowledge",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'a',\
+                                                            programme = bme_beng)
+    slo_bme_b,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Identify, formulate, research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.",\
+                                                            slo_short_description = "Problem Analysis",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'b',\
+                                                            programme = bme_beng)
+    slo_bme_c,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Design solutions for complex engineering problems and design systems, components or processes that meet t h e specified needs with appropriate consideration for public health and safety, cultural, societal, and environmental considerations.",\
+                                                            slo_short_description = "Design/development of Solutions",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'c',\
+                                                            programme = bme_beng)
+    slo_bme_d,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Conduct investigations of complex problems using research-based knowledge (WK8) and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.",\
+                                                            slo_short_description = "Investigation",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'd',\
+                                                            programme = bme_beng)
+    slo_bme_e,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering problems, with an understanding of the limitations.",\
+                                                            slo_short_description = "Modern Tool Usage",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'e',\
+                                                            programme = bme_beng)
+    slo_bme_f,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal, and cultural issues and the consequent responsibilities relevant to the professional engineering practice.",\
+                                                            slo_short_description = "The engineer and Society",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'f',\
+                                                            programme = bme_beng)
+    slo_bme_g,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for t h e sustainable development.",\
+                                                            slo_short_description = "Environment and Sustainability",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'g',\
+                                                            programme = bme_beng)
+    slo_bme_h,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.",\
+                                                            slo_short_description = "Ethics",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'h',\
+                                                            programme = bme_beng)
+    slo_bme_i,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Function effectively as an individual, and as a member or leader in diverse teams and in multidisciplinary settings.",\
+                                                            slo_short_description = "Individual and Team Work",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'i',\
+                                                            programme = bme_beng)    
+    slo_bme_j,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.",\
+                                                            slo_short_description = "Communication",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'j',\
+                                                            programme = bme_beng)
+    slo_bme_k,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Demonstrate knowledge and understanding of t h e engineering management principles and economic decision-making, and apply these to one’s own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.",\
+                                                            slo_short_description = "Project Management and Finance",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'k',\
+                                                            programme = bme_beng) 
+    slo_bme_l,created = StudentLearningOutcome.objects.get_or_create(slo_description = "Recognise the need for, and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.",\
+                                                            slo_short_description = "Life-long Learning",\
+                                                            is_default_by_accreditor = True,\
+                                                            letter_associated = 'l',\
+                                                            programme = bme_beng)
+    all_bme_slo = [slo_bme_a,slo_bme_b,slo_bme_c,slo_bme_d,slo_bme_e,slo_bme_f,slo_bme_g,slo_bme_h,slo_bme_i,slo_bme_j,slo_bme_k,slo_bme_l]
+
+    #Now create the MLO
+    verbs = ["Describe", "Identify", "Apply","Analyze","Appraise","Construct"]
+    objects = ["the fundamental tenets of", "the key principles of","the relevant aspects of"]
+    me_descr = ["mechanical engineering","power and control","solid mechanics","fluid mechanics","automation"]
+    rmi_descr = ["robotic movements","rtobotic control", "rrobotic vision", "robotic intelligence"]
+    ee_descr = ["electicity","power generation","circuit analysis","operational amplifiers","circuit boards"]
+    ceg_descr = ["computer architecture","network communication","logic gates","circuit boards","memory management"]
+    bme_descr = ["human body","biomaterials","tissue engineering","design of medical devices","cellularte engineering"]
+
+    mapped_to_how_many = [3,3,3,4,4,4,5,5,6]
+    how_many_mlos = [4,4,4,4,5,6]
+    strengths = [1,2,3]
+    #Do BME MLOs and mappings 
+    for mod in Module.objects.filter(scenario_ref = all_bme_wls[0]).filter(primary_programme=bme_beng):
+        module_code = mod.module_code
+        num_mlos = random.choice(how_many_mlos)
+        for i in range(0,num_mlos):
+            how_many_slos = random.choice(mapped_to_how_many)
+            disicipline_description = random.choice(bme_descr)
+            description = random.choice(verbs) + " " + random.choice(objects) + " " + disicipline_description
+            short_description = disicipline_description
+            mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
+            for k in range(0,how_many_slos):
+                mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_bme_slo),strength = random.choice(strengths))
+    #Do ME MLOs and mappings 
+    for mod in Module.objects.filter(scenario_ref = all_me_wls[0]).filter(primary_programme=me_beng):
+        module_code = mod.module_code
+        num_mlos = random.choice(how_many_mlos)
+        for i in range(0,num_mlos):
+            how_many_slos = random.choice(mapped_to_how_many)
+            disicipline_description = random.choice(me_descr)
+            description = random.choice(verbs) + " " + random.choice(objects) + " " + disicipline_description
+            short_description = disicipline_description
+            mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
+            for k in range(0,how_many_slos):
+                mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_me_slo),strength = random.choice(strengths))
+
+    #Do RMI MLOs and mappings 
+    for mod in Module.objects.filter(scenario_ref = all_me_wls[0]).filter(primary_programme=rmi_beng):
+        module_code = mod.module_code
+        num_mlos = random.choice(how_many_mlos)
+        for i in range(0,num_mlos):
+            how_many_slos = random.choice(mapped_to_how_many)
+            disicipline_description = random.choice(rmi_descr)
+            description = random.choice(verbs) + " " + random.choice(objects) + " " + disicipline_description
+            short_description = disicipline_description
+            mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
+            for k in range(0,how_many_slos):
+                mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_me_slo),strength = random.choice(strengths))
+
+    #Do EE MLOs and mappings 
+    for mod in Module.objects.filter(scenario_ref = all_ece_wls[0]).filter(primary_programme=ee_beng):
+        module_code = mod.module_code
+        num_mlos = random.choice(how_many_mlos)
+        for i in range(0,num_mlos):
+            how_many_slos = random.choice(mapped_to_how_many)
+            disicipline_description = random.choice(ee_descr)
+            description = random.choice(verbs) + " " + random.choice(objects) + " " + disicipline_description
+            short_description = disicipline_description
+            mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
+            for k in range(0,how_many_slos):
+                mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_me_slo),strength = random.choice(strengths))
+    #Do CEG MLOs and mappings 
+    for mod in Module.objects.filter(scenario_ref = all_ece_wls[0]).filter(primary_programme=ceg_beng):
+        module_code = mod.module_code
+        num_mlos = random.choice(how_many_mlos)
+        for i in range(0,num_mlos):
+            how_many_slos = random.choice(mapped_to_how_many)
+            disicipline_description = random.choice(ceg_descr)
+            description = random.choice(verbs) + " " + random.choice(objects) + " " + disicipline_description
+            short_description = disicipline_description
+            mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
+            for k in range(0,how_many_slos):
+                mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_me_slo),strength = random.choice(strengths))
