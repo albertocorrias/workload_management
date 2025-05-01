@@ -1,17 +1,40 @@
 import csv
 import random
+import datetime
 from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
-                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome, ModuleLearningOutcome,MLOSLOMapping
+                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome,\
+                   ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse
 from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModuleAssignmentForm,AddTeachingAssignmentForm,\
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
                               csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
                                 DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME
+from .helper_methods_survey import DetermineSurveyLabelsForProgramme
 
+def clear_database():
+    Lecturer.objects.all().delete()
+    Module.objects.all().delete()
+    TeachingAssignment.objects.all().delete() 
+    ModuleType.objects.all().delete()
+    EmploymentTrack.objects.all().delete()
+    ServiceRole.objects.all().delete()
+    Department.objects.all().delete(), \
+    WorkloadScenario.objects.all().delete()
+    Faculty.objects.all().delete()
+    ProgrammeOffered.objects.all().delete()
+    SubProgrammeOffered.objects.all().delete()
+    Academicyear.objects.all().delete()
+    StudentLearningOutcome.objects.all().delete(),\
+    ModuleLearningOutcome.objects.all().delete()
+    MLOSLOMapping.objects.all().delete()
+    MLOPerformanceMeasure.objects.all().delete()
+    SurveyQuestionResponse.objects.all().delete()
+    Survey.objects.all().delete()
 
 #This helper method helps creating a databse for the demo
-def populate_database():    
+def populate_database():
+    clear_database()    
     f = open("workload_app/others/random_names.txt", "r")
     names = []
     for x in f:
@@ -1023,10 +1046,10 @@ def populate_database():
     verbs = ["Describe", "Identify", "Apply","Analyze","Appraise","Construct"]
     objects = ["the fundamental tenets of", "the key principles of","the relevant aspects of"]
     me_descr = ["mechanical engineering","power and control","solid mechanics","fluid mechanics","automation"]
-    rmi_descr = ["robotic movements","rtobotic control", "rrobotic vision", "robotic intelligence"]
-    ee_descr = ["electicity","power generation","circuit analysis","operational amplifiers","circuit boards"]
+    rmi_descr = ["robotic movements","robotic control", "robotic vision", "robotic intelligence"]
+    ee_descr = ["electricity","power generation","circuit analysis","operational amplifiers","circuit boards"]
     ceg_descr = ["computer architecture","network communication","logic gates","circuit boards","memory management"]
-    bme_descr = ["human body","biomaterials","tissue engineering","design of medical devices","cellularte engineering"]
+    bme_descr = ["human body","biomaterials","tissue engineering","design of medical devices","cellular engineering"]
 
     mapped_to_how_many = [3,3,3,4,4,4,5,5,6]
     how_many_mlos = [4,4,4,4,5,6]
@@ -1093,3 +1116,125 @@ def populate_database():
             mlo,created = ModuleLearningOutcome.objects.get_or_create(mlo_description = description,mlo_short_description=short_description,module_code=module_code)
             for k in range(0,how_many_slos):
                 mapping,createed = MLOSLOMapping.objects.get_or_create(mlo=mlo,slo = random.choice(all_me_slo),strength = random.choice(strengths))
+    
+    #Do direct measures
+    direct_measure_types = ["final exam questions 1-5",\
+                            "final exam questions 6-10",\
+                            "mid-term test, question 7-10",\
+                            "mid-term test, question 1-6",\
+                            "student presentatioins", "lab reports",\
+                            "project report","project achievement score","homework assignment","weekly online quizzes"]
+    possible_num_mlos = [1,2,3]
+    class_sizes = [25,45,58,90,124,156,189,212]
+
+    unique_mod_cdes = []
+    for mod in Module.objects.all():
+        mod_code = mod.module_code
+        if (mod_code not in unique_mod_cdes):
+            unique_mod_cdes.append(mod_code)
+
+    all_progs_accr = [rmi_beng,bme_beng,me_beng,ee_beng,ceg_beng]
+    for ac_year in all_acad_years:
+        #Do programme survey
+        for this_prog in all_progs_accr:
+            srv,created = Survey.objects.get_or_create(survey_title = "Exit survey for "+this_prog.programme_name+" ("+str(ac_year.start_year)+"/"+str(ac_year.start_year+1)+")",\
+                                            opening_date = datetime.datetime(ac_year.start_year+1, 4, 10),\
+                                            closing_date = datetime.datetime(ac_year.start_year+1, 5, 12),\
+                                            cohort_targeted = ac_year,\
+                                            likert_labels = DetermineSurveyLabelsForProgramme(this_prog.id)["slo_survey_labels_object"],\
+                                            survey_type = Survey.SurveyType.SLO,\
+                                            max_respondents =  100, comments = "Exit survey",\
+                                            programme_associated = this_prog)
+            full_labels = srv.likert_labels.GetFullListOfLabels()
+            actual_labels = srv.likert_labels.GetListOfLabels()
+            survey_scores = [0]*len(full_labels)
+            for i in range(0,len(actual_labels)):
+                survey_scores.append(int(random.uniform(0,120)))
+            tot_respondents = sum(survey_scores)
+            srv.max_respondents = tot_respondents
+            srv.save()
+            for slo in StudentLearningOutcome.objects.filter(programme = this_prog):
+                    new_response,created = SurveyQuestionResponse.objects.get_or_create(question_text = slo.slo_short_description,\
+                        label_highest_score = full_labels[0],\
+                        n_highest_score = survey_scores[0],
+                        label_second_highest_score = full_labels[1],\
+                        n_second_highest_score = survey_scores[1],
+                        label_third_highest_score = full_labels[2],\
+                        n_third_highest_score = survey_scores[2],
+                        label_fourth_highest_score = full_labels[3],\
+                        n_fourth_highest_score = survey_scores[3],\
+                        label_fifth_highest_score = full_labels[4],\
+                        n_fifth_highest_score = survey_scores[4],\
+                        label_sixth_highest_score = full_labels[5],\
+                        n_sixth_highest_score = survey_scores[5],\
+                        label_seventh_highest_score = full_labels[6],\
+                        n_seventh_highest_score = survey_scores[6],\
+                        label_eighth_highest_score = full_labels[7],\
+                        n_eighth_highest_score = survey_scores[7],\
+                        label_ninth_highest_score = full_labels[8],\
+                        n_ninth_highest_score = survey_scores[8],\
+                        label_tenth_highest_score = full_labels[9],\
+                        n_tenth_highest_score = survey_scores[9],\
+                        associated_slo = slo, parent_survey = srv)
+
+        #DO module-based measures (direct and surveys)
+        for module_code in unique_mod_cdes:
+            perf_desc = random.choice(direct_measure_types)
+            perf_score = random.uniform(10,98)
+            how_many_mlos = random.choice(possible_num_mlos)
+            mlo_list = list(ModuleLearningOutcome.objects.filter(module_code=module_code))
+            prog = mod.primary_programme
+            if(len(mlo_list)>0):#exclude courses with no MLO
+                if how_many_mlos==1:
+                    direct_meas,created = MLOPerformanceMeasure.objects.get_or_create(description=perf_desc,academic_year=ac_year,associated_mlo=mlo_list[0],percentage_score=perf_score)
+                if how_many_mlos ==2:
+                    direct_meas,created = MLOPerformanceMeasure.objects.get_or_create(description=perf_desc,academic_year=ac_year,associated_mlo=mlo_list[0],\
+                                                                                    secondary_associated_mlo = mlo_list[1],\
+                                                                                    percentage_score=perf_score)
+                if how_many_mlos ==3:
+                    direct_meas,created = MLOPerformanceMeasure.objects.get_or_create(description=perf_desc,academic_year=ac_year,associated_mlo=mlo_list[0],\
+                                                                                    secondary_associated_mlo = mlo_list[1],tertiary_associated_mlo = mlo_list[2],\
+                                                                                    percentage_score=perf_score)
+                #Create MLO surveys
+                class_size = random.choice(class_sizes)
+                srv,created = Survey.objects.get_or_create(survey_title = "MLO survey for "+module_code+" ("+str(ac_year.start_year)+"/"+str(ac_year.start_year+1)+")",\
+                                                           opening_date = datetime.datetime(ac_year.start_year+1, 4, 10),\
+                                                           closing_date = datetime.datetime(ac_year.start_year+1, 5, 12),\
+                                                           cohort_targeted = ac_year,\
+                                                           likert_labels = DetermineSurveyLabelsForProgramme(prog.id)["mlo_survey_labels_object"],\
+                                                           survey_type = Survey.SurveyType.MLO,\
+                                                           max_respondents =  class_size, comments = "None",\
+                                                           programme_associated = prog)
+                full_labels = srv.likert_labels.GetFullListOfLabels()
+                actual_labels = srv.likert_labels.GetListOfLabels()
+                survey_scores = [0]*len(full_labels)
+                for i in range(0,len(actual_labels)):
+                    survey_scores.append(random.uniform(0,class_size/len(actual_labels)))
+                tot_respondents = sum(survey_scores)
+                srv.max_respondents = tot_respondents
+                srv.save()
+                
+                for mlo in mlo_list:
+                    new_response,created = SurveyQuestionResponse.objects.get_or_create(question_text = mlo.mlo_short_description,\
+                        label_highest_score = full_labels[0],\
+                        n_highest_score = survey_scores[0],
+                        label_second_highest_score = full_labels[1],\
+                        n_second_highest_score = survey_scores[1],
+                        label_third_highest_score = full_labels[2],\
+                        n_third_highest_score = survey_scores[2],
+                        label_fourth_highest_score = full_labels[3],\
+                        n_fourth_highest_score = survey_scores[3],\
+                        label_fifth_highest_score = full_labels[4],\
+                        n_fifth_highest_score = survey_scores[4],\
+                        label_sixth_highest_score = full_labels[5],\
+                        n_sixth_highest_score = survey_scores[5],\
+                        label_seventh_highest_score = full_labels[6],\
+                        n_seventh_highest_score = survey_scores[6],\
+                        label_eighth_highest_score = full_labels[7],\
+                        n_eighth_highest_score = survey_scores[7],\
+                        label_ninth_highest_score = full_labels[8],\
+                        n_ninth_highest_score = survey_scores[8],\
+                        label_tenth_highest_score = full_labels[9],\
+                        n_tenth_highest_score = survey_scores[9],\
+                        associated_mlo = mlo, parent_survey = srv)
+    

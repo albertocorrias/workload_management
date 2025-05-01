@@ -302,7 +302,12 @@ class TestUserPermissions(TestCase):
                                                                         survey_type = Survey.SurveyType.MLO,\
                                                                         max_respondents = 100)
         
-
+        #####
+        # Check that non-logged in user get properly handled
+        #####
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 200) #No issues, it should load up error page
+        self.assertContains(response,'Access forbidden')
     
         ####################
         ##SUPER  USER ACCESS

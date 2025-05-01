@@ -2,7 +2,6 @@ from .models import Department, UniversityStaff, Module,TeachingAssignment,Facul
 
 def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
 
-    
     if (UniversityStaff.objects.filter(user__id = user_id).exists()):
         usr = UniversityStaff.objects.filter(user__id = user_id).get()
         if (is_super_user == True):
@@ -27,80 +26,84 @@ def CanUserAdminUniversity(user_id,is_super_user = False):
     return False
 
 def CanUserAdminThisFaculty(user_id, fac_id, is_super_user=False):
-    if Faculty.objects.filter(id = fac_id).exists():
-        usr = UniversityStaff.objects.filter(user__id = user_id).get()
-        if (is_super_user == True): return True #No questions asked. Super user can
-        if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
-            if usr.faculty is None: return False
-            faculty_id = usr.faculty.id
-            if (faculty_id == fac_id):
-                return True        
+    if (UniversityStaff.objects.filter(user__id = user_id).exists()):
+        if Faculty.objects.filter(id = fac_id).exists():
+            usr = UniversityStaff.objects.filter(user__id = user_id).get()
+            if (is_super_user == True): return True #No questions asked. Super user can
+            if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
+                if usr.faculty is None: return False
+                faculty_id = usr.faculty.id
+                if (faculty_id == fac_id):
+                    return True        
     return False
 
 def CanUserAdminThisDepartment(user_id, dept_id, is_super_user = False):
-    if Department.objects.filter(id = dept_id).exists():
-        usr = UniversityStaff.objects.filter(user__id = user_id).get()
-        if (is_super_user == True): return True #No questions asked. Super user can
-        if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
-            if usr.department is None: return False
-            user_dept_id = usr.department.id
-            if (user_dept_id == dept_id):
-                return True
-        if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
-            if usr.faculty is None: return False
-            faculty_id = usr.faculty.id
-            fac_id = Department.objects.filter(id = dept_id).get().faculty.id
-            if (faculty_id == fac_id):
-                return True        
+    if (UniversityStaff.objects.filter(user__id = user_id).exists()):
+        if Department.objects.filter(id = dept_id).exists():
+            usr = UniversityStaff.objects.filter(user__id = user_id).get()
+            if (is_super_user == True): return True #No questions asked. Super user can
+            if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
+                if usr.department is None: return False
+                user_dept_id = usr.department.id
+                if (user_dept_id == dept_id):
+                    return True
+            if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
+                if usr.faculty is None: return False
+                faculty_id = usr.faculty.id
+                fac_id = Department.objects.filter(id = dept_id).get().faculty.id
+                if (faculty_id == fac_id):
+                    return True        
     return False
 
 def CanUserAdminThisModule(user_id, module_code,is_super_user = False):
-    if Module.objects.filter(module_code = module_code).exists():
-        usr = UniversityStaff.objects.filter(user__id = user_id).get()
-        if (is_super_user == True): return True #No questions asked. Super user can
-        if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
-            if usr.department is None: return False
-            user_dept_id = usr.department.id
-            module_department_id = Module.objects.filter(module_code = module_code).first().scenario_ref.dept.id #We take the first instance of such module
-            if (user_dept_id == module_department_id):
-                return True
-        if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
-            if usr.faculty is None: return False
-            faculty_id = usr.faculty.id
-            fac_id = module_department_id = Module.objects.filter(module_code = module_code).first().scenario_ref.dept.faculty.id #We take the first instance of such module
-            if (faculty_id == fac_id):
-                return True
-        if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
-            if usr.lecturer is None: return False #Must be assigned a lecturer
-            lec_id = usr.lecturer.id
-            #we return true only if the lecturer has been assigned to teach the module, at least once...
-            if (TeachingAssignment.objects.filter(assigned_module__module_code = module_code).filter(assigned_lecturer__id = lec_id).exists()):
-                return True
+    if (UniversityStaff.objects.filter(user__id = user_id).exists()):
+        if Module.objects.filter(module_code = module_code).exists():
+            usr = UniversityStaff.objects.filter(user__id = user_id).get()
+            if (is_super_user == True): return True #No questions asked. Super user can
+            if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
+                if usr.department is None: return False
+                user_dept_id = usr.department.id
+                module_department_id = Module.objects.filter(module_code = module_code).first().scenario_ref.dept.id #We take the first instance of such module
+                if (user_dept_id == module_department_id):
+                    return True
+            if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
+                if usr.faculty is None: return False
+                faculty_id = usr.faculty.id
+                fac_id = module_department_id = Module.objects.filter(module_code = module_code).first().scenario_ref.dept.faculty.id #We take the first instance of such module
+                if (faculty_id == fac_id):
+                    return True
+            if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
+                if usr.lecturer is None: return False #Must be assigned a lecturer
+                lec_id = usr.lecturer.id
+                #we return true only if the lecturer has been assigned to teach the module, at least once...
+                if (TeachingAssignment.objects.filter(assigned_module__module_code = module_code).filter(assigned_lecturer__id = lec_id).exists()):
+                    return True
     return False
 
 def CanUserAdminThisLecturer(user_id, lecturer_id,is_super_user = False):
-    if Lecturer.objects.filter(id = lecturer_id).exists():
-        usr = UniversityStaff.objects.filter(user__id = user_id).get()
-        if (is_super_user == True): return True #No questions asked. Super user can
-        supplied_lec_name = Lecturer.objects.filter(id=lecturer_id).get().name
-        if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
-            if usr.department is None: return False
-            user_dept_id = usr.department.id
-            module_department_id = Lecturer.objects.filter(name = supplied_lec_name).first().workload_scenario.dept.id #We take the first instance of such lecturer (ASSUMES NO TRANSFERS!)
-            if (user_dept_id == module_department_id):
-                return True
-        if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
-            if usr.faculty is None: return False
-            faculty_id = usr.faculty.id
-            fac_id = Lecturer.objects.filter(name = supplied_lec_name).first().workload_scenario.dept.faculty.id #We take the first instance of such lecturer
-            if (faculty_id == fac_id):
-                return True
-        if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
-            if usr.lecturer is None: return False #Must be assigned a lecturer
-            lec_name = usr.lecturer.name
-            #we return true only if the lecturer has been assigned to teach the module, at least once...
-            if (lec_name == supplied_lec_name):
-                return True
+    if (UniversityStaff.objects.filter(user__id = user_id).exists()):
+        if Lecturer.objects.filter(id = lecturer_id).exists():
+            usr = UniversityStaff.objects.filter(user__id = user_id).get()
+            if (is_super_user == True): return True #No questions asked. Super user can
+            supplied_lec_name = Lecturer.objects.filter(id=lecturer_id).get().name
+            if usr.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
+                if usr.department is None: return False
+                user_dept_id = usr.department.id
+                module_department_id = Lecturer.objects.filter(name = supplied_lec_name).first().workload_scenario.dept.id #We take the first instance of such lecturer (ASSUMES NO TRANSFERS!)
+                if (user_dept_id == module_department_id):
+                    return True
+            if usr.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
+                if usr.faculty is None: return False
+                faculty_id = usr.faculty.id
+                fac_id = Lecturer.objects.filter(name = supplied_lec_name).first().workload_scenario.dept.faculty.id #We take the first instance of such lecturer
+                if (faculty_id == fac_id):
+                    return True
+            if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
+                if usr.lecturer is None: return False #Must be assigned a lecturer
+                lec_name = usr.lecturer.name
+                #we return true only if the lecturer has been assigned to teach the module, at least once...
+                if (lec_name == supplied_lec_name):
+                    return True
     return False
 
 def DetermineUserMenu(user_id, is_super_user=False):
