@@ -42,8 +42,7 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
-
-#from .helper_methods_demo import populate_database
+from .helper_methods_demo import populate_database
 
 def post_login_landing(request):
     myerror = "error"
@@ -254,6 +253,7 @@ def school_page(request,faculty_id):
 def workloads_index(request):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
+    populate_database()#-Used to generate DB for demo leave commented out
     if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id, is_super_user = request.user.is_superuser)==False:
         template = loader.get_template('workload_app/errors_page.html')
         context = {
@@ -754,11 +754,9 @@ def module(request, module_code):
         #########################
         #Find all surveys
         surveys_ids = []
-        for srv in Survey.objects.filter(survey_type=Survey.SurveyType.MLO):
-            prog = srv.programme_associated
-            for mod in Module.objects.filter(module_code = module_code).filter(primary_programme = prog)|\
-                       Module.objects.filter(module_code = module_code).filter(secondary_programme = prog):        
-                surveys_ids.append(srv.id)
+        for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
+            for response in SurveyQuestionResponse.objects.filter(associated_mlo=mlo):     
+                surveys_ids.append(response.parent_survey.id)
                 
         #Remove duplicates
         surveys_ids = list(dict.fromkeys(surveys_ids))
