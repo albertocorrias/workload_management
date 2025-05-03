@@ -1159,13 +1159,13 @@ def populate_database():
                     programme = this_prog,\
                     letter_associated ="4")
         peo_1_how_many = random.choice(how_many_slo_mapped)
-        peo_1_slo_indices = random.sample(range(0, 8), peo_1_how_many)
+        peo_1_slo_indices = random.sample(range(0, 12), peo_1_how_many)
         peo_2_how_many = random.choice(how_many_slo_mapped)
-        peo_2_slo_indices = random.sample(range(0, 8), peo_2_how_many)
+        peo_2_slo_indices = random.sample(range(0, 12), peo_2_how_many)
         peo_3_how_many = random.choice(how_many_slo_mapped)
-        peo_3_slo_indices = random.sample(range(0, 8), peo_3_how_many)
+        peo_3_slo_indices = random.sample(range(0, 12), peo_3_how_many)
         peo_4_how_many = random.choice(how_many_slo_mapped)
-        peo_4_slo_indices = random.sample(range(0, 8), peo_4_how_many)
+        peo_4_slo_indices = random.sample(range(0, 12), peo_4_how_many)
         for i in range(0,len(peo_1_slo_indices)):
             map_peo_slo,created = PEOSLOMapping.objects.get_or_create(peo = peo1,slo=prog_slo[peo_1_slo_indices[i]],strength = random.choice(peo_strengths))
         for i in range(0,len(peo_2_slo_indices)):

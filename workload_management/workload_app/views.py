@@ -253,7 +253,7 @@ def school_page(request,faculty_id):
 def workloads_index(request):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
-    populate_database()#-Used to generate DB for demo leave commented out
+    #populate_database()#-Used to generate DB for demo leave commented out
     if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id, is_super_user = request.user.is_superuser)==False:
         template = loader.get_template('workload_app/errors_page.html')
         context = {
@@ -1009,8 +1009,9 @@ def accreditation(request,programme_id):
         if select_report_years_form.is_valid():
             start  = select_report_years_form.cleaned_data["academic_year_start"].start_year
             end  = select_report_years_form.cleaned_data["academic_year_end"].start_year
+            compulsory_only = select_report_years_form.cleaned_data["only_core"]
             return HttpResponseRedirect(reverse('workload_app:accreditation_report', 
-            kwargs={'programme_id' : programme_id, 'start_year' : start, 'end_year': end}));#Trigger a re-direct to full report page
+            kwargs={'programme_id' : programme_id, 'start_year' : start, 'end_year': end,'compulsory_only': compulsory_only}));#Trigger a re-direct to full report page
 
 
         edit_survey_label_form = EditSurveySettingsForm(request.POST)
@@ -1233,7 +1234,7 @@ def accreditation(request,programme_id):
         }
         return HttpResponse(template.render(context, request))
 
-def accreditation_report(request,programme_id, start_year,end_year):
+def accreditation_report(request,programme_id, start_year,end_year,compulsory_only):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
@@ -1249,15 +1250,15 @@ def accreditation_report(request,programme_id, start_year,end_year):
     
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
-        big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
-        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year)
+        big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
+        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
 
         slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
         slo_identifiers = []
         all_slo_data_for_plot = []
         all_slo_ids = []
         for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
-            all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year) 
+            all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year,compulsory_only=compulsory_only) 
             slo_survey_measures = all_slo_info["slo_surveys"] #A list of all the slo survey measures. This one is ready for HTML
             mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
             mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
