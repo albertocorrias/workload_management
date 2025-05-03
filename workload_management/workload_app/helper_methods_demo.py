@@ -716,7 +716,7 @@ def populate_database():
             if (num_lecs + random_lec_index >= len(me_profs)): random_lec_index -= 4
             for i in range(0,num_lecs):
                 assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
-                                                                    assigned_lecturer=ece_profs[random_lec_index+i], \
+                                                                    assigned_lecturer=me_profs[random_lec_index+i], \
                                                                     assigned_manually=True,\
                                                                     number_of_hours=int(mod.total_hours/num_lecs),\
                                                                     workload_scenario=wlscen)

@@ -253,7 +253,7 @@ def school_page(request,faculty_id):
 def workloads_index(request):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
-    #populate_database()#-Used to generate DB for demo leave commented out
+    populate_database()#-Used to generate DB for demo leave commented out
     if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id, is_super_user = request.user.is_superuser)==False:
         template = loader.get_template('workload_app/errors_page.html')
         context = {

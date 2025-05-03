@@ -539,7 +539,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year):
 #   - MLO valid for the year when it was delivered to that matriculated cohort
 #   - Module actually offered (teaching assignments checked) 
 # - Attention score for MLO surveys. Same as above, but counting survey question for the MLOs insetad of measure. same checks
-# - Attention score for SLo surveys. +1 for ecery question taregting the SLO, as long as the SLOis valid for that cohort 
+# - Attention score for SLO surveys. +1 for every question taregting the SLO, as long as the SLOis valid for that cohort 
 def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year):
     table_rows = []
     for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
