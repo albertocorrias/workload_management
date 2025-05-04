@@ -734,7 +734,7 @@ def CalculateModuleTypesTableForProgramme(scenario_id,programme_id):
     return main_table_data        
         
 #Helper method to calculate the table with information
-#about teh moculde whose module code is passed in.
+#about the module whose module code is passed in.
 #It looks at past official workloads only
 def CalculateSingleModuleInformationTable(module_code): 
     ret = []

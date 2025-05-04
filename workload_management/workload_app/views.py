@@ -613,7 +613,7 @@ def module(request, module_code):
             comments = mlo_survey_form.cleaned_data['comments']
                         
             #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
-            #Note: the line below will take care of creatingd efaults, if needed
+            #Note: the line below will take care of creating defaults, if needed
             likert_scale = DetermineSurveyLabelsForProgramme(programme_id)["mlo_survey_labels_object"]
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\

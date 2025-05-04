@@ -636,11 +636,18 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year,compu
                         for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
                             mod_code = mlo.module_code
                             year_delivered = srv_resp.parent_survey.cohort_targeted.start_year #The year stored in the survey object
-                            for module in  Module.objects.filter(module_code=mod_code).filter(compulsory_in_primary_programme=True)\
-                                .filter(scenario_ref__academic_year__start_year = year_delivered).filter(scenario_ref__status = WorkloadScenario.OFFICIAL):#Only compulsory courses
-
-                                student_year_of_study = module.students_year_of_study
+                            module_qs = None
+                            if (compulsory_only==1):
+                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                            else:
+                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
                                 
+                            for module in  module_qs:
+                                student_year_of_study = module.students_year_of_study
                                 if ( (year_delivered - student_year_of_study + 1) == matric_year ) and\
                                     TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
                                     mlo_survey_attention_score += mapping.strength/3 #3 is the highest possible
