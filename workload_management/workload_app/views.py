@@ -585,18 +585,13 @@ def module(request, module_code):
         if (mod.tertiary_programme is not None):
             all_prog_ids[2] = mod.tertiary_programme.id
             all_prog_names = mod.tertiary_programme.programme_name
+    #Determine primary programme ID or- if None - the highest level programme ID
+    for i in range(0,len(all_prog_ids)):
+        if (all_prog_ids[i] is not None):
+            primary_prog  = ProgrammeOffered.objects.filter(id = all_prog_ids[i]).get()
+            primary_programme_id = all_prog_ids[i]
+            break #exit at the first. Note we put primary, secondary and tertiary in order at loop above
 
-    #First figure out the programme name this module may belong to
-    #This is useful in multiple parts below
-    prog = None
-    programme_name = ""
-    programme_id = None
-    for mod in Module.objects.filter(module_code=module_code):
-        if (mod.primary_programme is not None):
-            prog = mod.primary_programme
-            programme_name = prog.programme_name
-            programme_id = prog.id
-            break
     if request.method =='POST':
         mlo_form = MLOForm(request.POST)
         if (mlo_form.is_valid()):
@@ -628,15 +623,16 @@ def module(request, module_code):
             comments = mlo_survey_form.cleaned_data['comments']
                         
             #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
+            #Such policy will follow the primary programme
             #Note: the line below will take care of creating defaults, if needed
-            likert_scale = DetermineSurveyLabelsForProgramme(programme_id)["mlo_survey_labels_object"]
+            likert_scale = DetermineSurveyLabelsForProgramme(primary_programme_id)["mlo_survey_labels_object"]
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\
                                                cohort_targeted = supplied_cohort_targeted,\
                                                likert_labels = likert_scale,\
                                                max_respondents = n_invited, comments = comments,\
                                                survey_type = Survey.SurveyType.MLO,\
-                                               programme_associated = prog)
+                                               programme_associated = primary_prog)
             new_survey.save()
 
         
@@ -670,13 +666,17 @@ def module(request, module_code):
         if (remove_mlo_measure_form.is_valid()):
             MLOPerformanceMeasure.objects.filter(id=request.POST.get('Select_MLO_measure_to_remove')).delete()
 
-        if (prog is not None):
-            mlo_slo_mapping_form = MLOSLOMappingForm(request.POST, prog_id=prog.id)
-            if mlo_slo_mapping_form.is_valid():
-                for slo in StudentLearningOutcome.objects.filter(programme__id = prog.id):
-                    supplied_strength = mlo_slo_mapping_form.cleaned_data ["mlo_slo_mapping_strength"+str(slo.id)]
-                    supplied_mlo_id = mlo_slo_mapping_form.cleaned_data["mlo_id"]
-                    MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=supplied_mlo_id).update(strength = supplied_strength)
+
+        for prog_id in all_prog_ids:
+            if (prog_id is not None):
+                    mlo_slo_mapping_form = MLOSLOMappingForm(request.POST, prog_id=prog_id)
+                    if mlo_slo_mapping_form.is_valid():
+                        supplied_slo_id = mlo_slo_mapping_form.cleaned_data["slo_id"]
+                        if StudentLearningOutcome.objects.filter(programme__id = prog_id).filter(id=supplied_slo_id).count()>0:
+                            for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
+                                supplied_strength = mlo_slo_mapping_form.cleaned_data ["mlo_slo_mapping_strength"+str(slo.id)]
+                                supplied_mlo_id = mlo_slo_mapping_form.cleaned_data["mlo_id_for_slo_mapping"]
+                                MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=supplied_mlo_id).update(strength = supplied_strength)
 
         corr_action_form = CorrectiveActionForm(request.POST, module_code=module_code)
         if(corr_action_form.is_valid()):
@@ -713,7 +713,7 @@ def module(request, module_code):
         module_table = CalculateSingleModuleInformationTable(module_name_qs.first().module_code)
         new_mlo_form = MLOForm(initial = {'mod_code' : module_code, 'fresh_record' : True})
         remove_mlo_form = RemoveMLOForm(module_code = module_code)
-        all_mlo_slo_tables = []
+        all_mlo_slo_tables = []#One item per programme
         for prog_id in all_prog_ids:
             if (prog_id is not None):
                 table_item = {
@@ -737,15 +737,15 @@ def module(request, module_code):
                         'slo_mapping_form' : None
                     }
 
-                    mlo_item["slo_mapping_form"] = MLOSLOMappingForm(prog_id = prog_id, initial = {"mlo_id" : mlo.id} )
+                    mlo_item["slo_mapping_form"] = MLOSLOMappingForm(prog_id = prog_id, initial = {"mlo_id_for_slo_mapping" : mlo.id} )
                     for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
                         strength = 0
                         mapping_qs = MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=mlo.id)
                         if (mapping_qs.count()==1):# if it is there...
                             strength = mapping_qs.get().strength
-                        else:#otherwise create it the object
-                            MLOSLOMapping.objects.create(slo=slo, mlo=mlo,strength=strength)
-                        
+                        if (mapping_qs.count()==0):#Not there, we create
+                            MLOSLOMapping.objects.create(slo=slo,mlo=mlo,strength=strength)
+            
                         icon = DetermineIconBasedOnStrength(strength)
                         slo_mapping_item = {
                             'slo_description' : slo.slo_description,
@@ -868,14 +868,11 @@ def module(request, module_code):
                     'new_mlo_form' : new_mlo_form,
                     'remove_mlo_form' : remove_mlo_form,
                     'all_mlo_slo_tables' : all_mlo_slo_tables,
-                    'mlo_list' : mlo_list,
-                    'slo_list' : slo_list,
+                    #'mlo_list' : mlo_list,
+                    #'slo_list' : slo_list,
                     'mlo_survey_table' : survey_table,
-                    'programme_name' : programme_name,
-                    'programme_id' : programme_id,
                     'mlo_survey_form' : mlo_survey_form,
                     'remove_mlo_survey_form' : remove_mlo_survey_form,
-                    'colspan_param' : len(mlo_list)*2,
                     'mlo_performance_measure_form' : mlo_performance_measure_form,
                     'remove_mlo_perfroamnce_measure_form' : remove_mlo_perfroamnce_measure_form,
                     'mlo_measure_table' : mlo_measure_table,

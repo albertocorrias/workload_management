@@ -572,11 +572,12 @@ class MLOSLOMappingForm(forms.Form):
     def __init__(self, *args, **kwargs):
         prog_id = kwargs.pop('prog_id')
         super(MLOSLOMappingForm, self).__init__(*args, **kwargs)
-        self.fields['mlo_id'] = forms.IntegerField(required=False, widget=forms.HiddenInput())
+        self.fields['mlo_id_for_slo_mapping'] = forms.IntegerField(required=True, widget=forms.HiddenInput())
         
         for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
             self.fields['mlo_slo_mapping_strength'+str(slo.id)] = forms.IntegerField(min_value=0, max_value=3, label='Enter mapping strength for SLO: ' + slo.slo_description)
-            self.fields['slo_id'] = forms.IntegerField(initial=slo.id, required=False, widget=forms.HiddenInput())
+            self.fields['slo_id'] = forms.IntegerField(initial=slo.id, required=False, widget=forms.HiddenInput())#we store the last....
+    
 
 class AddMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):

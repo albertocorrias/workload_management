@@ -51,7 +51,6 @@
             </div><!-- end of buttons container-->
 
             <div class="overall_container">
-            {% if mlo_list|length > 0 %}
             {% for table in all_mlo_slo_tables %}
                 <div>
                   <table id="OVERALL_MLO_TABLE" class="workload_tables table table-striped">
@@ -60,7 +59,7 @@
                       <th style="background-color:#f4f3f1;"> </th>
                       <th style="background-color:#f4f3f1;"> </th>
                       <th style="background-color:#f4f3f1;"> </th>
-                      <th colspan="{{ slo_list|length }}"> Student Learning Outcome - {{ table.programme_name }}</th>
+                      <th colspan="{{ table.slo_list|length }}"> Student Learning Outcome - {{ table.programme_name }}</th>
                     </tr>
                     <tr>
                         <th> </th>
@@ -74,7 +73,7 @@
                     <tbody>
                       {% for entry in table.mlo_list %}
                           <tr>
-                              <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditMLO{{ entry.mlo_id }}">
+                              <td> <button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditMLO{{ entry.mlo_id }}-{{ table.programme_id }}">
                                   <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                               <td style="text-align:left;">{{ entry.mlo_desc }}</td>
                               <td> {{ entry.mlo_validity }} </td>
@@ -95,9 +94,6 @@
                   </p>
                 </div>
             {% endfor %} <!--loop over tables -->
-            {% else %} <!-- no MLO defined -->
-              <p> No MLO were defined for this module </p>
-            {% endif %}
             </div> <!-- Flex container-->
             <div>
               <hr>
@@ -263,42 +259,44 @@
                   </div><!-- Mdal dialogue-->
                 </div><!--whole modal--> 
                 <!-- Modals to edit MLOs-->
-                {% for entry in mlo_list %}
-                    <div class="modal fade" id="EditMLO{{ entry.mlo_id }}" tabindex="-1" role="dialog" aria-labelledby="EditMLO{{ entry.mlo_id }}Label" aria-hidden="true">
-                      <div class="modal-dialog modal-xl" role="document">
-                        <div class="modal-content">
-                              <div class="modal-header">
-                                <h5 class="modal-title" id="EditMLO{{ entry.mlo_id }}Label">Edit existing MLO</h5>
-                                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
-                                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
-                                </button>
-                              </div>
-                              <form action="{% url 'workload_app:module' module_code %}" method="post">
-                              {% csrf_token %}
-                                  <div class="modal-body">
-                                        {{ entry.mlo_edit_form.as_p }}
-                                  </div>
-                                  <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
-                                    <button type="submit" class="btn btn-primary">Save changes</button>
-                                  </div>
-                              </form>
-                              <hr>
-                              <form action="{% url 'workload_app:module' module_code %}" method="post">
+                {% for table in all_mlo_slo_tables %}
+                  {% for entry in table.mlo_list %}
+                      <div class="modal fade" id="EditMLO{{ entry.mlo_id }}-{{table.programme_id}}" tabindex="-1" role="dialog" aria-labelledby="EditMLO{{ entry.mlo_id }}-{{table.programme_id}}Label" aria-hidden="true">
+                        <div class="modal-dialog modal-xl" role="document">
+                          <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="EditMLO{{ entry.mlo_id }}-{{table.programme_id}}Label">Edit existing MLO</h5>
+                                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                                  </button>
+                                </div>
+                                <form action="{% url 'workload_app:module' module_code %}" method="post">
                                 {% csrf_token %}
                                     <div class="modal-body">
-                                          {{ entry.slo_mapping_form.as_p }}
+                                          {{ entry.mlo_edit_form.as_p }}
                                     </div>
                                     <div class="modal-footer">
                                       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
                                       <button type="submit" class="btn btn-primary">Save changes</button>
                                     </div>
                                 </form>
-                              
-                        </div><!-- Modal content -->
-                      </div><!-- Mdal dialogue-->
-                    </div><!--whole modal--> 
-                {% endfor %}
+                                <hr>
+                                <form action="{% url 'workload_app:module' module_code %}" method="post">
+                                  {% csrf_token %}
+                                      <div class="modal-body">
+                                            {{ entry.slo_mapping_form.as_p }}
+                                      </div>
+                                      <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                                        <button type="submit" class="btn btn-primary">Save changes</button>
+                                      </div>
+                                  </form>
+                                
+                          </div><!-- Modal content -->
+                        </div><!-- Mdal dialogue-->
+                      </div><!--whole modal--> 
+                  {% endfor %}
+                {% endfor %} <!-- table looop -->
 
 
                   <!--Modal for new MLO Survey-->
