@@ -105,39 +105,92 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     prog_involved = slo.programme
     #Get all the relevan surveys
-    all_surveys_ids = []
-    for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
-        for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo = mlo_mapping.mlo):
-            all_surveys_ids.append(srv_resp.parent_survey.id)
+    # all_surveys_ids = []
+    # for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
+    #     for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo = mlo_mapping.mlo):
+    #         all_surveys_ids.append(srv_resp.parent_survey.id)
     
-    #Make the list unique
-    all_surveys_ids = list(dict.fromkeys(all_surveys_ids))#eliminate duplicates
+    # #Make the list unique
+    # all_surveys_ids = list(dict.fromkeys(all_surveys_ids))#eliminate duplicates
     
-    #Go through each survey (which contains the academic year, which in this case is the year the module was delivered)
-    mlo_survey_measures = []
-    for survey_id in all_surveys_ids:
-        survey = Survey.objects.filter(id  =survey_id).get()
-        #Look, within this survey for all responses associated with relevant MLO. 
-        #First determine the relevant MLOs by looking at the mapping
-        for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
-            mod_code = mlo_mapping.mlo.module_code
+    # #Go through each survey (which contains the academic year, which in this case is the year the module was delivered)
+    # mlo_survey_measures = []
+    # for survey_id in all_surveys_ids:
+    #     survey = Survey.objects.filter(id  =survey_id).get()
+    #     #Look, within this survey for all responses associated with relevant MLO. 
+    #     #First determine the relevant MLOs by looking at the mapping
+    #     for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
+    #         mod_code = mlo_mapping.mlo.module_code
 
-            year_of_mod_delivery = survey.opening_date.year
-            #For MLO surveys, the cohort targeted is the year of delivery.
-            if survey.cohort_targeted is not None: year_of_mod_delivery = survey.cohort_targeted.start_year
+    #         year_of_mod_delivery = survey.opening_date.year
+    #         #For MLO surveys, the cohort targeted is the year of delivery.
+    #         if survey.cohort_targeted is not None: year_of_mod_delivery = survey.cohort_targeted.start_year
             
+    #         #Note the filter for module offered in the year
+    #         module_qs = None
+    #         if (compulsory_only==1):
+    #             module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+    #                         Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+    #                         Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+    #         else:
+    #             module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+    #                         Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+    #                         Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+    #         #We look for modules offered 
+    #         for mod in module_qs:
+    #             year_of_cohort_targeted = year_of_mod_delivery - mod.students_year_of_study +1                
+    #             #We add the MLO survey measure IF 
+    #             # - MLO valid when module delivered
+    #             # - SLo valid for targeted cohort
+    #             # - the target cohort is within the requested rangess
+    #             if mlo_mapping.mlo.IsValidForYear(year_of_mod_delivery) and\
+    #                slo.IsValidForYear(year_of_cohort_targeted) and\
+    #                year_of_cohort_targeted >= start_year and year_of_cohort_targeted <= end_year:
+                    
+    #                 single_survey_mlo_measure = {
+    #                     'year' : year_of_cohort_targeted,
+    #                     'module_code' : mod_code,
+    #                     'percentage_positive' : 0,
+    #                     'strength' : mlo_mapping.strength,
+    #                     'n_questions' : 0
+    #                 }
+    #                 n_questions = 0
+    #                 perc_positive_for_survey  = 0
+    #                 for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_mlo = mlo_mapping.mlo):
+    #                     props = response.CalculateRepsonsesProprties()
+    #                     perc_positive_for_survey += props['percentage_positive']
+    #                     n_questions +=1
+    #                 if (n_questions > 0):
+    #                     single_survey_mlo_measure['n_questions'] = n_questions
+    #                     single_survey_mlo_measure['percentage_positive'] = perc_positive_for_survey/n_questions
+    #                     mlo_survey_measures.append(single_survey_mlo_measure)
+
+
+
+
+
+
+
+
+    mlo_survey_measures = []
+    for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo_id):
+        for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo = mlo_mapping.mlo):
+            year_of_mod_delivery = srv_resp.parent_survey.opening_date.year #year of mod delivery is the year the year the survey was administered
             #Note the filter for module offered in the year
             module_qs = None
             if (compulsory_only==1):
-                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
             else:
-                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+
+            
             #We look for modules offered 
             for mod in module_qs:
+                
                 year_of_cohort_targeted = year_of_mod_delivery - mod.students_year_of_study +1                
                 #We add the MLO survey measure IF 
                 # - MLO valid when module delivered
@@ -146,25 +199,23 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                 if mlo_mapping.mlo.IsValidForYear(year_of_mod_delivery) and\
                    slo.IsValidForYear(year_of_cohort_targeted) and\
                    year_of_cohort_targeted >= start_year and year_of_cohort_targeted <= end_year:
-                    
+
                     single_survey_mlo_measure = {
                         'year' : year_of_cohort_targeted,
-                        'module_code' : mod_code,
-                        'percentage_positive' : 0,
+                        'module_code' : mlo_mapping.mlo.module_code,
+                        'percentage_positive' : srv_resp.CalculateRepsonsesProprties()["percentage_positive"],
                         'strength' : mlo_mapping.strength,
-                        'n_questions' : 0
                     }
-                    n_questions = 0
-                    perc_positive_for_survey  = 0
-                    for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_mlo = mlo_mapping.mlo):
-                        props = response.CalculateRepsonsesProprties()
-                        perc_positive_for_survey += props['percentage_positive']
-                        n_questions +=1
-                    if (n_questions > 0):
-                        single_survey_mlo_measure['n_questions'] = n_questions
-                        single_survey_mlo_measure['percentage_positive'] = perc_positive_for_survey/n_questions
-                        mlo_survey_measures.append(single_survey_mlo_measure)
-    
+                    
+                    mlo_survey_measures.append(single_survey_mlo_measure)
+
+
+
+
+
+
+
+
     #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
     mlo_slo_survey_table_rows = []
 

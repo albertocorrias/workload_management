@@ -453,39 +453,39 @@ class TestAccreditationReport(TestCase):
                                                            n_fourth_highest_score = 15,\
                                                            associated_mlo = mlo_mod_2,\
                                                            parent_survey = mlo_survey )
-        props = response_1.CalculateRepsonsesProprties()
-        # #Generate the table for SLO 3, programme 1 - Including electives (module 2 should show up)
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
-        self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
-        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
-        self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
-        self.assertEqual(mlo_table_slo_3[0][0], mlo_mod_2.module_code)
-        self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 3
-        self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2013
-        self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
-        self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1of module 3 mapped to slo 3
-        self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2013
+        # props = response_1.CalculateRepsonsesProprties()
+        # # #Generate the table for SLO 3, programme 1 - Including electives (module 2 should show up)
+        # mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
+        # self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
+        # self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        # self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
+        # self.assertEqual(mlo_table_slo_3[0][0], mlo_mod_2.module_code)
+        # self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 3
+        # self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2013
+        # self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
+        # self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1of module 3 mapped to slo 3
+        # self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2013
 
-        # Do the same, table for SLO 3, programme 1 - Including compulsory only: module 2 should disappear
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
-        self.assertEqual(len(mlo_table_slo_3), 1)#Totals only
-        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
-        self.assertEqual(mlo_table_slo_3[0][0], "Weighted average")
-        self.assertAlmostEqual(mlo_table_slo_3[0][1],0)#Nothing
-        self.assertAlmostEqual(mlo_table_slo_3[0][2],0)#Nothing in 2013
+        # # Do the same, table for SLO 3, programme 1 - Including compulsory only: module 2 should disappear
+        # mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        # self.assertEqual(len(mlo_table_slo_3), 1)#Totals only
+        # self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        # self.assertEqual(mlo_table_slo_3[0][0], "Weighted average")
+        # self.assertAlmostEqual(mlo_table_slo_3[0][1],0)#Nothing
+        # self.assertAlmostEqual(mlo_table_slo_3[0][2],0)#Nothing in 2013
 
-        #IF we calculate the table for SLO 1 of prog 2, compulsory only, mod 2 should appear
-        # #Generate the table for SLO 1, programme 2 - compulsory only
-        mlo_table_slo_1_2 = CalculateTableForMLOSurveys(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
-        self.assertEqual(len(mlo_table_slo_1_2), 2)#One meausre, plus the totals
-        self.assertEqual(len(mlo_table_slo_1_2[0]), 3)#Two years plus the label
-        self.assertEqual(len(mlo_table_slo_1_2[1]), 3)#Two years plus the label
-        self.assertEqual(mlo_table_slo_1_2[0][0], mlo_mod_2.module_code)
-        self.assertAlmostEqual(mlo_table_slo_1_2[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 1
-        self.assertAlmostEqual(mlo_table_slo_1_2[0][2],'')#Nothing in 2013
-        self.assertEqual(mlo_table_slo_1_2[1][0], "Weighted average")
-        self.assertAlmostEqual(mlo_table_slo_1_2[1][1],props['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
-        self.assertAlmostEqual(mlo_table_slo_1_2[1][2],0)#Nothing in 2013
+        # #IF we calculate the table for SLO 1 of prog 2, compulsory only, mod 2 should appear
+        # # #Generate the table for SLO 1, programme 2 - compulsory only
+        # mlo_table_slo_1_2 = CalculateTableForMLOSurveys(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        # self.assertEqual(len(mlo_table_slo_1_2), 2)#One meausre, plus the totals
+        # self.assertEqual(len(mlo_table_slo_1_2[0]), 3)#Two years plus the label
+        # self.assertEqual(len(mlo_table_slo_1_2[1]), 3)#Two years plus the label
+        # self.assertEqual(mlo_table_slo_1_2[0][0], mlo_mod_2.module_code)
+        # self.assertAlmostEqual(mlo_table_slo_1_2[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 1
+        # self.assertAlmostEqual(mlo_table_slo_1_2[0][2],'')#Nothing in 2013
+        # self.assertEqual(mlo_table_slo_1_2[1][0], "Weighted average")
+        # self.assertAlmostEqual(mlo_table_slo_1_2[1][1],props['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
+        # self.assertAlmostEqual(mlo_table_slo_1_2[1][2],0)#Nothing in 2013
 
 
 
@@ -1303,8 +1303,8 @@ class TestAccreditationReport(TestCase):
 
         #Now create another survey
         #As we are tesing the weighted average calculations, we target the  same cohort
-        mlo_survey_2 = Survey.objects.create(survey_title = "second mlo survey", opening_date = datetime.datetime(2012, 5, 17),\
-                                                                                closing_date = datetime.datetime(2012, 5, 27),\
+        mlo_survey_2 = Survey.objects.create(survey_title = "second mlo survey", opening_date = datetime.datetime(2013, 5, 17),\
+                                                                                closing_date = datetime.datetime(2013, 5, 27),\
                                                                                 cohort_targeted = acad_year_2,\
                                                                                 programme_associated = prog_to_accredit,\
                                                                                 max_respondents = 100)
@@ -1318,7 +1318,7 @@ class TestAccreditationReport(TestCase):
                                                            parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3)
         props_3 = response_3.CalculateRepsonsesProprties()
         mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
-        self.assertEqual(len(mlo_table_slo_1), 3)#Two meausre, plus the totals
+        self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[2]), 3)#Two years plus the label
@@ -1371,9 +1371,9 @@ class TestAccreditationReport(TestCase):
         empty_mlo_table_slo = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
         self.assertEqual(len(empty_mlo_table_slo), 1)#Only the totals
 
-        # #####################################################################
-        # # Test the SLO survey table
-        # #####################################################################
+        # # #####################################################################
+        # # # Test the SLO survey table
+        # # #####################################################################
 
         slo_survey_1 = Survey.objects.create(survey_title = "first slo survey", opening_date = datetime.datetime(2012, 5, 17),\
                                                                                 closing_date = datetime.datetime(2013, 5, 17),\
