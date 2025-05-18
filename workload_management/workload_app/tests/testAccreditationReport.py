@@ -10,7 +10,7 @@ from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Facult
                                 ProgrammeEducationalObjective, EmploymentTrack, ServiceRole, Lecturer, TeachingAssignment, UniversityStaff
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                                         CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
-                                                        CalculateAllInforAboutOneSLO, DisplayOutcomeValidity,IsOutcomeValidForYear, CalculateAttentionScoresSummaryTable
+                                                        CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
 
 
 class TestAccreditationReport(TestCase):
@@ -72,33 +72,33 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(display_string_3, "Valid until 2015-2016")
         self.assertEqual(display_string_4, "Always")
         #Test the true/false method
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_1.id,accreditation_outcome_type.SLO,2016), False)
+        self.assertEqual(slo_1.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(slo_1.IsValidForYear(2012), True)
+        self.assertEqual(slo_1.IsValidForYear(2013), True)
+        self.assertEqual(slo_1.IsValidForYear(2014), True)
+        self.assertEqual(slo_1.IsValidForYear(2015), True)
+        self.assertEqual(slo_1.IsValidForYear(2016), False)
 
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_2.id,accreditation_outcome_type.SLO,2016), True)#Noe nd dat for this one
+        self.assertEqual(slo_2.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(slo_2.IsValidForYear(2012), True)
+        self.assertEqual(slo_2.IsValidForYear(2013), True)
+        self.assertEqual(slo_2.IsValidForYear(2014), True)
+        self.assertEqual(slo_2.IsValidForYear(2015), True)
+        self.assertEqual(slo_2.IsValidForYear(2016), True)#Noe nd dat for this one
 
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_3.id,accreditation_outcome_type.SLO,2016), False)
+        self.assertEqual(slo_3.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(slo_3.IsValidForYear(2012), True)
+        self.assertEqual(slo_3.IsValidForYear(2013), True)
+        self.assertEqual(slo_3.IsValidForYear(2014), True)
+        self.assertEqual(slo_3.IsValidForYear(2015), True)
+        self.assertEqual(slo_3.IsValidForYear(2016), False)
 
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(slo_4.id,accreditation_outcome_type.SLO,2016), True)#No end date
+        self.assertEqual(slo_4.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(slo_4.IsValidForYear(2012), True)
+        self.assertEqual(slo_4.IsValidForYear(2013), True)
+        self.assertEqual(slo_4.IsValidForYear(2014), True)
+        self.assertEqual(slo_4.IsValidForYear(2015), True)
+        self.assertEqual(slo_4.IsValidForYear(2016), True)#No end date
 
         #Valid from 2012 to 2015
         peo_1 = ProgrammeEducationalObjective.objects.create(peo_description = 'This is peo_1', \
@@ -135,33 +135,33 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(display_string_4, "Always")
 
         #Test the true/false method
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_1.id,accreditation_outcome_type.PEO,2016), False)
+        self.assertEqual(peo_1.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(peo_1.IsValidForYear(2012), True)
+        self.assertEqual(peo_1.IsValidForYear(2013), True)
+        self.assertEqual(peo_1.IsValidForYear(2014), True)
+        self.assertEqual(peo_1.IsValidForYear(2015), True)
+        self.assertEqual(peo_1.IsValidForYear(2016), False)
 
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_2.id,accreditation_outcome_type.PEO,2016), True)#Noe nd dat for this one
+        self.assertEqual(peo_2.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(peo_2.IsValidForYear(2012), True)
+        self.assertEqual(peo_2.IsValidForYear(2013), True)
+        self.assertEqual(peo_2.IsValidForYear(2014), True)
+        self.assertEqual(peo_2.IsValidForYear(2015), True)
+        self.assertEqual(peo_2.IsValidForYear(2016), True)#Noe nd dat for this one
 
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_3.id,accreditation_outcome_type.PEO,2016), False)
+        self.assertEqual(peo_3.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(peo_3.IsValidForYear(2012), True)
+        self.assertEqual(peo_3.IsValidForYear(2013), True)
+        self.assertEqual(peo_3.IsValidForYear(2014), True)
+        self.assertEqual(peo_3.IsValidForYear(2015), True)
+        self.assertEqual(peo_3.IsValidForYear(2016), False)
 
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(peo_4.id,accreditation_outcome_type.PEO,2016), True)#No end date
+        self.assertEqual(peo_4.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(peo_4.IsValidForYear(2012), True)
+        self.assertEqual(peo_4.IsValidForYear(2013), True)
+        self.assertEqual(peo_4.IsValidForYear(2014), True)
+        self.assertEqual(peo_4.IsValidForYear(2015), True)
+        self.assertEqual(peo_4.IsValidForYear(2016), True)#No end date
 
         mod_code_1 = 'AA101'
         mod_code_2 = 'AA201'
@@ -187,33 +187,33 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(display_string_4, "Always")
 
         #Test the true/false method
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_1.id,accreditation_outcome_type.MLO,2016), False)#Ends in 2015
+        self.assertEqual(mlo_1.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(mlo_1.IsValidForYear(2012), True)
+        self.assertEqual(mlo_1.IsValidForYear(2013), True)
+        self.assertEqual(mlo_1.IsValidForYear(2014), True)
+        self.assertEqual(mlo_1.IsValidForYear(2015), True)
+        self.assertEqual(mlo_1.IsValidForYear(2016), False)#Ends in 2015
 
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2011), False)#Starts in 2012
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_2.id,accreditation_outcome_type.MLO,2016), True)#No end dat for this one
+        self.assertEqual(mlo_2.IsValidForYear(2011), False)#Starts in 2012
+        self.assertEqual(mlo_2.IsValidForYear(2012), True)
+        self.assertEqual(mlo_2.IsValidForYear(2013), True)
+        self.assertEqual(mlo_2.IsValidForYear(2014), True)
+        self.assertEqual(mlo_2.IsValidForYear(2015), True)
+        self.assertEqual(mlo_2.IsValidForYear(2016), True)#No end dat for this one
 
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_3.id,accreditation_outcome_type.MLO,2016), False)#ends in 2015
+        self.assertEqual(mlo_3.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(mlo_3.IsValidForYear(2012), True)
+        self.assertEqual(mlo_3.IsValidForYear(2013), True)
+        self.assertEqual(mlo_3.IsValidForYear(2014), True)
+        self.assertEqual(mlo_3.IsValidForYear(2015), True)
+        self.assertEqual(mlo_3.IsValidForYear(2016), False)#ends in 2015
 
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2011), True)#No start date for this one
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2012), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2013), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2014), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2015), True)
-        self.assertEqual(IsOutcomeValidForYear(mlo_4.id,accreditation_outcome_type.MLO,2016), True)#No end date
+        self.assertEqual(mlo_4.IsValidForYear(2011), True)#No start date for this one
+        self.assertEqual(mlo_4.IsValidForYear(2012), True)
+        self.assertEqual(mlo_4.IsValidForYear(2013), True)
+        self.assertEqual(mlo_4.IsValidForYear(2014), True)
+        self.assertEqual(mlo_4.IsValidForYear(2015), True)
+        self.assertEqual(mlo_4.IsValidForYear(2016), True)#No end date
 
     def test_report_simple(self):
         self.setup_user()

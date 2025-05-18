@@ -273,6 +273,23 @@ class StudentLearningOutcome(models.Model):
     class Meta:
         ordering = ['letter_associated']
 
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.cohort_valid_from is None):
+            if (self.cohort_valid_to is None):
+                return True
+            if (self.cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.cohort_valid_to is None):#Note None-None case is above...no need here
+            if (self.cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.cohort_valid_from.start_year <= year and self.cohort_valid_to.start_year >= year):
+            return True
+        return False
+
 class ModuleLearningOutcome(models.Model):
     #The text of the MLO
     mlo_description = models.CharField(max_length=3000)
@@ -290,6 +307,23 @@ class ModuleLearningOutcome(models.Model):
 
     class Meta:
         ordering = ['mlo_description']
+
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.mlo_valid_from is None):
+            if (self.mlo_valid_to is None):
+                return True
+            if (self.mlo_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.mlo_valid_to is None):#Note None-None case is above...no need here
+            if (self.mlo_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.mlo_valid_from.start_year <= year and self.mlo_valid_to.start_year >= year):
+            return True
+        return False
 
 #A model to capture the mapping between MLO and SLO
 class MLOSLOMapping(models.Model):
@@ -323,6 +357,23 @@ class ProgrammeEducationalObjective(models.Model):
 
     class Meta:
         ordering = ['letter_associated']
+    
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.peo_cohort_valid_from is None):
+            if (self.peo_cohort_valid_to is None):
+                return True
+            if (self.peo_cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.peo_cohort_valid_to is None):#Note None-None case is above...no need here
+            if (self.peo_cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.peo_cohort_valid_from.start_year <= year and self.peo_cohort_valid_to.start_year >= year):
+            return True
+        return False
 
 #A model to capture the mapping between a PEO and an SLO. 
 class PEOSLOMapping(models.Model):

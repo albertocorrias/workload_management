@@ -49,56 +49,6 @@ def DisplayOutcomeValidity(outcome_id, outcome_type):
         ret = "Valid from " + start + " until " + end
     return ret
 
-#Little convenience method to figure out whether an outcome is valid for that year.
-#Works for MLO, PEO and SLO
-# outcome_id is the Id of the ourcome in the DB
-# outcome_type is the type of outcome (accreditation_outcome_type enum class)
-# year is a number of the start year of the academic year under consideration
-def IsOutcomeValidForYear(outcome_id,outcome_type,year):
-    if (outcome_type == accreditation_outcome_type.SLO):
-        slo = StudentLearningOutcome.objects.filter(id = outcome_id).get()
-        if (slo.cohort_valid_from is None):
-            if (slo.cohort_valid_to is None):
-                return True
-            if (slo.cohort_valid_to.start_year >= year):
-                return True
-            return False
-        if (slo.cohort_valid_to is None):#Note None-None case is above...no need here
-            if (slo.cohort_valid_from.start_year <= year):
-                return True
-            return False
-        if (slo.cohort_valid_from.start_year <= year and slo.cohort_valid_to.start_year >= year):
-            return True
-    if (outcome_type == accreditation_outcome_type.PEO):
-        peo = ProgrammeEducationalObjective.objects.filter(id = outcome_id).get()
-        if (peo.peo_cohort_valid_from is None):
-            if (peo.peo_cohort_valid_to is None):
-                return True
-            if (peo.peo_cohort_valid_to.start_year >= year):
-                return True
-            return False
-        if (peo.peo_cohort_valid_to is None):#Note None-None case is above...no need here
-            if (peo.peo_cohort_valid_from.start_year <= year):
-                return True
-            return False
-        if (peo.peo_cohort_valid_from.start_year <= year and peo.peo_cohort_valid_to.start_year >= year):
-            return True
-    if (outcome_type == accreditation_outcome_type.MLO):
-        mlo = ModuleLearningOutcome.objects.filter(id = outcome_id).get()
-        if (mlo.mlo_valid_from is None):
-            if (mlo.mlo_valid_to is None):
-                return True
-            if (mlo.mlo_valid_to.start_year >= year):
-                return True
-            return False
-        if (mlo.mlo_valid_to is None):#Note None-None case is above...no need here
-            if (mlo.mlo_valid_from.start_year <= year):
-                return True
-            return False
-        if (mlo.mlo_valid_from.start_year <= year and mlo.mlo_valid_to.start_year >= year):
-            return True
-    return False
-
 #Calculate a table with surveys for a given SLO within a given period for HTML visualization.
 #It returns a list of dictionaries, each intended as row in the table
 #Each dictionary is a survey, with info for
@@ -114,7 +64,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
     for survey in Survey.objects.filter(cohort_targeted__start_year__gte=start_year).filter(cohort_targeted__start_year__lte=end_year):
         year_of_cohort_targeted = survey.opening_date.year
         if survey.cohort_targeted is not None: year_of_cohort_targeted = survey.cohort_targeted.start_year
-        if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,year_of_cohort_targeted)):
+        if (slo.IsValidForYear(year_of_cohort_targeted)):
             single_slo_survey_measure = {
                 'date' : survey.opening_date,
                 'survey' : survey.survey_title,
@@ -193,8 +143,8 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                 # - MLO valid when module delivered
                 # - SLo valid for targeted cohort
                 # - the target cohort is within the requested rangess
-                if IsOutcomeValidForYear(mlo_mapping.mlo.id, accreditation_outcome_type.MLO,year_of_mod_delivery) and\
-                   IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO, year_of_cohort_targeted) and\
+                if mlo_mapping.mlo.IsValidForYear(year_of_mod_delivery) and\
+                   slo.IsValidForYear(year_of_cohort_targeted) and\
                    year_of_cohort_targeted >= start_year and year_of_cohort_targeted <= end_year:
                     
                     single_survey_mlo_measure = {
@@ -293,8 +243,8 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
                 #Before adding, check validity of the MLO for the year when the class was delivered
                 #and of the SLO for the targeted cohort
                 #and the target cohort is within the requested range
-                if (IsOutcomeValidForYear(mlo_mapping.mlo.id,accreditation_outcome_type.MLO,year_of_measurement) and 
-                    IsOutcomeValidForYear(slo.id, accreditation_outcome_type.SLO, target_cohort) and
+                if (mlo_mapping.mlo.IsValidForYear(year_of_measurement) and 
+                    slo.IsValidForYear(target_cohort) and
                     target_cohort >= start_year and target_cohort <= end_year):
                     single_mlo_direct_measure= {
                         'module_code' : mod_code,
@@ -418,8 +368,8 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only):
                         year_offered = mod.scenario_ref.academic_year.start_year
                         year_of_study = mod.students_year_of_study
                         target_cohort = year_offered - year_of_study + 1  #Figure out targeted cohort
-                        if (cohort_year == target_cohort and IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,year_offered) \
-                            and IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,target_cohort)):
+                        if (cohort_year == target_cohort and mlo.IsValidForYear(year_offered) \
+                            and slo.IsValidForYear(target_cohort)):
                             total_mapping_for_year += mapping.strength
                             if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
                                 numerical_mapping_for_year = mapping.strength
@@ -515,7 +465,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year,compuls
             slo_ok = False
             #Check whether the SLO is valid in ANY year
             for yr in range(start_year,end_year+1):
-                if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,yr)):
+                if (slo.IsValidForYear(yr)):
                     slo_ok = True
                     break
             
@@ -527,7 +477,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year,compuls
                     mlo_ok = False
                     #Check whether the MLO is valid in ANY year
                     for yr in range(start_year,end_year+1):
-                        if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,yr)):
+                        if (mlo.IsValidForYear(yr)):
                             mlo_ok = True
                             break
                     if (mlo_ok):
@@ -554,7 +504,7 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year,compuls
         slo_ok = False
         #Check whether the SLO is valid in ANY year
         for yr in range(start_year,end_year+1):
-            if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,yr)):
+            if (slo.IsValidForYear(yr)):
                 slo_ok = True
                 break
         if (slo_ok):
@@ -603,13 +553,13 @@ def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year,compu
         year_index=0
         for matric_year in range(start_year,end_year+1):
 
-            if (IsOutcomeValidForYear(slo.id,accreditation_outcome_type.SLO,matric_year)):
+            if (slo.IsValidForYear(matric_year)):
                 mlo_direct_attention_score = 0
                 mlo_survey_attention_score = 0
                 slo_survey_attention_score = 0
                 for mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
                     mlo = mapping.mlo
-                    if (IsOutcomeValidForYear(mlo.id,accreditation_outcome_type.MLO,matric_year)):
+                    if (mlo.IsValidForYear(matric_year)):
                         for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id) |
                                         MLOPerformanceMeasure.objects.filter(secondary_associated_mlo__id = mlo.id) |
                                         MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo__id = mlo.id)):
