@@ -302,7 +302,12 @@ class TestUserPermissions(TestCase):
                                                                         survey_type = Survey.SurveyType.MLO,\
                                                                         max_respondents = 100)
         
-
+        #####
+        # Check that non-logged in user get properly handled
+        #####
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 200) #No issues, it should load up error page
+        self.assertContains(response,'Access forbidden')
     
         ####################
         ##SUPER  USER ACCESS
@@ -337,7 +342,7 @@ class TestUserPermissions(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(response.context["programme_name"], "new_prog")
         #accreditation report page access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Lecturer page access 
@@ -428,11 +433,11 @@ class TestUserPermissions(TestCase):
         self.assertEqual(('error_message' in response.context), True)       
 
         #accreditation report page access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(('error_message' in response.context), True)   
         
         #Lecturer page access 
@@ -533,11 +538,11 @@ class TestUserPermissions(TestCase):
         self.assertEqual(('error_message' in response.context), True)       
 
         #accreditation report page access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(('error_message' in response.context), True)   
         
         #Lecturer page access 
@@ -639,11 +644,11 @@ class TestUserPermissions(TestCase):
         self.assertEqual(('error_message' in response.context), True)       
 
         #accreditation report page access - SHOULD BE NO ACCESS
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(('error_message' in response.context), True)
         #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
-        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021}))
+        response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(('error_message' in response.context), True)   
         

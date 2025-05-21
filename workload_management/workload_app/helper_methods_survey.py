@@ -15,7 +15,8 @@ def CalculateSurveyDetails(survey_id):
         n_recipients = survey.max_respondents
         for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
             props = response.CalculateRepsonsesProprties()
-            av_response_rate += props['all_respondents']/n_recipients
+            if n_recipients >0:
+                av_response_rate += props['all_respondents']/n_recipients
             how_many_questions = how_many_questions + 1
         if (how_many_questions > 0 ):
             av_response_rate = 100*av_response_rate/how_many_questions

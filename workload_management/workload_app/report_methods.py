@@ -28,7 +28,7 @@ def GetLastNYears(num_years):
 # First list: total hours for each of the last five years
 # tFTE of the prof for each of the last five years
 def CalculateProfessorIndividualWorkload(prof_name):    
-    ret = [];
+    ret = []
     time_info = GetLastNYears(5)
     years = time_info["years"]
     all_mod_codes = []

@@ -42,7 +42,7 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
-
+from .helper_methods_demo import populate_database
 
 def post_login_landing(request):
     myerror = "error"
@@ -253,6 +253,7 @@ def school_page(request,faculty_id):
 def workloads_index(request):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
+    #populate_database()#-Used to generate DB for demo leave commented out
     if request.user.is_authenticated == False or CanUserAdminUniversity(request.user.id, is_super_user = request.user.is_superuser)==False:
         template = loader.get_template('workload_app/errors_page.html')
         context = {
@@ -282,7 +283,7 @@ def workloads_index(request):
     if (Academicyear.objects.all().count() == 0):
         for year in range(2000, 2050):
             Academicyear.objects.create(start_year = year)
-    
+
     overall_table = CalculateWorkloadsIndexTable()
 
     #Scenario forms
@@ -570,17 +571,27 @@ def module(request, module_code):
                 'user_homepage' : user_homepage
         }
         return HttpResponse(template.render(context, request))
-    #First figure out the programme name this module may belong to
-    #This is useful in multiple parts below
-    prog = None
-    programme_name = ""
-    programme_id = None
+    
+    #Figure out the programme(s) this module may belong to
+    all_prog_ids = [None,None,None]#3 because we support up to 3 proghrammes for now
+    all_prog_names = [None,None,None]
     for mod in Module.objects.filter(module_code=module_code):
         if (mod.primary_programme is not None):
-            prog = mod.primary_programme
-            programme_name = prog.programme_name
-            programme_id = prog.id
-            break
+            all_prog_ids[0] = mod.primary_programme.id
+            all_prog_names[0] = mod.primary_programme.programme_name
+        if (mod.secondary_programme is not None):
+            all_prog_ids[1] = mod.secondary_programme.id
+            all_prog_names[1] = mod.secondary_programme.programme_name
+        if (mod.tertiary_programme is not None):
+            all_prog_ids[2] = mod.tertiary_programme.id
+            all_prog_names = mod.tertiary_programme.programme_name
+    #Determine primary programme ID or- if None - the highest level programme ID
+    for i in range(0,len(all_prog_ids)):
+        if (all_prog_ids[i] is not None):
+            primary_prog  = ProgrammeOffered.objects.filter(id = all_prog_ids[i]).get()
+            primary_programme_id = all_prog_ids[i]
+            break #exit at the first. Note we put primary, secondary and tertiary in order at loop above
+
     if request.method =='POST':
         mlo_form = MLOForm(request.POST)
         if (mlo_form.is_valid()):
@@ -612,15 +623,16 @@ def module(request, module_code):
             comments = mlo_survey_form.cleaned_data['comments']
                         
             #Point of creation of MLO survey. We look at the programme's policy to determine the survey labels
-            #Note: the line below will take care of creatingd efaults, if needed
-            likert_scale = DetermineSurveyLabelsForProgramme(programme_id)["mlo_survey_labels_object"]
+            #Such policy will follow the primary programme
+            #Note: the line below will take care of creating defaults, if needed
+            likert_scale = DetermineSurveyLabelsForProgramme(primary_programme_id)["mlo_survey_labels_object"]
             #first we create a survey object
             new_survey = Survey.objects.create(survey_title = survey_name, opening_date = start_date, closing_date = end_date,\
                                                cohort_targeted = supplied_cohort_targeted,\
                                                likert_labels = likert_scale,\
                                                max_respondents = n_invited, comments = comments,\
                                                survey_type = Survey.SurveyType.MLO,\
-                                               programme_associated = prog)
+                                               programme_associated = primary_prog)
             new_survey.save()
 
         
@@ -654,13 +666,17 @@ def module(request, module_code):
         if (remove_mlo_measure_form.is_valid()):
             MLOPerformanceMeasure.objects.filter(id=request.POST.get('Select_MLO_measure_to_remove')).delete()
 
-        if (prog is not None):
-            mlo_slo_mapping_form = MLOSLOMappingForm(request.POST, prog_id=prog.id)
-            if mlo_slo_mapping_form.is_valid():
-                for slo in StudentLearningOutcome.objects.filter(programme__id = prog.id):
-                    supplied_strength = mlo_slo_mapping_form.cleaned_data ["mlo_slo_mapping_strength"+str(slo.id)]
-                    supplied_mlo_id = mlo_slo_mapping_form.cleaned_data["mlo_id"]
-                    MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=supplied_mlo_id).update(strength = supplied_strength)
+
+        for prog_id in all_prog_ids:
+            if (prog_id is not None):
+                    mlo_slo_mapping_form = MLOSLOMappingForm(request.POST, prog_id=prog_id)
+                    if mlo_slo_mapping_form.is_valid():
+                        supplied_slo_id = mlo_slo_mapping_form.cleaned_data["slo_id"]
+                        if StudentLearningOutcome.objects.filter(programme__id = prog_id).filter(id=supplied_slo_id).count()>0:
+                            for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
+                                supplied_strength = mlo_slo_mapping_form.cleaned_data ["mlo_slo_mapping_strength"+str(slo.id)]
+                                supplied_mlo_id = mlo_slo_mapping_form.cleaned_data["mlo_id_for_slo_mapping"]
+                                MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=supplied_mlo_id).update(strength = supplied_strength)
 
         corr_action_form = CorrectiveActionForm(request.POST, module_code=module_code)
         if(corr_action_form.is_valid()):
@@ -697,49 +713,60 @@ def module(request, module_code):
         module_table = CalculateSingleModuleInformationTable(module_name_qs.first().module_code)
         new_mlo_form = MLOForm(initial = {'mod_code' : module_code, 'fresh_record' : True})
         remove_mlo_form = RemoveMLOForm(module_code = module_code)
-
-        mlo_list = []#List of dictionaries
-        for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
-            mlo_edit_form = MLOForm(initial = {'fresh_rescord' : False, 'mlo_id' : mlo.id,\
-                                                'mlo_description' : mlo.mlo_description,\
-                                                'mlo_short_description' : mlo.mlo_short_description,\
-                                                'mlo_valid_from': mlo.mlo_valid_from,\
-                                                'mlo_valid_to'  :mlo.mlo_valid_to})
-            mlo_item = {
-                'mlo_desc' : mlo.mlo_description,
-                'mlo_short_desc' : mlo.mlo_short_description,
-                'mlo_edit_form' : mlo_edit_form,
-                'mlo_validity' : DisplayOutcomeValidity(mlo.id, accreditation_outcome_type.MLO),
-                'mlo_id' : mlo.id,
-                'slo_mapping' : [],
-                'slo_mapping_form' : None
-            }
-            if (prog is not None):
-                mlo_item["slo_mapping_form"] = MLOSLOMappingForm(prog_id = prog.id, initial = {"mlo_id" : mlo.id} )
-                for slo in StudentLearningOutcome.objects.filter(programme__id = prog.id):
-                    strength = 0
-                    mapping_qs = MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=mlo.id)
-                    if (mapping_qs.count()==1):# if it is there...
-                        strength = mapping_qs.get().strength
-                    else:#otherwise create it the object
-                        MLOSLOMapping.objects.create(slo=slo, mlo=mlo,strength=strength)
-                    
-                    icon = DetermineIconBasedOnStrength(strength)
-                    slo_mapping_item = {
-                        'slo_description' : slo.slo_description,
-                        'slo_short_description' : slo.slo_short_description,
-                        'slo_letter' : slo.letter_associated,
-                        'mapping_strength' : strength,
-                        'mapping_icon' : icon
+        all_mlo_slo_tables = []#One item per programme
+        for prog_id in all_prog_ids:
+            if (prog_id is not None):
+                table_item = {
+                    "slo_list" : None,
+                    "mlo_list" : None
+                }
+                mlo_list = []#List of dictionaries
+                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+                    mlo_edit_form = MLOForm(initial = {'fresh_rescord' : False, 'mlo_id' : mlo.id,\
+                                                        'mlo_description' : mlo.mlo_description,\
+                                                        'mlo_short_description' : mlo.mlo_short_description,\
+                                                        'mlo_valid_from': mlo.mlo_valid_from,\
+                                                        'mlo_valid_to'  :mlo.mlo_valid_to})
+                    mlo_item = {
+                        'mlo_desc' : mlo.mlo_description,
+                        'mlo_short_desc' : mlo.mlo_short_description,
+                        'mlo_edit_form' : mlo_edit_form,
+                        'mlo_validity' : DisplayOutcomeValidity(mlo.id, accreditation_outcome_type.MLO),
+                        'mlo_id' : mlo.id,
+                        'slo_mapping' : [],
+                        'slo_mapping_form' : None
                     }
-                    mlo_item["slo_mapping"].append(slo_mapping_item)
-                    mlo_item["slo_mapping_form"]["mlo_slo_mapping_strength"+str(slo.id)].initial = strength
-            mlo_list.append(mlo_item)
-        #Since the slo list is contained in all MLO items, we extract one, if any, for easy display in the table
-        slo_list = []
-        for item in mlo_list:
-            slo_list = item["slo_mapping"]
-            break #Only once needed to extract the list, if any
+
+                    mlo_item["slo_mapping_form"] = MLOSLOMappingForm(prog_id = prog_id, initial = {"mlo_id_for_slo_mapping" : mlo.id} )
+                    for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
+                        strength = 0
+                        mapping_qs = MLOSLOMapping.objects.filter(slo__id=slo.id).filter(mlo__id=mlo.id)
+                        if (mapping_qs.count()==1):# if it is there...
+                            strength = mapping_qs.get().strength
+                        if (mapping_qs.count()==0):#Not there, we create
+                            MLOSLOMapping.objects.create(slo=slo,mlo=mlo,strength=strength)
+            
+                        icon = DetermineIconBasedOnStrength(strength)
+                        slo_mapping_item = {
+                            'slo_description' : slo.slo_description,
+                            'slo_short_description' : slo.slo_short_description,
+                            'slo_letter' : slo.letter_associated,
+                            'mapping_strength' : strength,
+                            'mapping_icon' : icon
+                        }
+                        mlo_item["slo_mapping"].append(slo_mapping_item)
+                        mlo_item["slo_mapping_form"]["mlo_slo_mapping_strength"+str(slo.id)].initial = strength
+                    mlo_list.append(mlo_item)
+                #Since the slo list is contained in all MLO items, we extract one, if any, for easy display in the table
+                slo_list = []
+                for item in mlo_list:
+                    slo_list = item["slo_mapping"]
+                    break #Only once needed to extract the list, if any
+                table_item["slo_list"] = slo_list
+                table_item["mlo_list"] = mlo_list
+                table_item["programme_name"] = ProgrammeOffered.objects.filter(id = prog_id).get().programme_name
+                table_item["programme_id"] = prog_id
+                all_mlo_slo_tables.append(table_item)
         
         ####
         # MLO survey forms
@@ -753,11 +780,9 @@ def module(request, module_code):
         #########################
         #Find all surveys
         surveys_ids = []
-        for srv in Survey.objects.filter(survey_type=Survey.SurveyType.MLO):
-            prog = srv.programme_associated
-            for mod in Module.objects.filter(module_code = module_code).filter(primary_programme = prog)|\
-                       Module.objects.filter(module_code = module_code).filter(secondary_programme = prog):        
-                surveys_ids.append(srv.id)
+        for mlo in ModuleLearningOutcome.objects.filter(module_code = module_code):
+            for response in SurveyQuestionResponse.objects.filter(associated_mlo=mlo):     
+                surveys_ids.append(response.parent_survey.id)
                 
         #Remove duplicates
         surveys_ids = list(dict.fromkeys(surveys_ids))
@@ -842,14 +867,12 @@ def module(request, module_code):
                     'module_table' : module_table,
                     'new_mlo_form' : new_mlo_form,
                     'remove_mlo_form' : remove_mlo_form,
-                    'mlo_list' : mlo_list,
-                    'slo_list' : slo_list,
+                    'all_mlo_slo_tables' : all_mlo_slo_tables,
+                    #'mlo_list' : mlo_list,
+                    #'slo_list' : slo_list,
                     'mlo_survey_table' : survey_table,
-                    'programme_name' : programme_name,
-                    'programme_id' : programme_id,
                     'mlo_survey_form' : mlo_survey_form,
                     'remove_mlo_survey_form' : remove_mlo_survey_form,
-                    'colspan_param' : len(mlo_list)*2,
                     'mlo_performance_measure_form' : mlo_performance_measure_form,
                     'remove_mlo_perfroamnce_measure_form' : remove_mlo_perfroamnce_measure_form,
                     'mlo_measure_table' : mlo_measure_table,
@@ -1010,8 +1033,9 @@ def accreditation(request,programme_id):
         if select_report_years_form.is_valid():
             start  = select_report_years_form.cleaned_data["academic_year_start"].start_year
             end  = select_report_years_form.cleaned_data["academic_year_end"].start_year
+            compulsory_only = select_report_years_form.cleaned_data["only_core"]
             return HttpResponseRedirect(reverse('workload_app:accreditation_report', 
-            kwargs={'programme_id' : programme_id, 'start_year' : start, 'end_year': end}));#Trigger a re-direct to full report page
+            kwargs={'programme_id' : programme_id, 'start_year' : start, 'end_year': end,'compulsory_only': compulsory_only}));#Trigger a re-direct to full report page
 
 
         edit_survey_label_form = EditSurveySettingsForm(request.POST)
@@ -1234,7 +1258,7 @@ def accreditation(request,programme_id):
         }
         return HttpResponse(template.render(context, request))
 
-def accreditation_report(request,programme_id, start_year,end_year):
+def accreditation_report(request,programme_id, start_year,end_year,compulsory_only):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
     programme = ProgrammeOffered.objects.filter(id = programme_id).get()
@@ -1250,15 +1274,15 @@ def accreditation_report(request,programme_id, start_year,end_year):
     
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
-        big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year)
-        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year)
+        big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
+        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
 
         slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
         slo_identifiers = []
         all_slo_data_for_plot = []
         all_slo_ids = []
         for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by("letter_associated"):
-            all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year) 
+            all_slo_info = CalculateAllInforAboutOneSLO(slo.id,start_year,end_year,compulsory_only=compulsory_only) 
             slo_survey_measures = all_slo_info["slo_surveys"] #A list of all the slo survey measures. This one is ready for HTML
             mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
             mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
@@ -1862,7 +1886,7 @@ def manage_scenario(request):
             #This is from the workloads index page. We capture the required dept
             supplied_dept_name = form.cleaned_data['dept']
             supplied_dept = Department.objects.filter(department_name = supplied_dept_name)
-            #Call the helpert o create what's needed
+            #Call the helper to create what's needed
             HandleScenarioForm(form,supplied_dept.get().id)
         else:#Invalid data, send to error page
             template = loader.get_template('workload_app/errors_page.html')
@@ -1896,6 +1920,7 @@ def add_professor(request, workloadscenario_id):
             supplied_prof_appointment = request.POST['fraction_appointment']
             supplied_employment_track_id = request.POST['employment_track']
             supplied_service_role_id = request.POST['service_role']
+            supplied_external = request.POST['is_external']
             
             active_scen = WorkloadScenario.objects.filter(id=workloadscenario_id).get()
             empl_track = EmploymentTrack.objects.filter(id = supplied_employment_track_id).get()
@@ -1904,7 +1929,8 @@ def add_professor(request, workloadscenario_id):
                 Lecturer.objects.filter(name=supplied_prof_name).filter(workload_scenario=active_scen).update(name=supplied_prof_name,\
                                                                                                 fraction_appointment=float(supplied_prof_appointment), \
                                                                                                 employment_track = empl_track,
-                                                                                                service_role = serv_role)
+                                                                                                service_role = serv_role,
+                                                                                                is_external = supplied_external)
             else :
                 if (Lecturer.objects.filter(name = supplied_prof_name).filter(workload_scenario__id = active_scen.id).exists()):
                     template = loader.get_template('workload_app/errors_page.html')
@@ -1916,7 +1942,8 @@ def add_professor(request, workloadscenario_id):
                     Lecturer.objects.create(name=supplied_prof_name,fraction_appointment=float(supplied_prof_appointment), \
                                                                                         workload_scenario = active_scen,\
                                                                                         employment_track = empl_track,
-                                                                                        service_role = serv_role)
+                                                                                        service_role = serv_role,
+                                                                                        is_external = supplied_external)
         else:
             template = loader.get_template('workload_app/errors_page.html')
             context = {
@@ -1967,6 +1994,9 @@ def add_module(request,workloadscenario_id):
             supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
             supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
             supplied_secondary_programme_belongs_to = form.cleaned_data['secondary_programme']
+            supplied_tertirary_programme_belongs_to = form.cleaned_data['tertiary_programme']
+            supplied_compulsory_in_secondary_programme = form.cleaned_data['compulsory_in_secondary_programme']
+            supplied_compulsory_in_tertiary_programme = form.cleaned_data['compulsory_in_tertiary_programme']
             supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
             supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
 
@@ -1988,6 +2018,9 @@ def add_module(request,workloadscenario_id):
                                          compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                          students_year_of_study = supplied_students_year_of_study,\
                                          secondary_programme = supplied_secondary_programme_belongs_to,\
+                                         tertiary_programme = supplied_tertirary_programme_belongs_to,\
+                                         compulsory_in_secondary_programme = supplied_compulsory_in_secondary_programme,\
+                                         compulsory_in_tertiary_programme = supplied_compulsory_in_tertiary_programme,\
                                          sub_programme = supplied_sub_programme_belongs_to,\
                                          secondary_sub_programme = supplied_secondary_sub_programme_belongs_to);                  
                                 
@@ -2013,6 +2046,9 @@ def add_module(request,workloadscenario_id):
                                                 compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                                 students_year_of_study = supplied_students_year_of_study,\
                                                 secondary_programme = supplied_secondary_programme_belongs_to,\
+                                                tertiary_programme = supplied_tertirary_programme_belongs_to,\
+                                                compulsory_in_secondary_programme = supplied_compulsory_in_secondary_programme,\
+                                                compulsory_in_tertiary_programme = supplied_compulsory_in_tertiary_programme,\
                                                 sub_programme = supplied_sub_programme_belongs_to,\
                                                 secondary_sub_programme = supplied_secondary_sub_programme_belongs_to)
                     new_mod.save()

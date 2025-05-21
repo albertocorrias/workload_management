@@ -24,16 +24,21 @@ class ProfessorForm(ModelForm):
     """
     
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
-    
+
     class Meta:
+        YES = True
+        NO = False
+        YES_NO_CHOICES = [(NO,'No'),(YES,'Yes')]
         model = Lecturer
-        fields = ['name', 'fraction_appointment', 'employment_track', 'service_role']
+        fields = ['name', 'fraction_appointment', 'employment_track', 'service_role', 'is_external']
         labels = {'name' : _('Name'),
                   'fraction_appointment' : _('Fractional appointment'),
                   'employment_track' : _('Select employment track'),
-                  'service_role' : _('Select service role')}
+                  'service_role' : _('Select service role'),
+                  'is_external' : _('Is this staff outside the Department?')}
         widgets = {'employment_track' : forms.Select(choices=EmploymentTrack.objects.all()),
-                   'service_role' : forms.Select(choices=ServiceRole.objects.all())}
+                   'service_role' : forms.Select(choices=ServiceRole.objects.all()),
+                   'is_external' : forms.Select(choices=YES_NO_CHOICES)}
         
     def __init__(self, *args, **kwargs):
         super(ProfessorForm, self).__init__(*args, **kwargs)
@@ -41,6 +46,8 @@ class ProfessorForm(ModelForm):
         if 'fresh_record' in self.initial: #Must check, otherwise a KeyError occurs (I suspect this is run a couple of times upon post)
             if (self.initial["fresh_record"] == False):
                 self.fields['name'].widget = forms.HiddenInput()#Hides the name alltogether
+        self.fields['is_external'].initial = self.Meta.NO
+
      
 class RemoveProfessorForm(forms.Form):
     """
@@ -82,17 +89,22 @@ class ModuleForm(ModelForm):
     
     class Meta:
         model = Module
-        fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'primary_programme',
-                  'compulsory_in_primary_programme','students_year_of_study','secondary_programme','sub_programme', 'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
+        fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'students_year_of_study', 'primary_programme',
+                  'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
+                  'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
+                  'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
         labels = {'module_code' : _('Module Code'),
                   'module_title' : _('Module title'),
                   'module_type' : _('Type of module'),
                   'semester_offered' : _('Semester offered'),
+                  'students_year_of_study': _('Year of study of students taking this module'),
                   'primary_programme' : _('Primary  programme the module is part of'),
                   'compulsory_in_primary_programme': _('Compulsory in primary programme?'),
-                  'students_year_of_study': _('Year of study of students taking this module'),
-                  'secondary_programme' : _('Another programme the module is part of'),
-                  'sub_programme' : _('Sub-programme this module is part of'),
+                  'secondary_programme' : _('A second programme the module may be part of'),
+                  'compulsory_in_secondary_programme' : _('Compulsory in this second programme?'),
+                  'tertiary_programme' : _('A third  programme the module may be part of'),
+                  'compulsory_in_tertiary_programme' : _('Compulsory in this third programme?'),
+                  'sub_programme' : _('Sub-programme this module may be part of'),
                   'secondary_sub_programme' : _('Another sub-programme this module is also part of'),
                   'number_of_tutorial_groups' : _('Number of tutorial groups'),
                   'total_hours' : _('Total hours')
@@ -100,7 +112,9 @@ class ModuleForm(ModelForm):
 
         widgets = {
                    'semester_offered' : forms.Select(choices=Module.SEMESTER_OFFERED),
-                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE)
+                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
+                   'compulsory_in_secondary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
+                   'compulsory_in_tertiary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
                    }
         
     def __init__(self, *args, **kwargs):
@@ -108,14 +122,18 @@ class ModuleForm(ModelForm):
         super(ModuleForm, self).__init__(*args, **kwargs)
         self.fields['primary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['secondary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
+        self.fields['tertiary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['module_type'] = forms.ModelChoiceField(queryset=ModuleType.objects.filter(department__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
         self.fields['compulsory_in_primary_programme'].required=False
+        self.fields['compulsory_in_secondary_programme'].required=False
+        self.fields['compulsory_in_tertiary_programme'].required=False
         self.fields['students_year_of_study'].required=False
         self.fields['secondary_programme'].required = False
+        self.fields['tertiary_programme'].required = False
         self.fields['sub_programme'].required = False
         self.fields['secondary_sub_programme'].required = False
         #No editing of module codes of existing modules
@@ -554,11 +572,12 @@ class MLOSLOMappingForm(forms.Form):
     def __init__(self, *args, **kwargs):
         prog_id = kwargs.pop('prog_id')
         super(MLOSLOMappingForm, self).__init__(*args, **kwargs)
-        self.fields['mlo_id'] = forms.IntegerField(required=False, widget=forms.HiddenInput())
+        self.fields['mlo_id_for_slo_mapping'] = forms.IntegerField(required=True, widget=forms.HiddenInput())
         
         for slo in StudentLearningOutcome.objects.filter(programme__id = prog_id):
             self.fields['mlo_slo_mapping_strength'+str(slo.id)] = forms.IntegerField(min_value=0, max_value=3, label='Enter mapping strength for SLO: ' + slo.slo_description)
-            self.fields['slo_id'] = forms.IntegerField(initial=slo.id, required=False, widget=forms.HiddenInput())
+            self.fields['slo_id'] = forms.IntegerField(initial=slo.id, required=False, widget=forms.HiddenInput())#we store the last....
+    
 
 class AddMLOSurveyForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -882,6 +901,10 @@ class SelectAcademicYearForm(forms.Form):
     select_academic_year = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
 
 class SelectAccreditationReportForm(forms.Form):
+    YES = 1
+    NO = 0
+    YES_NO_CHOICES = [(NO,'No'),(YES,'Yes')]
     this_year = datetime.datetime.now().year
     academic_year_start = forms.ModelChoiceField(label = "From cohort ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
     academic_year_end = forms.ModelChoiceField(label = "To cohort (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    only_core = forms.ChoiceField(label="Include only compulsory modules?", choices=YES_NO_CHOICES)
