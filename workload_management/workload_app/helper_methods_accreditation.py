@@ -313,33 +313,31 @@ def DetermineIconBasedOnStrength(strength):
 
 #This function generates the MLO-SLO table for HTML viewing
 #Referred to a single SLO from start_year to end_year
-#Each row is a module code as long as it is offered in the given period.
+#Each row is a module code as long as it is offered in the given period for the cohort matriculated.
 #It returns a list, where each item is inteded as a table row (a dictionary)
 # one column for each year
 # - module code (unique)
 # - Maximal numerical mapping strength of the MLO - A list with same length as above
 # - The icons to be visualized based on strengths - A list with same length as above
-# - The number of MLO that each moduel contributes to the SLO that year
+# - The number of MLO that each module contributes to the SLO that year
 def CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only):
-    slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
-    prog_involved = slo.programme
+
     mlo_mappings_table_rows = []# A list of table rows with mappings
     all_mods_involved = []
-
     #We look at all the mapped measures
-    for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo).order_by('mlo__module_code'):
+    for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo_id).order_by('mlo__module_code'):
         module_code_to_be_added = mlo_mapping.mlo.module_code
         module_qs = None
-        if (compulsory_only==1):
-            module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-                        Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-                        Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
-        else:
-            module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year) |\
-                        Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-                        Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
-        if (module_qs.count()>0):
-            all_mods_involved.append(module_code_to_be_added)
+        # if (compulsory_only==1):
+        #     module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
+        #                 Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
+        #                 Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
+        # else:
+        #     module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year) |\
+        #                 Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
+        #                 Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
+        # if (module_qs.count()>0):
+        all_mods_involved.append(module_code_to_be_added)
     all_mods_involved = list(dict.fromkeys(all_mods_involved))#eliminate duplicates
 
     for mod_code in all_mods_involved:
@@ -354,32 +352,33 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only):
             total_mapping_for_year = 0
             n_mlo_mapped_for_year = 0
             for mlo in ModuleLearningOutcome.objects.filter(module_code = mod_code):
-                for mapping in MLOSLOMapping.objects.filter(slo = slo).filter(mlo = mlo):
+                for mapping in MLOSLOMapping.objects.filter(slo__id = slo_id).filter(mlo = mlo):
                     module_qs = None
                     if (compulsory_only==1):
-                        module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                    Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                    Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                        module_qs = Module.objects.filter(primary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                                    Module.objects.filter(secondary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                                    Module.objects.filter(tertiary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
                     else:
-                        module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                    Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                    Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                        module_qs = Module.objects.filter(primary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                                    Module.objects.filter(secondary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                                    Module.objects.filter(tertiary_programme__id=mlo_mapping.slo.programme.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
                     #Loop over the relevant modules selected by the qs above
                     for mod in module_qs:
                         year_offered = mod.scenario_ref.academic_year.start_year
                         year_of_study = mod.students_year_of_study
                         target_cohort = year_offered - year_of_study + 1  #Figure out targeted cohort
                         if (cohort_year == target_cohort and mlo.IsValidForYear(year_offered) \
-                            and slo.IsValidForYear(target_cohort)):
+                            and mapping.slo.IsValidForYear(target_cohort)):
                             total_mapping_for_year += mapping.strength
                             if mapping.strength > numerical_mapping_for_year: #It will get the max mapping throughout... Limitation of linking MLO to mod code and not module...
                                 numerical_mapping_for_year = mapping.strength
                             n_mlo_mapped_for_year += 1
+
             table_row_item['numerical_mappings'].append(numerical_mapping_for_year)
             table_row_item['icons'].append(DetermineIconBasedOnStrength(numerical_mapping_for_year))
             table_row_item['n_mlo_mapped'].append(n_mlo_mapped_for_year)
-        
-        mlo_mappings_table_rows.append(table_row_item)
+        if (sum(table_row_item['numerical_mappings'])>0):
+            mlo_mappings_table_rows.append(table_row_item)
     return mlo_mappings_table_rows
 
 #This function calculates all the info about one particular SLO. It calls the 4 methods above and computes

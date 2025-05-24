@@ -1673,12 +1673,12 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_2_table[1]["numerical_mappings"][0], 3)#SLO 2 - MOD 2 - 2012
         self.assertEqual(slo_2_table[1]["numerical_mappings"][1], 3)#SLO 2 - MOD 2 - 2013
         self.assertEqual(slo_2_table[1]["numerical_mappings"][2], 3)#SLO 2 - MOD 2 - 2014
-        self.assertEqual(slo_2_table[1]["numerical_mappings"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MODE 2 yet
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MOD 2 yet
 
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][0], 1)#SLO 2 - MOD 2 - 2012
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 2 - 2013
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][2], 1)#SLO 2 - MOD 2 - 2014
-        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MODE 2 yet
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MOD 2 yet
 
         self.assertEqual(slo_2_table[2]["numerical_mappings"][0], 1)#SLO 2 - MOD 4 - 2012
         self.assertEqual(slo_2_table[2]["numerical_mappings"][1], 0)#SLO 2 - MOD 4 - 2013 -> 2013 cohort hasn't taken MOD 4 yet
