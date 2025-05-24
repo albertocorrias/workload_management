@@ -56,10 +56,11 @@ def DisplayOutcomeValidity(outcome_id, outcome_type):
 # - question targeting teh SLO
 # - % positive (if more than one question, the average score is taken)
 # -  number of questions 
+#The number of questions for this slo is also the attention score that is returned, one per year
 def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     slo_survey_measures = [] #A list of all the slo survey measures. This one is ready for HTML
-    
+    slo_attention_scores =  [0]*(end_year - start_year +1) #will store the attention scores
     #First look among the surveys, to see if any SLO measure is found
     for survey in Survey.objects.filter(cohort_targeted__start_year__gte=start_year).filter(cohort_targeted__start_year__lte=end_year):
         year_of_cohort_targeted = survey.opening_date.year
@@ -86,11 +87,17 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
                 single_slo_survey_measure['percent_positive'] = perc_positive/n_questions
                 single_slo_survey_measure['n_questions'] = n_questions
                 slo_survey_measures.append(single_slo_survey_measure)
-    return slo_survey_measures
+    year_index = 0
+    for year in range(start_year, end_year+1):
+        for meas in slo_survey_measures:
+            if meas['date'].year == year:
+                slo_attention_scores[year_index] += meas['n_questions'] 
+        year_index += 1
+    return slo_survey_measures, slo_attention_scores
 
 #Calculate a table with MLO survey measures for the given SLO and 
 #a given period between start_year and end_year
-#It returns a list of items, one per row of the table. 
+#It returns a list of items, one per row of the table. It also rteturns a list of attention scores (see below)
 #The columns of the table are the years.
 #Each row has the module code at first position and then the strengths of the
 #the survey measures for each year. If more MLOs contribute to the SLo for that year,
@@ -98,14 +105,19 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
 #After all the module codes (one per table row, as mentioned above),
 #the method appends a final row to be displayed which contains "Weighted average" at the start, 
 #and then, for each year, the weighted average of all the MLO survey measures for that year, 
-# with, again, the mapping strength as the weight
+# with, again, the mapping strength as the weight.
+#The list of "attention scores", contains one attention score per year. 
+#This is calculated as the summation of all the survey measures (i.e., survey questions) of MLO mapped to the SLO.
+# Each measure counts as 1/3, 2/3 or 3/3 depending on the mapping strength (1,2,or 3). 
+#
 #start year and year are interpreted as the starting year of the acadmeic year, intended as the cohort targeted
-#if you want a report for matriculated cohorts 2010/2011 to 2020/2021, then start_yera is 2010 and end year is 2020.
+#if you want a report for matriculated cohorts 2010/2011 to 2020/2021, then start_year is 2010 and end year is 2020.
 def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     prog_involved = slo.programme
-    
+
     mlo_survey_measures = []
+    attention_scores =  [0]*(end_year - start_year +1) #will store the attention scores
     for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo_id):
         for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo = mlo_mapping.mlo):
             year_of_mod_delivery = srv_resp.parent_survey.opening_date.year #year of mod delivery is the year the year the survey was administered
@@ -119,7 +131,6 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                 module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
                             Module.objects.filter(secondary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
                             Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(scenario_ref__academic_year__start_year = year_of_mod_delivery).filter(module_code = mlo_mapping.mlo.module_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-
             
             #We look for modules offered 
             for mod in module_qs:
@@ -141,13 +152,6 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                     }
                     
                     mlo_survey_measures.append(single_survey_mlo_measure)
-
-
-
-
-
-
-
 
     #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
     mlo_slo_survey_table_rows = []
@@ -180,6 +184,7 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                     strengths += meas['strength']
 
             if (score > 0): to_display_in_row = score/strengths
+
             single_table_row.append(to_display_in_row)
             #Update the totals for the last row
             total_row_scores[year_index] += score
@@ -192,16 +197,25 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
     for year in range(start_year, end_year+1):
         if (total_row_weights[year_index] > 0):
             total_row_scores[year_index] = total_row_scores[year_index]/total_row_weights[year_index]
+        attention_scores[year_index] = total_row_weights[year_index]/3
         year_index+=1
     total_row_scores.insert(0, 'Weighted average')#Insert the label at the start
     mlo_slo_survey_table_rows.append(total_row_scores)#Append to the overall table
 
-    return mlo_slo_survey_table_rows
+    return mlo_slo_survey_table_rows, attention_scores
 
+#This method looks at all MLO direct measures that map to the given SLO, performed within the specified period.
+#It calculates, for each module and each year the weighted average of the perofrmance scores.
+#It retruns a structure for easy HTML visualization.
+# It also return a list of "attention scores", containing one attention score per year. 
+# This is calculated as the summation of all the direct measures of MLO mapped to the SLO. 
+# Each "hit" is divided by 3 (max mapping strength). So for every MLO measure with full mapping, "1" will be added to the attention score for that year.
 def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_only):
     slo=StudentLearningOutcome.objects.filter(id = slo_id).get()
     prog_involved = slo.programme
+    
     all_mlo_measures = []# A list of direct MLO measurements for the mlo mapped to this SLO
+    attention_scores =  [0]*(end_year - start_year +1) #will store the attention scores
 
     #We look at all the mapped measures
     for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo):
@@ -210,16 +224,16 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
                         MLOPerformanceMeasure.objects.filter(secondary_associated_mlo = mlo_mapping.mlo) or \
                         MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo = mlo_mapping.mlo)):
             year_of_measurement = measure.academic_year.start_year #This is when the module was delivered and measureds
-
+            
             module_qs = None
             if (compulsory_only==1):
-                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
             else:
-                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
+                module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
+                            Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
+                            Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
             #We loo over all the modules with the correct code, offered the year of measurement AND compulsory
             for mod in module_qs:
                 year_of_study = mod.students_year_of_study
@@ -259,6 +273,7 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
         single_table_row_direct = []
         single_table_row_direct.append(mod_code)
         year_index = 0
+        
         for year in range(start_year, end_year+1):
             to_display_in_row = ''
             score = 0
@@ -268,8 +283,9 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
                     #Weigthed average of all the contributions of the various MLO of this module to this SLO
                     score += meas['score']*meas['mapping_strength']
                     strengths += meas['mapping_strength']
-
+             
             if (score > 0): to_display_in_row = score/strengths
+
             single_table_row_direct.append(to_display_in_row)
             #Update the totals for the last row
             total_row_scores_direct[year_index] += score
@@ -281,10 +297,11 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
     for year in range(start_year, end_year+1):
         if (total_row_weights_direct[year_index] > 0):
             total_row_scores_direct[year_index] = total_row_scores_direct[year_index]/total_row_weights_direct[year_index]
+        attention_scores[year_index] = total_row_weights_direct[year_index]/3 #Diviude by max strength
         year_index+=1
     total_row_scores_direct.insert(0, 'Weighted average')#Insert the label at the start
     mlo_direct_measures_table_rows.append(total_row_scores_direct)#Append to the overall table
-    return mlo_direct_measures_table_rows
+    return mlo_direct_measures_table_rows, attention_scores
 
 #A helper method to figure out the full-moon/half-mmon/empty moon icons to show
 def DetermineIconBasedOnStrength(strength):
@@ -370,9 +387,9 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only):
 def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year,compulsory_only):
     ret = {}
     ret["mlo_mapping_for_slo"] = CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only)
-    ret["mlo_direct_measures_for_slo"] =CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_only)
-    ret["mlo_surveys_for_slo"] = CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only)
-    ret["slo_surveys"] = CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only)
+    ret["mlo_direct_measures_for_slo"], ret["direct_meas_attention_scores"] =CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_only)
+    ret["mlo_surveys_for_slo"], ret["mlo_survey_attention_scores"] = CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only)
+    ret["slo_surveys"],ret["slo_survey_attention_scores"] = CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only)
     
     #Calculate data for plot
     years =[]
@@ -508,95 +525,4 @@ def CalculateTableForOverallSLOMapping(programme_id, start_year,end_year,compuls
     }
     return ret            
 
-# This method calculates a table of attentions cores for all SLOs, cumulative for the matriculating cohorts between start_year and end_year
-# Each row is intended to be associated to a SLO
-# Columns are
-# -letter associated with the SLO
-# -short description
-# -Attentionscore for direct measures. This is calculated as the summation of all the direct measures of MLO mapped to the SLO. 
-#  Each "hit" is divided by 3 (max mapping strength). So for every MLO measure with full mapping, "1" will be added to the attention score.
-#  Checks performed before adding:
-#   - SLO valid for the matriculating year under consideration
-#   - MLO valid for the year when it was delivered to that matriculated cohort
-#   - Module actually offered (teaching assignments checked) 
-# - Attention score for MLO surveys. Same as above, but counting survey question for the MLOs insetad of measure. same checks
-# - Attention score for SLO surveys. +1 for every question taregting the SLO, as long as the SLOis valid for that cohort 
-def CalculateAttentionScoresSummaryTable(programme_id, start_year,end_year,compulsory_only):
-    table_rows = []
-    for slo in StudentLearningOutcome.objects.filter(programme__id = programme_id).order_by('letter_associated'):
-        table_row = {
-            'letter' : slo.letter_associated,
-            'description' : slo.slo_short_description,
-            'attention_scores_direct' : [0]*(end_year - start_year +1),
-            'attention_scores_mlo_surveys' : [0]*(end_year - start_year +1),
-            'attention_scores_slo_surveys' : [0]*(end_year - start_year +1),
-            'colours_direct' : ['']*(end_year - start_year +1),
-            'colours_mlo_surveys' : ['']*(end_year - start_year +1),
-            'colours_slo_surveys' : ['']*(end_year - start_year +1),
-        }
-        year_index=0
-        for matric_year in range(start_year,end_year+1):
 
-            if (slo.IsValidForYear(matric_year)):
-                mlo_direct_attention_score = 0
-                mlo_survey_attention_score = 0
-                slo_survey_attention_score = 0
-                for mapping in MLOSLOMapping.objects.filter(slo__id = slo.id):
-                    mlo = mapping.mlo
-                    if (mlo.IsValidForYear(matric_year)):
-                        for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo__id = mlo.id) |
-                                        MLOPerformanceMeasure.objects.filter(secondary_associated_mlo__id = mlo.id) |
-                                        MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo__id = mlo.id)):
-                            mod_code = measure.associated_mlo.module_code
-                            year_delivered = measure.academic_year.start_year
-                            #Note the filter for module offered in the year
-                            module_qs = None
-                            if (compulsory_only==1):
-                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-                            else:
-                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-                            for module in  module_qs:
-                                
-                                student_year_of_study = module.students_year_of_study
-                                
-                                if ((year_delivered - student_year_of_study + 1) == matric_year) and\
-                                    TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
-                                    mlo_direct_attention_score += mapping.strength/3 #3 is the highest possible
-                                    
-                        for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo__id = mlo.id):
-                            mod_code = mlo.module_code
-                            year_delivered = srv_resp.parent_survey.cohort_targeted.start_year #The year stored in the survey object
-                            module_qs = None
-                            if (compulsory_only==1):
-                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-                            else:
-                                module_qs = Module.objects.filter(primary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
-                                            Module.objects.filter(secondary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
-                                            Module.objects.filter(tertiary_programme__id=programme_id).filter(scenario_ref__academic_year__start_year = year_delivered).filter(module_code = mod_code).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-                                
-                            for module in  module_qs:
-                                student_year_of_study = module.students_year_of_study
-                                if ( (year_delivered - student_year_of_study + 1) == matric_year ) and\
-                                    TeachingAssignment.objects.filter(assigned_module__id=module.id).count()>0 : #make sure it was offered...
-                                    mlo_survey_attention_score += mapping.strength/3 #3 is the highest possible
-                for slo_srv_resp in SurveyQuestionResponse.objects.filter(associated_slo__id = slo.id).filter(parent_survey__cohort_targeted__start_year = matric_year):
-                    slo_survey_attention_score +=1
-
-                table_row['attention_scores_direct'][year_index] = mlo_direct_attention_score
-                table_row['colours_direct'][year_index] = DetermineColourBasedOnAttentionScore(mlo_direct_attention_score)
-                table_row['attention_scores_mlo_surveys'][year_index] = mlo_survey_attention_score
-                table_row['colours_mlo_surveys'][year_index] = DetermineColourBasedOnAttentionScore(mlo_survey_attention_score)
-                table_row['attention_scores_slo_surveys'][year_index] = slo_survey_attention_score
-                table_row['colours_slo_surveys'][year_index] = DetermineColourBasedOnAttentionScore(slo_survey_attention_score)
-                year_index +=1
-
-        table_rows.append(table_row)
-
-    return table_rows
-                    
