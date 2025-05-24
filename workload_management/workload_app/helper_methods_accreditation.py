@@ -324,20 +324,9 @@ def CalculateMLOSLOMappingTable(slo_id, start_year,end_year,compulsory_only):
 
     mlo_mappings_table_rows = []# A list of table rows with mappings
     all_mods_involved = []
-    #We look at all the mapped measures
+    #We look at all the mappings
     for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo_id).order_by('mlo__module_code'):
-        module_code_to_be_added = mlo_mapping.mlo.module_code
-        module_qs = None
-        # if (compulsory_only==1):
-        #     module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_primary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-        #                 Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_secondary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-        #                 Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(compulsory_in_tertiary_programme = True).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
-        # else:
-        #     module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year) |\
-        #                 Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)|\
-        #                 Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = module_code_to_be_added).filter(scenario_ref__status = WorkloadScenario.OFFICIAL).filter(scenario_ref__academic_year__start_year__gte=start_year).filter(scenario_ref__academic_year__start_year__lte=end_year)
-        # if (module_qs.count()>0):
-        all_mods_involved.append(module_code_to_be_added)
+        all_mods_involved.append(mlo_mapping.mlo.module_code)
     all_mods_involved = list(dict.fromkeys(all_mods_involved))#eliminate duplicates
 
     for mod_code in all_mods_involved:
