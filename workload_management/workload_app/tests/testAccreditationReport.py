@@ -1202,16 +1202,17 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_1_1,\
                                                            parent_survey = mlo_survey_1 )
         props = response_1.CalculateRepsonsesProprties()
+        self.assertAlmostEqual(props["percentage_positive"],100*(50+30)/(50+30+5+15))
         # #Generate the table for SLO 1
         mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2013
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
-        self.assertAlmostEqual(mlo_table_slo_1[1][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2013
         
         #call the collective method - test the structures for plotting
@@ -1271,13 +1272,13 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
         expected_weigthed_average = (3.0*props['percentage_positive']  + \
                                      2.0*props_2['percentage_positive'])/(3.0+2.0)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2021
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
         self.assertAlmostEqual(mlo_table_slo_1[1][1],expected_weigthed_average)#same as above
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2021
 
-        #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
+        #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 2
         mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
@@ -1325,7 +1326,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
         expected_weigthed_average = (3.0*props['percentage_positive'] + \
                                      2.0*props_2['percentage_positive'])/(3.0+2.0)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in second academic year
         self.assertEqual(mlo_table_slo_1[1][0], mlo_2_1.module_code)
         self.assertAlmostEqual(mlo_table_slo_1[1][1],props_3['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
@@ -1367,9 +1368,70 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
 
+        #We now add another repsonse in the same survey, same MLO to test the averaginbg out of same MLO targeted by different questions
+        response_4 = SurveyQuestionResponse.objects.create(question_text = mlo_2_1.mlo_description,\
+                                                           n_highest_score = 85,\
+                                                           n_second_highest_score = 8,\
+                                                           n_third_highest_score = 29,\
+                                                           n_fourth_highest_score = 15,\
+                                                           associated_mlo = mlo_2_1,\
+                                                           parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3) - NOT SAME MLO, SAME SURVEY
+        props_4 = response_4.CalculateRepsonsesProprties()
+        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
+        self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_1[2]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
+        expected_weigthed_average = (3.0*props['percentage_positive'] + \
+                                     2.0*props_2['percentage_positive'])/(3.0+2.0)
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in second academic year
+        self.assertEqual(mlo_table_slo_1[1][0], mlo_2_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_1[1][1],0.5*(props_3['percentage_positive']+props_4['percentage_positive']))#MLO 1 of module 2 mapped to slo 1, two responses
+        self.assertAlmostEqual(mlo_table_slo_1[1][2],'')#Nothing in second academic year
+        self.assertEqual(mlo_table_slo_1[2][0], "Weighted average")
+        expected_weigthed_average_2 = (3.0*props['percentage_positive'] + \
+                                      2.0*props_2['percentage_positive'] + \
+                                      2.0*props_3['percentage_positive'] + 2.0*props_4['percentage_positive'])/(3.0+2.0+2.0+2.0)
+        self.assertAlmostEqual(mlo_table_slo_1[2][1],expected_weigthed_average_2)#same as above
+        self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in second academic year
+
+        # #Generate the table for SLO 2 
+        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
+        self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_2[2]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_2[0][0], mlo_1_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_2[0][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_2[0][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_2[1][0], mlo_2_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_2[1][1],0.5*(props_3['percentage_positive']+props_4['percentage_positive']))#MLO 1of module 1 mapped to slo 1, two responses - simple average
+        self.assertAlmostEqual(mlo_table_slo_2[1][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_2[2][0], "Weighted average")
+        expected_weighted_average_3 = (3.0* props['percentage_positive'] +\
+                                       3.0*props_3['percentage_positive']+3.0*props_4['percentage_positive'])/(3.0+3.0+3.0)
+        self.assertAlmostEqual(mlo_table_slo_2[2][1],expected_weighted_average_3)
+        self.assertAlmostEqual(mlo_table_slo_2[2][2],0)#Nothing in 2021
+
+        #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
+        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
+        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_3[0][0], mlo_1_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
+        self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
+        
         #Cover the empty table because of dates out of range
         empty_mlo_table_slo = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
         self.assertEqual(len(empty_mlo_table_slo), 1)#Only the totals
+
+
 
         # # #####################################################################
         # # # Test the SLO survey table
@@ -1641,12 +1703,12 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][2],0)#SLO c1, NO direct measures, 2014 
         self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][3],0)#SLO c1, NO direct measures, 2015
 
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],3/3 + 2/3 + 2/3)#SLO a, MLO survey measures, 2012 -> Three questions
+        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],3/3 + 2/3 + 2/3 + 2/3)#SLO a, MLO survey measures, 2012 -> Total four questions
         self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
         self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][2],0)#SLO a, MLO  survey measures, 2014 ->None
         self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][3],0)#SLO a, MLOsurvey measures, 2015 -> None
 
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],3/3 + 3/3)#SLO b, MLO  survey measures, 2012 -> Two questions
+        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],3/3 + 3/3 + 3/3)#SLO b, MLO  survey measures, 2012 -> Total three quewstions 
         self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
         self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][2],0)#SLO b, MLO  survey measures, 2014 ->None
         self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][3],0)#SLO b, MLO  survey measures, 2015 -> None
