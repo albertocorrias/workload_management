@@ -12,7 +12,7 @@
     {% include './top_bar.html' %}
     <div class="overall_container" id="overall_container_dept_page">
       <h1>Accreditation report for {{ programme_name }}</h1>
-      <h3>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
+      <h4>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
       <hr>
       <div class="accr_report_overall_summary">
         <div class="accr_report_overall_summary_item"> <!--Table container-->
@@ -85,16 +85,16 @@
           </tr>
           </thead>
           <tbody>
-            {% for row in attention_scores_table %}
+            {% for slo_item in slo_measures %}
             <tr style="border-bottom-color: black;">
             <td rowspan="4">
-              {{ row.letter }}) {{ row.description }}
+              {{ slo_item.slo_letter }}) {{ slo_item.slo_desc }}
             </td>
             </tr>
             
             <tr>
               <td>Direct measures</td>
-              {% for direct_att_score, direct_color in row.zipped_direct %}
+              {% for direct_att_score, direct_color in slo_item.zipped_attn_scores_direct %}
               <td style="background-color: {{ direct_color }};">
                 {{ direct_att_score|floatformat }}
               </td>
@@ -102,7 +102,7 @@
             </tr>
             <tr>
               <td>MLO survey measures</td>
-              {% for mlo_att_score,mlo_att_color in row.zipped_mlo_surveys %}
+              {% for mlo_att_score,mlo_att_color in slo_item.zipped_attn_scores_mlo_survey %}
               <td style="background-color: {{ mlo_att_color }};">
                 {{ mlo_att_score|floatformat }}
               </td>
@@ -110,7 +110,7 @@
             </tr>
             <tr style="border-bottom-color: black;">
               <td>SLO survey meausres</td>
-              {% for slo_att_score,slo_att_colour in row.zipped_slo_surveys %}
+              {% for slo_att_score,slo_att_colour in slo_item.zipped_attn_scores_slo_surveys %}
               <td style="background-color: {{ slo_att_colour }};">
                 {{ slo_att_score|floatformat }}
               </td>

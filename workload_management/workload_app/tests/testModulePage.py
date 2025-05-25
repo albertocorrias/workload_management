@@ -58,7 +58,6 @@ class TestModulePage(TestCase):
         self.assertEqual(response.context["module_title"], "Third module")
         self.assertEqual(response.context["module_code"], "BN301")
         self.assertEqual(len(response.context["module_table"]),1)#Content of the table is tested in the helper method!
-        self.assertEqual(len(response.context["mlo_list"]), 0) #No MLO yet (see test below)
         #Cover the case of non-existent module code
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': "BN301TT"}))
         self.assertEqual(response.status_code, 200) #no issues, simply the error page is shown
@@ -84,8 +83,7 @@ class TestModulePage(TestCase):
         #Test the get without any MLO
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(len(response.context["mlo_list"]), 0) #
-        self.assertEqual(len(response.context["slo_list"]), 0) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"]), 1) #
         
         #Create a MLO
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),0)
@@ -122,11 +120,11 @@ class TestModulePage(TestCase):
         #Test the get directly, with one MLO
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(len(response.context["mlo_list"]), 1) #
-        self.assertEqual(response.context["mlo_list"][0]["mlo_desc"], new_description)
-        self.assertEqual(response.context["mlo_list"][0]["mlo_short_desc"], short_desc)
-        self.assertEqual(len(response.context["mlo_list"][0]["slo_mapping"]), 0) #
-        self.assertEqual(len(response.context["slo_list"]), 0) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"]), 1) #"
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_desc"], new_description)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_short_desc"], short_desc)
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"]), 0)                                                                
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 0) #
         
         #Create one programme
         new_prog = ProgrammeOffered.objects.create(programme_name="new_prog", primary_dept=test_dept)
@@ -141,37 +139,37 @@ class TestModulePage(TestCase):
         #Call the get again
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(MLOSLOMapping.objects.all().count(),2)#one MLO mapped to 2 SLO created by the view
-        self.assertEqual(len(response.context["mlo_list"]), 1) #
-        self.assertEqual(response.context["mlo_list"][0]["mlo_desc"], new_description)
-        self.assertEqual(response.context["mlo_list"][0]["mlo_short_desc"], short_desc)
-        self.assertNotEqual(response.context["mlo_list"][0]["slo_mapping_form"], None)
-        self.assertEqual(len(response.context["mlo_list"][0]["slo_mapping"]), 2) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
-        self.assertEqual(len(response.context["slo_list"]), 2) #
-        self.assertEqual(response.context["slo_list"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["slo_list"][1]["slo_description"], "slo_2") #
+        self.assertEqual(MLOSLOMapping.objects.all().count(),2)#Created by the view
+        self.assertEqual(len(response.context["all_mlo_slo_tables"]), 1) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_desc"], new_description)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_short_desc"], short_desc)
+        self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping_form"], None)
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
         
         #Try to edit the strength of one MLO-SLO mapping
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
-            {"prog_id" : new_prog.id, "mlo_slo_mapping_strength"+str(slo_1.id) : 3, "mlo_id" : mlo_obj.id, "slo_id" : slo_1.id, \
-                                      "mlo_slo_mapping_strength"+str(slo_2.id) : 0, "mlo_id" : mlo_obj.id, "slo_id" : slo_2.id,})
+            {"prog_id" : new_prog.id, "mlo_slo_mapping_strength"+str(slo_1.id) : 3, "mlo_id_for_slo_mapping" : mlo_obj.id, "slo_id" : slo_1.id, \
+                                      "mlo_slo_mapping_strength"+str(slo_2.id) : 0, "mlo_id_for_slo_mapping" : mlo_obj.id, "slo_id" : slo_2.id,})
         self.assertEqual(response.status_code, 302) #No issues, re-direct
 
         #Call the get again
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 3) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 3) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
 
         #Add another MLO
         new_MLO_descr = "NEW MLO fulld escription"
@@ -194,40 +192,72 @@ class TestModulePage(TestCase):
         #Get again
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(len(response.context["mlo_list"]), 2) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"]), 2) #
         self.assertEqual(MLOSLOMapping.objects.all().count(),4)#2 mlo mapped to two SLO
         #CHECK FIRST MLO
-        self.assertEqual(response.context["mlo_list"][0]["mlo_desc"], new_MLO_descr)
-        self.assertEqual(response.context["mlo_list"][0]["mlo_short_desc"], new_MLO_short_desc)
-        self.assertNotEqual(response.context["mlo_list"][0]["slo_mapping_form"], None)
-        self.assertEqual(len(response.context["mlo_list"][0]["slo_mapping"]), 2) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
-        self.assertEqual(response.context["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
-        self.assertEqual(len(response.context["slo_list"]), 2) #
-        self.assertEqual(response.context["slo_list"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["slo_list"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_desc"], new_MLO_descr)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_short_desc"], new_MLO_short_desc)
+        self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping_form"], None)
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
         #CHECK SECOND MLO (USED TO BE FIRST)
-        self.assertEqual(response.context["mlo_list"][1]["mlo_desc"], new_description)
-        self.assertEqual(response.context["mlo_list"][1]["mlo_short_desc"], short_desc)
-        self.assertNotEqual(response.context["mlo_list"][1]["slo_mapping_form"], None)
-        self.assertEqual(len(response.context["mlo_list"][1]["slo_mapping"]), 2) #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][1]["slo_description"], "slo_2") #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][0]["slo_short_description"], "short_1") #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][1]["slo_short_description"], "short_2") #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 3) #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
-        self.assertEqual(response.context["mlo_list"][1]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
-        self.assertEqual(len(response.context["slo_list"]), 2) #
-        self.assertEqual(response.context["slo_list"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["slo_list"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_desc"], new_description)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_short_desc"], short_desc)
+        self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping_form"], None)
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["slo_short_description"], "short_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["slo_short_description"], "short_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 3) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
+        
+        self.assertEqual(MLOSLOMapping.objects.all().count(),4)#2 mlo mapped to two SLO
+
+        #Now we create another programme
+        test_prog_2 = ProgrammeOffered.objects.create(programme_name='test_prog_2', primary_dept=test_dept)
+        #with one SLO
+        slo_prog_2  =StudentLearningOutcome.objects.create(slo_description="slo_2_prog_2", slo_short_description="short_2_prog_2", programme = test_prog_2)
+        module_1.secondary_programme = test_prog_2
+        module_1.save()
+        #Get again
+        response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
+        self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(len(response.context["all_mlo_slo_tables"]), 2) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"]), 2) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][1]["mlo_list"]), 2) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][1]["slo_list"]), 1) #
+
+        #Map the new slo
+        response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
+            {"prog_id" : test_prog_2.id, "mlo_slo_mapping_strength"+str(slo_prog_2.id) : 2, "mlo_id_for_slo_mapping" : new_mlo_obj.id, "slo_id" : slo_prog_2.id})
+        self.assertEqual(response.status_code, 302) #No issues, re-direct
+
+        #Call the get again
+        response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
+        self.assertEqual(response.status_code, 200) #No issues
+        # MLO mapped to first programme untouched
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        #MLO mapped to second programme with new strength
+        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 0) #
 
         #Now remove both MLOs
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
@@ -243,7 +273,7 @@ class TestModulePage(TestCase):
         #Get again
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(len(response.context["mlo_list"]), 0) #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"]), 0) #
         self.assertEqual(MLOSLOMapping.objects.all().count(),0)#The "cascade" delete policy should do the job
 
     def test_mlo_measures(self):

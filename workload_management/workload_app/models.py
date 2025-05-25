@@ -158,6 +158,9 @@ class Lecturer(models.Model):
 
     #The service role of this lecturer (e.g. head of department, director, etc)
     service_role = models.ForeignKey(ServiceRole, on_delete=models.CASCADE, default=1)
+
+    #A flag to say whether this lecturer is external to the department that the workload is associated with
+    is_external = models.BooleanField(default=False)
     
     def __str__(self):
         return self.name
@@ -270,6 +273,23 @@ class StudentLearningOutcome(models.Model):
     class Meta:
         ordering = ['letter_associated']
 
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.cohort_valid_from is None):
+            if (self.cohort_valid_to is None):
+                return True
+            if (self.cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.cohort_valid_to is None):#Note None-None case is above...no need here
+            if (self.cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.cohort_valid_from.start_year <= year and self.cohort_valid_to.start_year >= year):
+            return True
+        return False
+
 class ModuleLearningOutcome(models.Model):
     #The text of the MLO
     mlo_description = models.CharField(max_length=3000)
@@ -287,6 +307,23 @@ class ModuleLearningOutcome(models.Model):
 
     class Meta:
         ordering = ['mlo_description']
+
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.mlo_valid_from is None):
+            if (self.mlo_valid_to is None):
+                return True
+            if (self.mlo_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.mlo_valid_to is None):#Note None-None case is above...no need here
+            if (self.mlo_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.mlo_valid_from.start_year <= year and self.mlo_valid_to.start_year >= year):
+            return True
+        return False
 
 #A model to capture the mapping between MLO and SLO
 class MLOSLOMapping(models.Model):
@@ -320,6 +357,23 @@ class ProgrammeEducationalObjective(models.Model):
 
     class Meta:
         ordering = ['letter_associated']
+    
+    #Little convenience method to figure out whether an outcome is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.peo_cohort_valid_from is None):
+            if (self.peo_cohort_valid_to is None):
+                return True
+            if (self.peo_cohort_valid_to.start_year >= year):
+                return True
+            return False
+        if (self.peo_cohort_valid_to is None):#Note None-None case is above...no need here
+            if (self.peo_cohort_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.peo_cohort_valid_from.start_year <= year and self.peo_cohort_valid_to.start_year >= year):
+            return True
+        return False
 
 #A model to capture the mapping between a PEO and an SLO. 
 class PEOSLOMapping(models.Model):
@@ -378,12 +432,11 @@ class Module(models.Model):
     #The workload scenario in which it appears
     scenario_ref = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE, default=1)
     #Total expected hours to be taught
-    total_hours = models.PositiveIntegerField(null=True);
+    total_hours = models.PositiveIntegerField(null=True)
     #The type of module
     module_type = models.ForeignKey(ModuleType, on_delete=models.SET_NULL, null=True)
-    #Whether it is compulsory in primary programme
-    compulsory_in_primary_programme = models.BooleanField(default=False)
-    #year of study of students, this is intended as the "typical stduent" accoridng to recommended schedule
+
+    #year of study of students, this is intended as the "typical stduent" according to recommended schedule
     students_year_of_study = models.PositiveIntegerField(default=0,null=True)
 
     #The semester in which it is offered
@@ -395,6 +448,15 @@ class Module(models.Model):
     primary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="primary_programme")
     #Another programme this module may be offered as part of
     secondary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="secondary_programme")
+    #Yet another programme this module may be offered as part of
+    tertiary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="tertirary_programme")
+    #Whether it is compulsory in primary programme
+    compulsory_in_primary_programme = models.BooleanField(default=False)
+    #Whether it is compulsory in secondary programme
+    compulsory_in_secondary_programme = models.BooleanField(default=False)
+    #Whether it is compulsory in tertiary programme
+    compulsory_in_tertiary_programme = models.BooleanField(default=False)
+    
     #The sub-programme this module is part of
     sub_programme = models.ForeignKey(SubProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="sub_programme")
     #Another sub-programme this module may be part of
@@ -610,7 +672,7 @@ class SurveyQuestionResponse(models.Model):
                 nps = (self.n_highest_score+self.n_second_highest_score)/num_responses - (self.n_fifth_highest_score + self.n_sixth_highest_score + \
                                                                 self.n_seventh_highest_score + self.n_eighth_highest_score + self.n_eighth_highest_score + \
                                                                 self.n_tenth_highest_score)/num_responses
-                nps_message = "NPS for a 9-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
+                nps_message = "NPS for a 10-point scale is calculated as sum of the % of respondents with highest two scores,  minus % of respondents with the bottom six scores."
 
         ret = {
             'all_respondents' : num_responses,

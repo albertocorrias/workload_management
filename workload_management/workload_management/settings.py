@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 from django.urls import path
 import os 
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,6 +66,26 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'workload_management.urls'
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
+
+#Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
+TESTING = "test" in sys.argv
+if not TESTING:
+    print('88888888888888888888888888888888888888888888888888888888888')
+    INSTALLED_APPS = [
+        *INSTALLED_APPS,
+        "debug_toolbar",
+    ]
+    MIDDLEWARE = [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        *MIDDLEWARE,
+    ]
+#############################################
 
 TEMPLATES = [
     {

@@ -119,6 +119,7 @@ def CalculateFacultiesTable():
         item = {"faculty_name" : fac.faculty_name,
                 "faculty_acronym" : fac.faculty_acronym,
                 'no_space_fac_name' : RegularizeName(fac.faculty_name),
+                "faculty_id" : fac.id,
                 "edit_fac_form" : FacultyForm(initial = {'faculty_name' : fac.faculty_name, \
                                                          'faculty_acronym' : fac.faculty_acronym, \
                                                          'fresh_record' : False, 'fac_id' : fac.id})
@@ -255,7 +256,7 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
             "prof_id" : prof.id,
             "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
                                                        'employment_track' : prof.employment_track.id, \
-                                                        'service_role' : prof.service_role.id, 'fresh_record' : False}),
+                                                        'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
             "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
             "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
             "num_assigns_for_prof" : TeachingAssignment.objects.filter(assigned_lecturer__id = prof.id).count()
@@ -383,7 +384,10 @@ def CalculateSummaryData(workload_scenario_id):
     for assign in all_teaching_assignments:
         mod_involved = assign.assigned_module
         prof_involved = assign.assigned_lecturer
-        
+        #make sure we don'tcount towards the workload the assignments to external profs
+        if (prof_involved.is_external == True):
+            assign.counted_towards_workload = False #no matter what was stored... 
+
         if (mod_involved.module_type is not None):
             if (mod_involved.module_type.department.id == dept_id):
                 if (mod_involved.module_type.type_name not in labels):
@@ -444,11 +448,14 @@ def CalculateSummaryData(workload_scenario_id):
     total_module_hours = 0
     total_adjunct_tFTE = 0
     total_number_of_adjuncts = 0
+    total_number_external_staff = 0
     for prof in Lecturer.objects.filter(workload_scenario__id = workload_scenario_id):
         track_adj = prof.employment_track.track_adjustment
         empl_adj = prof.service_role.role_adjustment
-        total_dept_fte = total_dept_fte + prof.fraction_appointment*track_adj*empl_adj
-
+        if (prof.is_external == False):
+            total_dept_fte = total_dept_fte + prof.fraction_appointment*track_adj*empl_adj
+        else:
+            total_number_external_staff = total_number_external_staff + 1
         if (prof.employment_track.is_adjunct == True):
             total_adjunct_tFTE = total_adjunct_tFTE + prof.fraction_appointment*track_adj*empl_adj
             total_number_of_adjuncts = total_number_of_adjuncts + 1
@@ -475,6 +482,7 @@ def CalculateSummaryData(workload_scenario_id):
             'total_module_hours_for_dept' : total_module_hours,
             'total_adjunct_tFTE' : total_adjunct_tFTE,
             'total_number_of_adjuncts' : total_number_of_adjuncts,
+            'total_number_of_external' : total_number_external_staff,
             'total_hours_not_counted' : total_hours_not_counted
             }
     return ret
@@ -578,6 +586,9 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
                                           'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
                                           'students_year_of_study' : student_year_of_study,\
                                           'secondary_programme' : mod.secondary_programme,\
+                                          'compulsory_in_secondary_programme' : mod.compulsory_in_secondary_programme,\
+                                          'tertiary_programme' : mod.tertiary_programme,\
+                                          'compulsory_in_tertiary_programme' : mod.compulsory_in_tertiary_programme,\
                                           'sub_programme' : mod.sub_programme,\
                                           'secondary_sub_programme' : mod.secondary_sub_programme,\
                                           'fresh_record' : False})}
@@ -723,15 +734,14 @@ def CalculateModuleTypesTableForProgramme(scenario_id,programme_id):
     return main_table_data        
         
 #Helper method to calculate the table with information
-#about teh moculde whose module code is passed in.
+#about the module whose module code is passed in.
 #It looks at past official workloads only
 def CalculateSingleModuleInformationTable(module_code): 
     ret = []
     for acad_year in Academicyear.objects.all():
         for workload in WorkloadScenario.objects.filter(academic_year = acad_year).filter(status=WorkloadScenario.OFFICIAL):
             for module in Module.objects.filter(module_code=module_code).filter(scenario_ref=workload):
-                text_for_compulsory = "No"
-                if (module.compulsory_in_primary_programme): text_for_compulsory = "Yes"
+
                 #Infer the year of study to display
                 display_year_of_study = ""
                 if module.students_year_of_study == 0 and len(module_code)>2:
@@ -747,11 +757,8 @@ def CalculateSingleModuleInformationTable(module_code):
                     "module_type" : display_mod_type,
                     "semester_offered" : module.semester_offered,
                     "year_of_study" :  display_year_of_study,
-                    "compulsory_in_primary_programme" : text_for_compulsory,
-                    "primary_programme" : "",
-                    "secondary_programme" : "",
-                    "primary_subprogramme" : "",
-                    "secondary_subprogramme" : "",
+                    "programmes" : "",
+                    "subprogrammes" : "",
                     "total_hours_delivered" : 0,
                     "lecturers_involved" : ""}
                 formatted_string = ""
@@ -760,10 +767,36 @@ def CalculateSingleModuleInformationTable(module_code):
                     formatted_string+= (assign.assigned_lecturer.name + " (" + str(assign.number_of_hours) + "), ")
                 if (len(formatted_string) > 0): table_row_item["lecturers_involved"] = formatted_string[:-2] #Otherwise it stays empty
 
-                if (module.primary_programme is not None): table_row_item["primary_programme"] = module.primary_programme.programme_name
-                if (module.secondary_programme is not None): table_row_item["secondary_programme"] = module.secondary_programme.programme_name
-                if (module.sub_programme is not None): table_row_item["primary_subprogramme"] = module.sub_programme.sub_programme_name
-                if (module.secondary_sub_programme is not None): table_row_item["secondary_subprogramme"] = module.secondary_sub_programme.sub_programme_name
+                text_for_compulsory = " (compulsory), "
+                text_for_elective = " (elective), "
+                if (module.primary_programme is not None): 
+                    table_row_item["programmes"] += module.primary_programme.programme_name
+                    if module.compulsory_in_primary_programme == True:
+                        table_row_item["programmes"] += text_for_compulsory
+                    else:
+                        table_row_item["programmes"] += text_for_elective
+                if (module.secondary_programme is not None): 
+                    table_row_item["programmes"] += module.secondary_programme.programme_name
+                    if module.compulsory_in_secondary_programme == True:
+                        table_row_item["programmes"] += text_for_compulsory
+                    else:
+                        table_row_item["programmes"] += text_for_elective
+                if (module.tertiary_programme is not None): 
+                    table_row_item["programmes"] += module.tertiary_programme.programme_name
+                    if module.compulsory_in_tertiary_programme == True:
+                        table_row_item["programmes"] += text_for_compulsory
+                    else:
+                        table_row_item["programmes"] += text_for_elective
+                if (len(table_row_item["programmes"])>0):
+                    table_row_item['programmes'] = table_row_item['programmes'][:-2]
+                else:
+                    table_row_item['programmes'] = 'None'
+                
+                if (module.sub_programme is not None):
+                    table_row_item["subprogrammes"] += module.sub_programme.sub_programme_name
+                if (module.secondary_sub_programme is not None):
+                    table_row_item["subprogrammes"] += "," + module.secondary_sub_programme.programme_name
+                if (len(table_row_item["subprogrammes"]) ==0): table_row_item["subprogrammes"] = "None"
                 ret.append(table_row_item)
     return ret
 

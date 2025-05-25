@@ -1,0 +1,22 @@
+ES2631 Critical Thinking & Writing
+CS1010E Programming Methodology
+GEA1000 Quantitative Reasoning with Data
+DTK1234 Design Thinking
+EG1311 Design and Make
+EE2211 Introduction to Machine Learning
+PF1101 Fundamentals of Project Management
+MA1511 Engineering Calculus
+MA1512 Differential Equations for Engineering
+MA1508E Linear Algebra for Engineering
+EG2401A Engineering Professionalism
+EE1111A Electrical Engineering Principles and Practice I
+EE2111A Electrical Engineering Principles and Practice II
+EE2012 Analytical Methods in Electrical and Computer Engineering
+EE2022 Electrical Energy Systems
+EE2023 Signals and Systems
+EE2026 Digital Design
+EE2028 Microcontroller Programming and Interfacing
+EE2027 Electronic Circuits
+EE3033 Systems Integration and Design Lab
+PC2020 Electromagnetics for Electrical Engineers
+
