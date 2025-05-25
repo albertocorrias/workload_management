@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
-
+from django.core.management.utils import get_random_secret_key
 from pathlib import Path
 from django.urls import path
 import os 
@@ -18,33 +18,9 @@ import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Figure out the git branch we are in, and, based on that, the DB to use
-GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-head_file = GIT_ROOT_DIR / ".git" / "HEAD"
-branch_name = ''
-with head_file.open("r") as f: content = f.read().splitlines()
-for line in content:
-    if line[0:4] == "ref:":
-        branch_name = line.partition("refs/heads/")[2]
-db_to_use = 'db.sqlite3'
-if ('devel' in str(branch_name)):
-    db_to_use = 'db_devel.sqlite3'
-print('Using database' + db_to_use)
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)v@rsyf9#%jgot9b4d_f64d(q%^7ks8yhtph5^uw51celmgqw3'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['104.248.157.119','localhost', '127.0.0.1']
 
 # Application definition
-
 INSTALLED_APPS = [
     'workload_app.apps.WorkloadAppConfig',
     'django.contrib.admin',
@@ -65,6 +41,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://127.0.0.1']
 ROOT_URLCONF = 'workload_management.urls'
 
 INTERNAL_IPS = [
@@ -76,7 +55,6 @@ INTERNAL_IPS = [
 #Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
 TESTING = "test" in sys.argv
 if not TESTING:
-    print('88888888888888888888888888888888888888888888888888888888888')
     INSTALLED_APPS = [
         *INSTALLED_APPS,
         "debug_toolbar",
@@ -109,12 +87,44 @@ WSGI_APPLICATION = 'workload_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
+# Figure out the git branch we are in, and, based on that, the DB to use
+GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+head_file = GIT_ROOT_DIR / ".git" / "HEAD"
+branch_name = ''
+with head_file.open("r") as f: content = f.read().splitlines()
+for line in content:
+    if line[0:4] == "ref:":
+        branch_name = line.partition("refs/heads/")[2]
+
+
+if ('production' in str(branch_name)):
+    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
+    DEBUG = False #Must be false in proiduction!
+    DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': str(BASE_DIR / db_to_use),
+        'ENGINE': 'django.db.backends.postgresql',
+        'OPTIONS': {
+            'service': 'workload_service',
+            'passfile': '.pgpass',
+        },
     }
-}
+    }
+    print('**** We are using production settings  *****')
+else: #Not the production branch
+    # SECURITY WARNING: keep the secret key used in production secret!
+    SECRET_KEY = 'django-insecure-)v@rsyf9#%jgot9b4d_f64d(q%^7ks8yhtph5^uw51celmgqw3'
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = True
+    db_to_use = 'db.sqlite3'
+    if ('devel' in str(branch_name)):
+        db_to_use = 'db_devel.sqlite3'
+    print('Using database ' + db_to_use)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(BASE_DIR / db_to_use),
+        }
+    }
 
 
 # Password validation
