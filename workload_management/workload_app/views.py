@@ -29,7 +29,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
                               DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type,ShortenString
+                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -37,7 +37,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateSingleModuleInformationTable, HandleScenarioForm
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
-                                          CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
+                                          CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
@@ -1275,7 +1275,7 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
         big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
-        attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
+        #attention_scores_table = CalculateAttentionScoresSummaryTable(programme_id,start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
 
         slo_measures = [] #A list with all SLO measures. As long as there are SLO in the programme
         slo_identifiers = []
@@ -1287,11 +1287,22 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
             mlo_slo_survey_table_rows = all_slo_info["mlo_surveys_for_slo"]#A list of measurements for this SLO obtained via MLO survey
             mlo_direct_measures_table_rows = all_slo_info["mlo_direct_measures_for_slo"]
             mlo_slo_mapping_table_rows = all_slo_info["mlo_mapping_for_slo"] 
-            
             slo_measures_data_plot = all_slo_info["slo_measures_plot_data"]
+            attention_scores_direct =  all_slo_info["direct_meas_attention_scores"]
+            attention_scores_mlo_surveys = all_slo_info["mlo_survey_attention_scores"]
+            attention_scores_slo_surveys = all_slo_info["slo_survey_attention_scores"]
+
             years_for_tables = []
+            color_attn_direct = []
+            color_attn_mlo_srv = []
+            color_attn_slo_srv = []
+            year_index=0
             for year in range(start_year, end_year+1):
                 years_for_tables.append(year)
+                color_attn_direct.append(DetermineColourBasedOnAttentionScore(attention_scores_direct[year_index]))
+                color_attn_mlo_srv.append(DetermineColourBasedOnAttentionScore(attention_scores_mlo_surveys[year_index]))
+                color_attn_slo_srv.append(DetermineColourBasedOnAttentionScore(attention_scores_slo_surveys[year_index]))
+                year_index += 1
             slo_info = {
                 'slo_id' : slo.id,
                 'slo_desc' : slo.slo_short_description,
@@ -1303,6 +1314,9 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
                 'colspan_param' : end_year - start_year + 2,
                 'years_for_tables' : years_for_tables,
                 'mlo_slo_survey_table_rows' : mlo_slo_survey_table_rows,
+                'zipped_attn_scores_direct' : zip(attention_scores_direct, color_attn_direct), #contains scores and colors
+                'zipped_attn_scores_mlo_survey' : zip(attention_scores_mlo_surveys, color_attn_mlo_srv), #contains scores and colors
+                'zipped_attn_scores_slo_surveys' : zip(attention_scores_slo_surveys, color_attn_slo_srv), #contains scores and colors
                 'slo_measures_plot_data' : slo_measures_data_plot #unused here?
             }
             slo_measures.append(slo_info)
@@ -1312,10 +1326,10 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
         
 
         #all_direct_data
-        for row in attention_scores_table:
-            row['zipped_direct'] = zip(row['attention_scores_direct'], row['colours_direct'])
-            row['zipped_mlo_surveys'] = zip(row['attention_scores_mlo_surveys'], row['colours_mlo_surveys'])
-            row['zipped_slo_surveys'] = zip(row['attention_scores_slo_surveys'], row['colours_slo_surveys'])
+        # for row in attention_scores_table:
+        #     row['zipped_direct'] = zip(row['attention_scores_direct'], row['colours_direct'])
+        #     row['zipped_mlo_surveys'] = zip(row['attention_scores_mlo_surveys'], row['colours_mlo_surveys'])
+        #     row['zipped_slo_surveys'] = zip(row['attention_scores_slo_surveys'], row['colours_slo_surveys'])
                                     
         years_to_display = range(start_year,end_year+1)
         template = loader.get_template('workload_app/accreditation_report.html')
@@ -1329,7 +1343,7 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
             'num_years_colspan' : len(years_to_display),
             'overall_colpsan' : len(years_to_display)+2,
             'big_mlo_slo_table' : big_mlo_slo_table['main_body_table'],
-            'attention_scores_table' : attention_scores_table,
+            #'attention_scores_table' : attention_scores_table,
             'big_mlo_slo_table_totals_strengths' : big_mlo_slo_table['totals_strengths_row'],
             'big_mlo_slo_table_totals_n_mlo' : big_mlo_slo_table['totals_n_mlo_row'],
             'number_of_slo_plus_one' : len(slo_measures)+1,

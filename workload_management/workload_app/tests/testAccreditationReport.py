@@ -10,7 +10,7 @@ from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Facult
                                 ProgrammeEducationalObjective, EmploymentTrack, ServiceRole, Lecturer, TeachingAssignment, UniversityStaff
 from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
                                                         CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
-                                                        CalculateAllInforAboutOneSLO, DisplayOutcomeValidity, CalculateAttentionScoresSummaryTable
+                                                        CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
 
 class TestAccreditationReport(TestCase):
@@ -408,7 +408,7 @@ class TestAccreditationReport(TestCase):
         measure_mod_2 = MLOPerformanceMeasure.objects.create(description = 'test 2', academic_year = acad_year_1, associated_mlo = mlo_mod_2,percentage_score=90)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),2)
         #Call for programme 1, compulosry only, module 2 is not compulosry and should not show up
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 3)
         self.assertEqual(len(table_slo_1[1]), 3)
@@ -418,9 +418,14 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_1[1][0], 'Weighted average')
         self.assertEqual(table_slo_1[1][1], 45)#Only one measure
         self.assertAlmostEqual(table_slo_1[1][2],0)#no measure in second academic year -> totals row is zero
+
+        #test the attention scores
+        self.assertEqual(len(attn_score_direct),2) #only two years
+        self.assertEqual(attn_score_direct[0],1) #one measure in first year, associated to mlo 1, mapping strength is 3, so 3/3=1
+        self.assertEqual(attn_score_direct[1],0) #no measures in second year
         
         #Now include electives also: module 2 should show up for SLO 3 of prog 1
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=0)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=0)
         self.assertEqual(len(table_slo_3), 2)#1 measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 3)
         self.assertEqual(len(table_slo_3[1]), 3)
@@ -431,8 +436,12 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_3[1][1], 90)#One measure
         self.assertAlmostEqual(table_slo_3[1][2],0)#no measure in second academic year -> totals row is zero
 
+        self.assertEqual(len(attn_score_direct),2) #only two years
+        self.assertEqual(attn_score_direct[0],1) #two measure in first year, associated to mlo 1, mapping strength is 3, so 3/3=1
+        self.assertEqual(attn_score_direct[1],0) #no measures in second year
+        
         #same as above, but asking for compulsory only. Module 2 should disappear.
-        table_slo_3_compulsory = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
+        table_slo_3_compulsory, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3_compulsory), 1)#No measures, only the totals row
         self.assertEqual(len(table_slo_3_compulsory[0]), 3)
         self.assertEqual(table_slo_3_compulsory[0][0], 'Weighted average')
@@ -453,99 +462,39 @@ class TestAccreditationReport(TestCase):
                                                            n_fourth_highest_score = 15,\
                                                            associated_mlo = mlo_mod_2,\
                                                            parent_survey = mlo_survey )
-        # props = response_1.CalculateRepsonsesProprties()
-        # # #Generate the table for SLO 3, programme 1 - Including electives (module 2 should show up)
-        # mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
-        # self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
-        # self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
-        # self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
-        # self.assertEqual(mlo_table_slo_3[0][0], mlo_mod_2.module_code)
-        # self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 3
-        # self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2013
-        # self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
-        # self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1of module 3 mapped to slo 3
-        # self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2013
+        props = response_1.CalculateRepsonsesProprties()
+        # #Generate the table for SLO 3, programme 1 - Including electives (module 2 should show up)
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
+        self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
+        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_3[0][0], mlo_mod_2.module_code)
+        self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 3
+        self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2013
+        self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
+        self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1of module 3 mapped to slo 3
+        self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2013
 
-        # # Do the same, table for SLO 3, programme 1 - Including compulsory only: module 2 should disappear
-        # mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
-        # self.assertEqual(len(mlo_table_slo_3), 1)#Totals only
-        # self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
-        # self.assertEqual(mlo_table_slo_3[0][0], "Weighted average")
-        # self.assertAlmostEqual(mlo_table_slo_3[0][1],0)#Nothing
-        # self.assertAlmostEqual(mlo_table_slo_3[0][2],0)#Nothing in 2013
+        # Do the same, table for SLO 3, programme 1 - Including compulsory only: module 2 should disappear
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_3), 1)#Totals only
+        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_3[0][0], "Weighted average")
+        self.assertAlmostEqual(mlo_table_slo_3[0][1],0)#Nothing
+        self.assertAlmostEqual(mlo_table_slo_3[0][2],0)#Nothing in 2013
 
-        # #IF we calculate the table for SLO 1 of prog 2, compulsory only, mod 2 should appear
-        # # #Generate the table for SLO 1, programme 2 - compulsory only
-        # mlo_table_slo_1_2 = CalculateTableForMLOSurveys(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
-        # self.assertEqual(len(mlo_table_slo_1_2), 2)#One meausre, plus the totals
-        # self.assertEqual(len(mlo_table_slo_1_2[0]), 3)#Two years plus the label
-        # self.assertEqual(len(mlo_table_slo_1_2[1]), 3)#Two years plus the label
-        # self.assertEqual(mlo_table_slo_1_2[0][0], mlo_mod_2.module_code)
-        # self.assertAlmostEqual(mlo_table_slo_1_2[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 1
-        # self.assertAlmostEqual(mlo_table_slo_1_2[0][2],'')#Nothing in 2013
-        # self.assertEqual(mlo_table_slo_1_2[1][0], "Weighted average")
-        # self.assertAlmostEqual(mlo_table_slo_1_2[1][1],props['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
-        # self.assertAlmostEqual(mlo_table_slo_1_2[1][2],0)#Nothing in 2013
-
-
-
-        #Test the attention score tables - PROG 1
-        #Compulsory only first
-        att_score_table = CalculateAttentionScoresSummaryTable(prog_to_accredit.id,2012,2013, compulsory_only=1)        
-        #print(att_score_table)
-        self.assertEqual(len(att_score_table),3)#There are 3 SLOs
-        self.assertEqual(att_score_table[0]["letter"],'a')#first SLO, letter
-        self.assertEqual(att_score_table[1]["letter"],'b')#second SLO, letter
-        self.assertEqual(att_score_table[2]["letter"],'c')#third SLO, letter
-        self.assertEqual(len(att_score_table[0]["attention_scores_direct"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_mlo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_slo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_direct"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_mlo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_slo_surveys"]),2)#2 years from 2102 to 2013 included
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],1)#SLO a, direct measures, 2012 -> There is one mapping, strength 3
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],0)#SLO a, direct measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][0],0)#SLO b, direct measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][1],0)#SLO b, direct measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][0],0)#SLO c, direct measures, 2012 -> One measure, but it is elective (no show)
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][1],0)#SLO c, direct measures, 2013 -> None
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],0)#SLO a, MLO survey measures, 2012 ->None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],0)#SLO b, MLO  survey measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][0],0)#SLO c, MLO  survey measures, 2012 -> One question, but it is elective (no show)
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
-
-        #Now same, but allow electives to be counted
-        att_score_table = CalculateAttentionScoresSummaryTable(prog_to_accredit.id,2012,2013, compulsory_only=0)        
-        #print(att_score_table)
-        self.assertEqual(len(att_score_table),3)#There are 3 SLOs
-        self.assertEqual(att_score_table[0]["letter"],'a')#first SLO, letter
-        self.assertEqual(att_score_table[1]["letter"],'b')#second SLO, letter
-        self.assertEqual(att_score_table[2]["letter"],'c')#third SLO, letter
-        self.assertEqual(len(att_score_table[0]["attention_scores_direct"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_mlo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_slo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_direct"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_mlo_surveys"]),2)#2 years from 2102 to 2013 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_slo_surveys"]),2)#2 years from 2102 to 2013 included
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],1)#SLO a, direct measures, 2012 -> There is one measure, strength 3
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],0)#SLO a, direct measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][0],0)#SLO b, direct measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][1],0)#SLO b, direct measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][0],1)#SLO c, direct measures, 2012 -> One measure, ELECTIVE SHOULD SHOW UP
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][1],0)#SLO c, direct measures, 2013 -> None
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],0)#SLO a, MLO survey measures, 2012 ->None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],0)#SLO b, MLO  survey measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][0],1)#SLO c, MLO  survey measures, 2012 -> One question, ELECTIVE SHOULD SHOW UP
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
-
+        #IF we calculate the table for SLO 1 of prog 2, compulsory only, mod 2 should appear
+        # #Generate the table for SLO 1, programme 2 - compulsory only
+        mlo_table_slo_1_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_1_2), 2)#One meausre, plus the totals
+        self.assertEqual(len(mlo_table_slo_1_2[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_1_2[1]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_1_2[0][0], mlo_mod_2.module_code)
+        self.assertAlmostEqual(mlo_table_slo_1_2[0][1],props['percentage_positive'])#MLO of module 2 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1_2[0][2],'')#Nothing in 2013
+        self.assertEqual(mlo_table_slo_1_2[1][0], "Weighted average")
+        self.assertAlmostEqual(mlo_table_slo_1_2[1][1],props['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1_2[1][2],0)#Nothing in 2013
 
     def test_report_realistic(self):
         self.setup_user()
@@ -733,7 +682,7 @@ class TestAccreditationReport(TestCase):
         #First measure added performed in acad_year_2 on module 1_2, which is taken by students in year 1. Measure should appear in second academic year 
         measure_1 = MLOPerformanceMeasure.objects.create(description = 'test 1', academic_year = acad_year_2, associated_mlo = mlo_1_1,percentage_score=75)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),1)
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -748,7 +697,13 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_1[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_1[1][4], 0)#no measure in last academic year -> totals row is zero
         
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #no measure in first year
+        self.assertEqual(attn_score_direct[1],1) #one measures in second year - MLO 1 of MOD 1, mapped to SLO 1 with strength=3 -> should be 3/3 = 1 here
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+        
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -763,7 +718,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_2[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_2[1][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -804,7 +759,7 @@ class TestAccreditationReport(TestCase):
         #Now add another measure for MLO 2, still module 1. This is mapped to SLO 1 (strength 2). So only the table for SLO1 should change - SAME academic year
         measure_2 = MLOPerformanceMeasure.objects.create(description = 'test 2', academic_year = acad_year_2, associated_mlo = mlo_1_2,percentage_score=45)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),2)
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -819,7 +774,13 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_1[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_1[1][4], 0)#no measure in last academic year -> totals row is zero
         
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #no measure in first year
+        self.assertAlmostEqual(attn_score_direct[1],3/3+2/3) #two measures in second year - MLO 1 of MOD 1,  mapped to SLO 1 with strength=3 -> should be 3/3, plus MLO 2 of mod 1 (mapping strength 2 -> should be 2/3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -834,7 +795,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_2[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_2[1][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -854,7 +815,7 @@ class TestAccreditationReport(TestCase):
         # Tables for SLO1 and SLO2 should change. Tbale for SLO3 should remain unaltered
         measure_3 = MLOPerformanceMeasure.objects.create(description = 'test 3', academic_year = acad_year_3, associated_mlo = mlo_2_1,percentage_score=65)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),3)
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 3)#measures for Module 1 and module 2 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -875,7 +836,15 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_1[2][3], 0)#no measure in third academic year (module 2, MLO 1)
         self.assertEqual(table_slo_1[2][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #no measure in first year
+        self.assertAlmostEqual(attn_score_direct[1],3/3+2/3+2/3) #one measures in second year -  MLO 1 of MOD 1,  mapped to SLO 1 with strength=3 -> 
+                                                                  #should be 3/3, plus MLO 2 of mod 1 (mapping strength 2 -> should be 2/3,
+                                                                  #plus the new measure of MLO of module 2 (mapping strength=2) - >should be 2/3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+        
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 3)#MOD 1, MOD 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -896,7 +865,13 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_2[2][3], 0)#No measure in third academic year
         self.assertEqual(table_slo_2[2][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #no measure in first year
+        self.assertAlmostEqual(attn_score_direct[1],3/3+3/3) #oTwo measure, both with mapping strength=3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -916,7 +891,7 @@ class TestAccreditationReport(TestCase):
         # # Tables for SLO1 and SLO3 should change. Table for SLO2 should remain unaltered
         measure_4 = MLOPerformanceMeasure.objects.create(description = 'test 3', academic_year = acad_year_3, associated_mlo = mlo_3_1,percentage_score=15)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),4)
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -943,8 +918,16 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_1[3][3], 0)#No measure in third academic year -> total is zero
         self.assertEqual(table_slo_1[3][4], 0)#no measure in last academic year -> totals row is zero
 
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertAlmostEqual(attn_score_direct[0],2/3) #one measure in first year, MLO 1 of module 3, maps with strength 2 to SLO 1 --> should be 2/3
+        self.assertAlmostEqual(attn_score_direct[1],3/3+2/3+2/3) #one measures in second year -  MLO 1 of MOD 1,  mapped to SLO 1 with strength=3 -> 
+                                                                  #should be 3/3, plus MLO 2 of mod 1 (mapping strength 2 -> should be 2/3,
+                                                                  #plus the new measure of MLO of module 2 (mapping strength=2) - >should be 2/3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+
         # #unchanged
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 3)#MOD 1, MOS 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -969,8 +952,14 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_2[2][2], (75.0*3+65*3)/(3+3))#75 measure in second academic year plus 65 ->weigthed average
         self.assertAlmostEqual(table_slo_2[2][3], 0)#No measure in third academic year
         self.assertEqual(table_slo_2[2][4], 0)#no measure in last academic year -> totals row is zero
+        #unchanged
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #no measure in first year
+        self.assertAlmostEqual(attn_score_direct[1],3/3+3/3) #Two measure, both with mapping strength=3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -991,13 +980,19 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_3[2][4], 0)#no measure in last academic year -> totals row is zero
 
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertAlmostEqual(attn_score_direct[0],3/3) #One measure, for MLO 1 of module 3, maps with strength=3 to slo 3 -> should be 3/3=1
+        self.assertAlmostEqual(attn_score_direct[1],1/3) #One measure, for MLO 1 of module 1, maps with strength=1 to slo 3 -> should be 1/3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+
         # #Now add another measure for MLO 1, for module 4. This is taken in year 4. Measure taken in acad_year_4, should affect acad_year_1
         # # This is mapped to SLO 2 (strength 1).
         # # Tables for SLO2 should change. Tables for SLO1 and SLO3 should remain unaltered
         measure_5 = MLOPerformanceMeasure.objects.create(description = 'test 4', academic_year = acad_year_4, associated_mlo = mlo_4_1,percentage_score=12.6)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),5)
         #unchanged
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -1025,7 +1020,15 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_1[3][4], 0)#no measure in last academic year -> totals row is zero
 
         
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertAlmostEqual(attn_score_direct[0],2/3) #one measure in first year, MLO 1 of module 3, maps with strength 2 to SLO 1 --> should be 2/3
+        self.assertAlmostEqual(attn_score_direct[1],3/3+2/3+2/3) #one measures in second year -  MLO 1 of MOD 1,  mapped to SLO 1 with strength=3 -> 
+                                                                  #should be 3/3, plus MLO 2 of mod 1 (mapping strength 2 -> should be 2/3,
+                                                                  #plus the new measure of MLO of module 2 (mapping strength=2) - >should be 2/3
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
+
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 4)#MOD 1, MOS 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -1051,9 +1054,14 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_2[3][3], 0)#No measure in third academic year
         self.assertEqual(table_slo_2[3][4], 0)#no measure in last academic year -> totals row is zero
 
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertAlmostEqual(attn_score_direct[0],1/3) #one measure in first year, MLO 1 of module 4, maps with strength 1 to SLO 2 --> should be 1/3
+        self.assertAlmostEqual(attn_score_direct[1],3/3+3/3) #see abbve
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
         # #unachanged
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -1106,7 +1114,7 @@ class TestAccreditationReport(TestCase):
                                                         tertiary_associated_mlo = mlo_1_4,
                                                         percentage_score=89.9)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),6)
-        table_slo_1 = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -1134,7 +1142,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_1[3][4], Decimal((89.9*2+89.9*1)/(2.0+1.0)))#4th academic year -> totals row is weighted average
 
         
-        table_slo_2 = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 4)#MOD 1, MOD 2 , MOD 4 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -1161,7 +1169,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_2[3][4], Decimal(89.9))#only one  measure in last academic year
 
 
-        table_slo_3 = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -1182,8 +1190,13 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure just added 
 
-        table_slo_wrong_range = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year-50, end_year = acad_year_4.start_year-50, compulsory_only=1)
+        table_slo_wrong_range, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year-50, end_year = acad_year_4.start_year-50, compulsory_only=1)
         self.assertEqual(len(table_slo_wrong_range), 1)#totals only
+        self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
+        self.assertEqual(attn_score_direct[0],0) #o
+        self.assertEqual(attn_score_direct[1],0) #
+        self.assertEqual(attn_score_direct[2],0) #no measures in third year
+        self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
         # #####################################################################
         # # Test the MLO survey table
@@ -1202,18 +1215,23 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_1_1,\
                                                            parent_survey = mlo_survey_1 )
         props = response_1.CalculateRepsonsesProprties()
+        self.assertAlmostEqual(props["percentage_positive"],100*(50+30)/(50+30+5+15))
         # #Generate the table for SLO 1
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2013
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
-        self.assertAlmostEqual(mlo_table_slo_1[1][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2013
-        
+
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 2 academic years
+        self.assertEqual(mlo_survey_attention_scores[0],1) #Measure to MLO 1 of module 1 mapped to slo 1, sternght =3-> 3/3=1
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
         #call the collective method - test the structures for plotting
         all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
@@ -1231,7 +1249,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO slo surveys 
 
         #Generate the table for SLO 2 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1242,8 +1260,12 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[1][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_2[1][2],0)#Nothing in 2021
 
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 2 academic years
+        self.assertEqual(mlo_survey_attention_scores[0],1) #Measure to MLO 1 of module 1 mapped to slo 2, sternght = 3-> 3/3=1
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
         #Generate the table for SLO 3 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1254,7 +1276,11 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
 
-        #Create another response in the same survey, for MLO 2 of module 1
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],1/3) #Measure to MLO 1 of module 1 mapped to slo 3, sternght = 1-> 1/3
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
+        #Create another response in the same survey, for MLO 2 of module 1, which maps only to slo 1, strength = 2
         response_2 = SurveyQuestionResponse.objects.create(question_text = mlo_1_2.mlo_description,\
                                                            n_highest_score = 5,\
                                                            n_second_highest_score = 15,\
@@ -1264,21 +1290,24 @@ class TestAccreditationReport(TestCase):
                                                            parent_survey = mlo_survey_1 )
         props_2 = response_2.CalculateRepsonsesProprties()
         #Generate the table for SLO 1 - CHANGED
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
         expected_weigthed_average = (3.0*props['percentage_positive']  + \
                                      2.0*props_2['percentage_positive'])/(3.0+2.0)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in 2021
         self.assertEqual(mlo_table_slo_1[1][0], "Weighted average")
         self.assertAlmostEqual(mlo_table_slo_1[1][1],expected_weigthed_average)#same as above
         self.assertAlmostEqual(mlo_table_slo_1[1][2],0)#Nothing in 2021
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 4 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],3/3+2/3) #Measure to MLO 1 of module 1 mapped to slo 2, sternght = 3-> 3/3=1 PLUS MLO 2 of mod 1, strength=2 -> 2/3
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
 
-        #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 2
+        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1290,7 +1319,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[1][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1317,7 +1346,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_2_1,\
                                                            parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3)
         props_3 = response_3.CalculateRepsonsesProprties()
-        mlo_table_slo_1 = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -1325,7 +1354,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
         expected_weigthed_average = (3.0*props['percentage_positive'] + \
                                      2.0*props_2['percentage_positive'])/(3.0+2.0)
-        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in second academic year
         self.assertEqual(mlo_table_slo_1[1][0], mlo_2_1.module_code)
         self.assertAlmostEqual(mlo_table_slo_1[1][1],props_3['percentage_positive'])#MLO 1 of module 2 mapped to slo 1
@@ -1337,8 +1366,12 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_1[2][1],expected_weigthed_average_2)#same as above
         self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in second academic year
 
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],3/3+2/3+2/3) #
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
         # #Generate the table for SLO 2 
-        mlo_table_slo_2 = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1355,8 +1388,12 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[2][1],expected_weighted_average_3)
         self.assertAlmostEqual(mlo_table_slo_2[2][2],0)#Nothing in 2021
 
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],3/3+3/3) #
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
         #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
-        mlo_table_slo_3 = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1367,9 +1404,78 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
 
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 4 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],1/3) # MLO 1 of moule 1 maps to SLO 3 with strength = 1 
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
+        #We now add another repsonse in the same survey, same MLO to test the averaginbg out of same MLO targeted by different questions
+        response_4 = SurveyQuestionResponse.objects.create(question_text = mlo_2_1.mlo_description,\
+                                                           n_highest_score = 85,\
+                                                           n_second_highest_score = 8,\
+                                                           n_third_highest_score = 29,\
+                                                           n_fourth_highest_score = 15,\
+                                                           associated_mlo = mlo_2_1,\
+                                                           parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3) - NOT SAME MLO, SAME SURVEY
+        props_4 = response_4.CalculateRepsonsesProprties()
+        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
+        self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_1[2]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_1[0][0], mlo_1_1.module_code)
+        expected_weigthed_average = (3.0*props['percentage_positive'] + \
+                                     2.0*props_2['percentage_positive'])/(3.0+2.0)
+        self.assertAlmostEqual(mlo_table_slo_1[0][1],expected_weigthed_average)#MLO 1of module 1 mapped to slo 1, but also MLO 2 of module 1 is mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_1[0][2],'')#Nothing in second academic year
+        self.assertEqual(mlo_table_slo_1[1][0], mlo_2_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_1[1][1],0.5*(props_3['percentage_positive']+props_4['percentage_positive']))#MLO 1 of module 2 mapped to slo 1, two responses
+        self.assertAlmostEqual(mlo_table_slo_1[1][2],'')#Nothing in second academic year
+        self.assertEqual(mlo_table_slo_1[2][0], "Weighted average")
+        expected_weigthed_average_2 = (3.0*props['percentage_positive'] + \
+                                      2.0*props_2['percentage_positive'] + \
+                                      2.0*props_3['percentage_positive'] + 2.0*props_4['percentage_positive'])/(3.0+2.0+2.0+2.0)
+        self.assertAlmostEqual(mlo_table_slo_1[2][1],expected_weigthed_average_2)#same as above
+        self.assertAlmostEqual(mlo_table_slo_1[2][2],0)#Nothing in second academic year
+
+        self.assertEqual(len(mlo_survey_attention_scores),2) #request is 4 academic years
+        self.assertAlmostEqual(mlo_survey_attention_scores[0],3/3+2/3+2/3+2/3) #
+        self.assertEqual(mlo_survey_attention_scores[1],0) #
+
+        # #Generate the table for SLO 2 
+        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
+        self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_2[2]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_2[0][0], mlo_1_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_2[0][1],props['percentage_positive'])#MLO 1of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_2[0][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_2[1][0], mlo_2_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_2[1][1],0.5*(props_3['percentage_positive']+props_4['percentage_positive']))#MLO 1of module 1 mapped to slo 1, two responses - simple average
+        self.assertAlmostEqual(mlo_table_slo_2[1][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_2[2][0], "Weighted average")
+        expected_weighted_average_3 = (3.0* props['percentage_positive'] +\
+                                       3.0*props_3['percentage_positive']+3.0*props_4['percentage_positive'])/(3.0+3.0+3.0)
+        self.assertAlmostEqual(mlo_table_slo_2[2][1],expected_weighted_average_3)
+        self.assertAlmostEqual(mlo_table_slo_2[2][2],0)#Nothing in 2021
+
+        #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
+        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
+        self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
+        self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
+        self.assertEqual(mlo_table_slo_3[0][0], mlo_1_1.module_code)
+        self.assertAlmostEqual(mlo_table_slo_3[0][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_3[0][2],'')#Nothing in 2021
+        self.assertEqual(mlo_table_slo_3[1][0], "Weighted average")
+        self.assertAlmostEqual(mlo_table_slo_3[1][1],props['percentage_positive'])#MLO 1 of module 1 mapped to slo 1
+        self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
+        
         #Cover the empty table because of dates out of range
-        empty_mlo_table_slo = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
+        empty_mlo_table_slo, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
         self.assertEqual(len(empty_mlo_table_slo), 1)#Only the totals
+
+
 
         # # #####################################################################
         # # # Test the SLO survey table
@@ -1397,11 +1503,15 @@ class TestAccreditationReport(TestCase):
         props_slo_1 = slo_response_1.CalculateRepsonsesProprties()
         props_slo_2 = slo_response_2.CalculateRepsonsesProprties()
         # #Generate table for SLO 1
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_1_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description)
         self.assertAlmostEqual(slo_1_survey_table[0]['percent_positive'],props_slo_1['percentage_positive'])
         self.assertEqual(slo_1_survey_table[0]['n_questions'],1)
+
+        self.assertEqual(len(slo_survey_attn_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(slo_survey_attn_scores[0],1) #one question in first year for slo 1
+        self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
 
         all_info_slo_1 = CalculateAllInforAboutOneSLO(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(all_info_slo_1["slo_measures_plot_data"]),4)
@@ -1413,15 +1523,23 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO slo surveys 
 
         #Generate table for SLO 2
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_2_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_2_survey_table),1)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],props_slo_2['percentage_positive'])
         self.assertEqual(slo_2_survey_table[0]['n_questions'],1)
 
+        self.assertEqual(len(slo_survey_attn_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(slo_survey_attn_scores[0],1) #one question in first year for slo 2
+        self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
+
         #Generate table for SLO 3 (this one is empty)
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_3_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_3_survey_table),0)
+
+        self.assertEqual(len(slo_survey_attn_scores),2) #request is 2 academic years
+        self.assertEqual(slo_survey_attn_scores[0],0) #nothing here
+        self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
 
         #Add another response linked to slo 1 in the same survey (test concatenation and averaging of two questions with same target)
         alternate_question = "blah blah"
@@ -1435,22 +1553,30 @@ class TestAccreditationReport(TestCase):
         
         props_slo_alternate = slo_response_1_alternate.CalculateRepsonsesProprties()
         #Generate table for SLO 1
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_1_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
         expected_perc = 0.5*(props_slo_1['percentage_positive']+ props_slo_alternate['percentage_positive'])
         self.assertAlmostEqual(slo_1_survey_table[0]['percent_positive'],expected_perc)
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now
 
+        self.assertEqual(len(slo_survey_attn_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(slo_survey_attn_scores[0],2) #two questions in first year for slo 1
+        self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
+
         #Generate table for SLO 2 - UNCHANGED
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_2_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_2_survey_table),1)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],props_slo_2['percentage_positive'])
         self.assertEqual(slo_2_survey_table[0]['n_questions'],1)
 
+        self.assertEqual(len(slo_survey_attn_scores),2) #request is 2 academic years
+        self.assertAlmostEqual(slo_survey_attn_scores[0],1) #one question in first year for slo 2
+        self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
+
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_3_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_3_survey_table),0)
 
         #Do another survey. Test ability to create new lines in the table
@@ -1469,7 +1595,7 @@ class TestAccreditationReport(TestCase):
         
         props_new_slo_2_srv_2 = slo_response_2_srv2.CalculateRepsonsesProprties()
         #Generate table for SLO 1 - UNCHANGED
-        slo_1_survey_table = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_1_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_1_survey_table),1)
         self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
         expected_perc = 0.5*(props_slo_1['percentage_positive'] + props_slo_alternate['percentage_positive'])
@@ -1477,7 +1603,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now
 
         #Generate table for SLO 2 - new line added here
-        slo_2_survey_table = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_2_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_2_survey_table),2)
         self.assertEqual(slo_2_survey_table[0]['question'],slo_2.slo_description)
         self.assertAlmostEqual(slo_2_survey_table[0]['percent_positive'],props_slo_2['percentage_positive'])
@@ -1487,7 +1613,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_2_survey_table[1]['n_questions'],1)
 
         #Generate table for SLO 3 (this one is empty) - UNCHANGED
-        slo_3_survey_table = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        slo_3_survey_table, slo_survey_attn_scores  = CalculateTableForSLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_3_survey_table),0)
 
         # #Test the MLO-SLO mapping table for a single SLO
@@ -1547,12 +1673,12 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_2_table[1]["numerical_mappings"][0], 3)#SLO 2 - MOD 2 - 2012
         self.assertEqual(slo_2_table[1]["numerical_mappings"][1], 3)#SLO 2 - MOD 2 - 2013
         self.assertEqual(slo_2_table[1]["numerical_mappings"][2], 3)#SLO 2 - MOD 2 - 2014
-        self.assertEqual(slo_2_table[1]["numerical_mappings"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MODE 2 yet
+        self.assertEqual(slo_2_table[1]["numerical_mappings"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MOD 2 yet
 
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][0], 1)#SLO 2 - MOD 2 - 2012
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][1], 1)#SLO 2 - MOD 2 - 2013
         self.assertEqual(slo_2_table[1]["n_mlo_mapped"][2], 1)#SLO 2 - MOD 2 - 2014
-        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MODE 2 yet
+        self.assertEqual(slo_2_table[1]["n_mlo_mapped"][3], 0)#SLO 2 - MOD 2 - 2015 -> 2015 cohort hasn't taken MOD 2 yet
 
         self.assertEqual(slo_2_table[2]["numerical_mappings"][0], 1)#SLO 2 - MOD 4 - 2012
         self.assertEqual(slo_2_table[2]["numerical_mappings"][1], 0)#SLO 2 - MOD 4 - 2013 -> 2013 cohort hasn't taken MOD 4 yet
@@ -1599,87 +1725,6 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_3_table[2]["n_mlo_mapped"][1], 2)#SLO 3 - MOD 3 - 2013 -> 2 MLO, both 3
         self.assertEqual(slo_3_table[2]["n_mlo_mapped"][2], 0)#SLO 3 - MOD 3 - 2014
         self.assertEqual(slo_3_table[2]["n_mlo_mapped"][3], 0)#SLO 3 - MOD 3 - 2015
-
-        #Test the attention score tables
-        att_score_table = CalculateAttentionScoresSummaryTable(prog_to_accredit.id,acad_year_1.start_year,acad_year_4.start_year, compulsory_only=1)        
-        #print(att_score_table)
-        self.assertEqual(len(att_score_table),4)#There are 4 SLOs
-        self.assertEqual(att_score_table[0]["letter"],'a')#first SLO, letter
-        self.assertEqual(att_score_table[1]["letter"],'b')#second SLO, letter
-        self.assertEqual(att_score_table[2]["letter"],'c')#third SLO, letter
-        self.assertEqual(att_score_table[3]["letter"],'c1')#fourth SLO, letter
-        self.assertEqual(len(att_score_table[0]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[0]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[1]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[2]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[2]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[2]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[3]["attention_scores_direct"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[3]["attention_scores_mlo_surveys"]),4)#4 years from 2102 to 2015 included
-        self.assertEqual(len(att_score_table[3]["attention_scores_slo_surveys"]),4)#4 years from 2102 to 2015 included
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][0],2/3)#SLO a, direct measures, 2012 -> There is one mapping, strenth 2
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][1],1+2/3+2/3)#SLO a, direct measures, 2013 -> 3 measures (3 and 2 and 2) -> 1+2/3 +2/3
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][2],0)#SLO a, direct measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_direct"][3],1/3+2/3)#SLO a, direct measures, 2015 ->Two measures
-
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][0],1/3)#SLO b, direct measures, 2012 -> There is one mapping, strenth 1 (from mod 4 to slo 2)
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][1],3/3 + 3/3)#SLO b, direct measures, 2013 -> 2 measures (3 and 3) -> 3/3 +3/3
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][2],0)#SLO b, direct measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_direct"][3],2/3)#SLO b, direct measures, 2015 -> One measure from mod 1, mlo 4 as tertiary associated. Strength 2
-
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][0],3/3)#SLO c, direct measures, 2012 -> There is one mapping, from mlo 3 (mod 1) sterngth 3 
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][1],1/3)#SLO c, direct measures, 2013 -> 1 measure, from mlo 1 (mod 1) strength is 1
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][2],0)#SLO c, direct measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_direct"][3],2/3)#SLO c, direct measures, 2015 -> One measure from mod 1, mlo 3 as secondary associated. Strength 2
-
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][0],0)#SLO c1, NO direct measures, 2012
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][1],0)#SLO c1, NO direct measures, 2013 
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][2],0)#SLO c1, NO direct measures, 2014 
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_direct"][3],0)#SLO c1, NO direct measures, 2015
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][0],3/3 + 2/3 + 2/3)#SLO a, MLO survey measures, 2012 -> Three questions
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][2],0)#SLO a, MLO  survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_mlo_surveys"][3],0)#SLO a, MLOsurvey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][0],3/3 + 3/3)#SLO b, MLO  survey measures, 2012 -> Two questions
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][2],0)#SLO b, MLO  survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_mlo_surveys"][3],0)#SLO b, MLO  survey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][0],1/3)#SLO c, MLO  survey measures, 2012 -> One question
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][2],0)#SLO c, MLO survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_mlo_surveys"][3],0)#SLO c, vsurvey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][0],0)#SLO c1, MLO  survey measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][1],0)#SLO c1, MLO survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][2],0)#SLO c1, MLO survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_mlo_surveys"][3],0)#SLO c1, vsurvey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][0],2)#SLO a, MLO survey measures, 2012 -> two questions
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][1],0)#SLO a, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][2],0)#SLO a, MLO  survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[0]["attention_scores_slo_surveys"][3],0)#SLO a, MLOsurvey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][0],2)#SLO b, MLO  survey measures, 2012 -> Two questions
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][1],0)#SLO b, MLO  survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][2],0)#SLO b, MLO  survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[1]["attention_scores_slo_surveys"][3],0)#SLO b, MLO  survey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][0],0)#SLO c, MLO  survey measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][1],0)#SLO c, MLO survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][2],0)#SLO c, MLO survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[2]["attention_scores_slo_surveys"][3],0)#SLO c, vsurvey measures, 2015 -> None
-
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][0],0)#SLO c1, MLO  survey measures, 2012 -> None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][1],0)#SLO c1, MLO survey measures, 2013 -> None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][2],0)#SLO c1, MLO survey measures, 2014 ->None
-        self.assertAlmostEqual(att_score_table[3]["attention_scores_slo_surveys"][3],0)#SLO c1, vsurvey measures, 2015 -> None
 
         #Test the big slo mlo table
         main_body_table = CalculateTableForOverallSLOMapping(prog_to_accredit.id, 2020,2021, compulsory_only=1)['main_body_table']
