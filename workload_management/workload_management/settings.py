@@ -115,18 +115,28 @@ if ('production' in str(branch_name)):
 else: #Not the production branch
     # SECURITY WARNING: keep the secret key used in production secret!
     SECRET_KEY = 'django-insecure-)v@rsyf9#%jgot9b4d_f64d(q%^7ks8yhtph5^uw51celmgqw3'
-    # SECURITY WARNING: don't run with debug turned on in production!
-    DEBUG = True
-    db_to_use = 'db.sqlite3'
     if ('devel' in str(branch_name)):
-        db_to_use = 'db_devel.sqlite3'
-    print('Using database ' + db_to_use)
-    DATABASES = {
+        # SECURITY WARNING: don't run with debug turned on in production!
+        DEBUG = True
+        DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': str(BASE_DIR / db_to_use),
+            'ENGINE': 'django.db.backends.postgresql',
+            'OPTIONS': {
+                'service': 'workload_service',
+                'passfile': '.pgpass',
+            },
         }
-    }
+        }
+        print('**** We are using devel settings  *****')
+    else:
+        db_to_use = 'db.sqlite3'
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': str(BASE_DIR / db_to_use),
+            }
+        }
+        print('**** We are using main settings  *****')
 
 
 # Password validation
