@@ -37,7 +37,7 @@ class TestUserPermissions(TestCase):
         mod_code = "BN2102"
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=new_dept)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
         module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
@@ -136,8 +136,8 @@ class TestUserPermissions(TestCase):
         
         #test faculty and department mismatch
         #Create one more faculty and one more dpet      
-        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac_2', faculty_acronym = 'CDE_2')
-        new_dept_2 = Department.objects.create(department_name = 'test_dept_2', department_acronym = 'BME_2', faculty = new_fac_2)
+        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac_2', faculty_acronym = 'CDE2')
+        new_dept_2 = Department.objects.create(department_name = 'test_dept_2', department_acronym = 'BME2', faculty = new_fac_2)
         uni_dept_admin.faculty = new_fac_2
         uni_dept_admin.save()
         uni_dept_admin.department = new_dept_2
@@ -246,7 +246,7 @@ class TestUserPermissions(TestCase):
         acad_year_2 = Academicyear.objects.create(start_year=2022)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
         scenario_2 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept_2, status = WorkloadScenario.OFFICIAL)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=new_dept)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False,faculty=new_fac)
         track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 2.0, is_adjunct = False,faculty=new_fac_2)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0, faculty=new_fac)

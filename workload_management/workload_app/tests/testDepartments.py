@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import WorkloadScenario,Department, Faculty, ProgrammeOffered, Academicyear, Lecturer, \
     ServiceRole, EmploymentTrack, Module, ModuleType,TeachingAssignment, UniversityStaff
-from workload_app.global_constants import DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM, DEFAULT_FACULTY_NAME
 
 class TestDepartments(TestCase):
     def setup_user(self):
@@ -25,27 +24,24 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.all().count(),0) #0 to start with
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
-
+        self.assertEqual(Department.objects.all().count(),0) #
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         new_dept_name = 'new name'
         new_dept_code = 'NN'
-        #add another one
+        #add  one
         self.client.post(reverse('workload_app:manage_department'),{'department_name':new_dept_name, 'department_acronym' : new_dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
-        self.assertEqual(Department.objects.all().count(),2) #1 created by default when there is none + 1 one more
+                        'faculty' : new_fac.id, 'fresh_record' :  True})
+        self.assertEqual(Department.objects.all().count(),1) #1 created 
         self.assertEqual(Department.objects.filter(department_name = new_dept_name).count(), 1)
         self.assertEqual(Department.objects.filter(department_acronym = new_dept_code).count(), 1)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
+
 
         new_dept_object = Department.objects.filter(department_name = new_dept_name)
         #Remove department
         self.client.post(reverse('workload_app:remove_department'),{'select_department_to_remove':new_dept_object.get().id})
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none + 1 one more
+        self.assertEqual(Department.objects.all().count(),0) #
         self.assertEqual(Department.objects.filter(department_name = new_dept_name).count(), 0)
         self.assertEqual(Department.objects.filter(department_acronym = new_dept_code).count(), 0)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
 
     def test_add_same_name(self):
 
@@ -55,29 +51,19 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.all().count(),0) #0 to start with
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
+        self.assertEqual(Department.objects.all().count(),0) #
 
         new_dept_name = 'new name'
-        new_dept_code = 'NN'
-        #add another one
-        self.client.post(reverse('workload_app:manage_department'),{'department_name':new_dept_name, 'department_acronym' : new_dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
-        self.assertEqual(Department.objects.all().count(),2) #1 created by default when there is none + 1 one more
-        self.assertEqual(Department.objects.filter(department_name = new_dept_name).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = new_dept_code).count(), 1)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        new_dept = Department.objects.create(department_name=new_dept_name, department_acronym="TTDD", faculty=new_fac)
 
-        #Add one with same name
+        new_dept_code = 'NN'
+        #add another one, same name. It should fail to add
         self.client.post(reverse('workload_app:manage_department'),{'department_name':new_dept_name, 'department_acronym' : new_dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
-        
-        #Check everything is the same,addition should have failed
-        self.assertEqual(Department.objects.all().count(),2) #1 created by default when there is none + 1 one more
+                        'faculty' : new_fac.id, 'fresh_record' :  True})
+        self.assertEqual(Department.objects.all().count(),1) #1, add should fail
         self.assertEqual(Department.objects.filter(department_name = new_dept_name).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = new_dept_code).count(), 1)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
+        self.assertEqual(Department.objects.filter(department_acronym = new_dept_code).count(), 0)
 
 
     def test_add_remove_with_workloads(self):
@@ -85,86 +71,66 @@ class TestDepartments(TestCase):
         self.client.login(username='test_user', password='test_user_password')
 
         self.assertEqual(Department.objects.all().count(),0) #0 to start with
-        response = self.client.get(reverse('workload_app:workloads_index'))
-        self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
+        self.assertEqual(Department.objects.all().count(),0) #
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        acad_year = Academicyear.objects.create(start_year=2025)
         #Add a new dept
         new_dept_name = 'new name'
         new_dept_code = 'NN'
         self.client.post(reverse('workload_app:manage_department'),{'department_name':new_dept_name, 'department_acronym' : new_dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
-        self.assertEqual(Department.objects.all().count(),2) 
+                        'faculty' : new_fac.id, 'fresh_record' :  True})
+        self.assertEqual(Department.objects.all().count(),1) 
 
         new_dept_object = Department.objects.filter(department_name = new_dept_name)
         #Add a new workload associated with the new department
-        self.client.post(reverse('workload_app:manage_scenario'), {'label': 'test_scen', 'dept' : new_dept_object.get().id, 'status': WorkloadScenario.DRAFT, 'copy_from':'','fresh_record' : True, 'academic_year' : 1});
+        self.client.post(reverse('workload_app:manage_scenario'), {'label': 'test_scen', 'dept' : new_dept_object.get().id, 'status': WorkloadScenario.DRAFT, 'copy_from':'','fresh_record' : True, 'academic_year' : acad_year.id});
         
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=new_dept_name).count(), 1)
-        self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=DEFAULT_DEPARTMENT_NAME).count(), 0)
 
-        #Now remove the new department. Expected behaviour: the workload will be assigned the Default department
+        #Now remove the new department. Expected behaviour: the workload will disappear
         self.client.post(reverse('workload_app:remove_department'),{'select_department_to_remove':new_dept_object.get().id})        
-        self.assertEqual(WorkloadScenario.objects.all().count(), 1)
+        self.assertEqual(WorkloadScenario.objects.all().count(), 0)
         self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=new_dept_name).count(), 0)
-        self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.all().count(),1)
-
-        #Check that, if one removes the default deprtment nothing is done
-        def_dept_object = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
-        self.client.post(reverse('workload_app:remove_department'),{'select_department_to_remove':def_dept_object.get().id})        
-        self.assertEqual(WorkloadScenario.objects.all().count(), 1)
-        self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=new_dept_name).count(), 0)
-        self.assertEqual(WorkloadScenario.objects.filter(dept__department_name=DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.all().count(),1)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(),1)
+        self.assertEqual(Department.objects.all().count(),0)
 
     def test_edit_department(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
         self.assertEqual(Department.objects.all().count(),0) #0 to start with
-        response = self.client.get(reverse('workload_app:workloads_index'))
-        self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        acad_year = Academicyear.objects.create(start_year=2025)
         #Add a new dept
         dept_name = 'my_dept'
         dept_code = 'NN'
         self.client.post(reverse('workload_app:manage_department'),{'department_name':dept_name, 'department_acronym' : dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
-        self.assertEqual(Department.objects.all().count(),2) 
+                        'faculty' : new_fac.id, 'fresh_record' :  True})
+        self.assertEqual(Department.objects.all().count(),1) 
         self.assertEqual(Department.objects.filter(department_name = dept_name).count(), 1)
         self.assertEqual(Department.objects.filter(department_acronym = dept_code).count(), 1)
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
 
         #Now edit the name of the new dept
         dept_id = Department.objects.filter(department_name = dept_name).get().id
         new_name = "new name"
         self.client.post(reverse('workload_app:manage_department'),{'department_name':new_name, 'department_acronym' : dept_code,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  False,
+                        'faculty' : new_fac.id, 'fresh_record' :  False,
                         'dept_id' : dept_id})
-        self.assertEqual(Department.objects.all().count(),2) #still 2
+        self.assertEqual(Department.objects.all().count(),1) #still 1
         self.assertEqual(Department.objects.filter(department_name = dept_name).count(), 0) #should be gone
         self.assertEqual(Department.objects.filter(department_name = new_name).count(), 1) #should be there, it is the new name
         self.assertEqual(Department.objects.filter(department_acronym = dept_code).count(), 1) #no change
-        self.assertEqual(Department.objects.filter(faculty = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id).count(), 2) #this plus the default
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
         
         new_acronym = "NCRW"
         #Now edit the acronym
         self.client.post(reverse('workload_app:manage_department'),{'department_name':new_name, 'department_acronym' : new_acronym,\
-                        'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  False,
+                        'faculty' : new_fac.id, 'fresh_record' :  False,
                         'dept_id' : dept_id})
-        self.assertEqual(Department.objects.all().count(),2) #still 2
+        self.assertEqual(Department.objects.all().count(),1) #still 1
         self.assertEqual(Department.objects.filter(department_name = dept_name).count(), 0) #should be gone
         self.assertEqual(Department.objects.filter(department_name = new_name).count(), 1) #should be there, it is the new name
         self.assertEqual(Department.objects.filter(department_acronym = dept_code).count(), 0) #should be gone
         self.assertEqual(Department.objects.filter(department_acronym = new_acronym).count(), 1) #should be there, the new one
-        self.assertEqual(Department.objects.filter(faculty = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id).count(), 2) #no change
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
 
         #Create a new faculty
         new_fac_name = 'new name'
@@ -177,15 +143,12 @@ class TestDepartments(TestCase):
                         'faculty' : Faculty.objects.filter(faculty_name = new_fac_name).get().id, 'fresh_record' :  False,
                         'dept_id' : dept_id})
         
-        self.assertEqual(Department.objects.all().count(),2) #still 2
+        self.assertEqual(Department.objects.all().count(),1) #still 2
         self.assertEqual(Department.objects.filter(department_name = dept_name).count(), 0) #should be gone
         self.assertEqual(Department.objects.filter(department_name = new_name).count(), 1) #should be there, it is the new name
         self.assertEqual(Department.objects.filter(department_acronym = dept_code).count(), 0) #should be gone
         self.assertEqual(Department.objects.filter(department_acronym = new_acronym).count(), 1) #should be there, the new one
-        self.assertEqual(Department.objects.filter(faculty = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id).count(), 1) #down from 2
         self.assertEqual(Department.objects.filter(faculty = Faculty.objects.filter(faculty_name = new_fac_name).get().id).count(), 1) #new one
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
 
     def test_edit_department_into_same_name(self):
         self.setup_user()
@@ -194,56 +157,35 @@ class TestDepartments(TestCase):
         self.assertEqual(Department.objects.all().count(),0) #0 to start with
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
+        self.assertEqual(Department.objects.all().count(),0) #
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         #Create two separate departments
         dept_name_1= 'dept_1'
         dept_code_1 = 'NN1'
         self.client.post(reverse('workload_app:manage_department'),{'department_name':dept_name_1, 'department_acronym' : dept_code_1,\
-                    'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
+                    'faculty' : new_fac.id, 'fresh_record' :  True})
 
         dept_name_2= 'dept_2'
         dept_code_2 = 'NN2'
         self.client.post(reverse('workload_app:manage_department'),{'department_name':dept_name_2, 'department_acronym' : dept_code_2,\
-                    'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  True})
+                    'faculty' : new_fac.id, 'fresh_record' :  True})
         
-        self.assertEqual(Department.objects.all().count(),3) #2 + default
+        self.assertEqual(Department.objects.all().count(),2) #2
         self.assertEqual(Department.objects.filter(department_name = dept_name_1).count(), 1) #
         self.assertEqual(Department.objects.filter(department_name = dept_name_2).count(), 1) #
         
         #Now try to edit dept 1 to have the same name as dept 2
         dept_id = Department.objects.filter(department_name = dept_name_1).get().id
         self.client.post(reverse('workload_app:manage_department'),{'department_name':dept_name_2, 'department_acronym' : dept_code_1,\
-                    'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  False,
+                    'faculty' : new_fac.id, 'fresh_record' :  False,
                     'dept_id' : dept_id})
         
         #Edit should have failed
-        self.assertEqual(Department.objects.all().count(),3) #2 + default
+        self.assertEqual(Department.objects.all().count(),2) #2
         self.assertEqual(Department.objects.filter(department_name = dept_name_1).count(), 1) #
         self.assertEqual(Department.objects.filter(department_name = dept_name_2).count(), 1) #
 
-    def test_no_messing_with_default(self):
-        self.setup_user()
-        self.client.login(username='test_user', password='test_user_password')
-
-        self.assertEqual(Department.objects.all().count(),0) #0 to start with
-        response = self.client.get(reverse('workload_app:workloads_index'))
-        self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
-
-        #Try editing the DEFAULT
-        dept_id = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get().id
-        new_name_tried = "trying hard"
-        self.client.post(reverse('workload_app:manage_department'),{'department_name':new_name_tried, 'department_acronym' : DEFAULT_DEPT_ACRONYM,\
-                    'faculty' : Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id, 'fresh_record' :  False,
-                    'dept_id' : dept_id})
-        #EDit should have failed
-        self.assertEqual(Department.objects.all().count(),1) #1 created by default when there is none
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(), 1)
-        self.assertEqual(Department.objects.filter(department_acronym = DEFAULT_DEPT_ACRONYM).count(), 1)
-        self.assertEqual(Department.objects.filter(department_name = new_name_tried).count(), 0)
 
     def testDepartmentSummaryViewAndAddNewScenario(self):
         self.setup_user()
@@ -270,14 +212,15 @@ class TestDepartments(TestCase):
         wl_scen = WorkloadScenario.objects.create(label = test_scenario_name, dept = test_dept, academic_year = test_acad_year,\
                                                    status = WorkloadScenario.OFFICIAL)
         #Create some lecturers
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
-        test_svc_role = ServiceRole.objects.create(role_name = "test", role_adjustment = 2.0)
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer", fraction_appointment = 0.7, service_role = test_svc_role, workload_scenario = wl_scen)
+        def_track = EmploymentTrack.objects.create(track_name = "track_def", track_adjustment = 1.0, is_adjunct = False, faculty=first_fac)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False, faculty=first_fac)
+        test_svc_role = ServiceRole.objects.create(role_name = "test", role_adjustment = 2.0, faculty=first_fac)
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer", fraction_appointment = 0.7, employment_track = def_track, service_role = test_svc_role, workload_scenario = wl_scen)
         educator_track = Lecturer.objects.create(name="educator_track", fraction_appointment = 1.0, service_role = test_svc_role, employment_track=track_1,workload_scenario = wl_scen)
-        vice_dean = Lecturer.objects.create(name="vice_dean", fraction_appointment = 0.5, service_role = test_svc_role, workload_scenario = wl_scen)
+        vice_dean = Lecturer.objects.create(name="vice_dean", fraction_appointment = 0.5, employment_track = def_track, service_role = test_svc_role, workload_scenario = wl_scen)
         #and some modules with two types
-        core_mod = ModuleType.objects.create(type_name = "core")
-        elective_mod = ModuleType.objects.create(type_name = "elective")
+        core_mod = ModuleType.objects.create(type_name = "core", department=test_dept)
+        elective_mod = ModuleType.objects.create(type_name = "elective", department=test_dept)
         mod_1_ug_sem_1 = Module.objects.create(module_code = "M1-UG-SEM1", module_title = "module 1 ug sem 1", scenario_ref = wl_scen,\
                                                total_hours = 200, module_type = core_mod, semester_offered= Module.SEM_1, number_of_tutorial_groups=1,\
                                                primary_programme=ug_prog)

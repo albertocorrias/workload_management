@@ -176,10 +176,11 @@ class TestSurveys(TestCase):
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),0) #0 to start with
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),0) #0 to start with
         
-        new_mod_type = ModuleType.objects.create(type_name="test_type")
+        
         new_faculty = Faculty.objects.create(faculty_name = "new faculty", faculty_acronym = "NFC")
         new_dept = Department.objects.create(department_name = "new_dept", department_acronym = "NDPT",faculty=new_faculty)
         acad_year = Academicyear.objects.create(start_year=2023)
+        new_mod_type = ModuleType.objects.create(type_name="test_type", department=new_dept)
         wl_scen = WorkloadScenario.objects.create(label = "test_scen", status = WorkloadScenario.OFFICIAL,\
                                                   dept = new_dept,academic_year = acad_year )
         #We create the programme with all the foreign keys to the label sets for all survey as NULL
@@ -300,9 +301,9 @@ class TestSurveys(TestCase):
         self.assertEqual(ModuleLearningOutcome.objects.all().count(),0) #0 to start with
         self.assertEqual(SurveyQuestionResponse.objects.all().count(),0) #0 to start with
         
-        new_mod_type = ModuleType.objects.create(type_name="test_type")
         new_faculty = Faculty.objects.create(faculty_name = "new faculty", faculty_acronym = "NFC")
         new_dept = Department.objects.create(department_name = "new_dept", department_acronym = "NDPT",faculty=new_faculty)
+        new_mod_type = ModuleType.objects.create(type_name="test_type", department=new_dept)
         acad_year = Academicyear.objects.create(start_year=2023)
         wl_scen = WorkloadScenario.objects.create(label = "test_scen", status = WorkloadScenario.OFFICIAL,\
                                                   dept = new_dept,academic_year = acad_year )

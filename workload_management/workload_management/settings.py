@@ -113,24 +113,17 @@ if ('production' in str(branch_name)):
     }
     print('**** We are using production settings  *****')
 else: #Not the production branch
-    # SECURITY WARNING: keep the secret key used in production secret!
-    SECRET_KEY = 'django-insecure-)v@rsyf9#%jgot9b4d_f64d(q%^7ks8yhtph5^uw51celmgqw3'
-    if ('devel' in str(branch_name)):
-        # SECURITY WARNING: don't run with debug turned on in production!
-        DEBUG = True
+    SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
+    if ('devel' in str(branch_name)): 
+        DEBUG = True# Development settings have debug=true
         DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME' : 'workload_db',
             'USER': 'workload_user',
-            'PASSWORD' : 'A$ino189',
+            'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
             'HOST' : 'localhost',
             'PORT' : '5432'
-
-            #'OPTIONS': {
-            #    'service': 'workload_service',
-            #    'passfile': '.mypgpass',
-            #},
         }
         }
         print('**** We are using devel settings  *****')

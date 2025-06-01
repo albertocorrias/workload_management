@@ -47,10 +47,10 @@ class TestLecturerPage(TestCase):
 
         track_adjust = 2.0
         service_role_adjust = 3.0
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = track_adjust, is_adjunct = False)
-        service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = service_role_adjust)
-        service_role_2 = ServiceRole.objects.create(role_name = "role_2", role_adjustment = service_role_adjust+0.5)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = track_adjust, is_adjunct = False, faculty=first_fac)
+        service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = service_role_adjust, faculty=first_fac)
+        service_role_2 = ServiceRole.objects.create(role_name = "role_2", role_adjustment = service_role_adjust+0.5, faculty=first_fac)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=test_dept)
         programme_1 = ProgrammeOffered.objects.create(programme_name = "B. Eng", primary_dept = test_dept)
         programme_2 = ProgrammeOffered.objects.create(programme_name = "M. Sc", primary_dept = test_dept)
         sub_programme_1 = SubProgrammeOffered.objects.create(sub_programme_name = "specialization", main_programme = programme_1)

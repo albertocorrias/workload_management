@@ -42,7 +42,7 @@ class Department(models.Model):
     """
     department_name = models.CharField(max_length=300) #the full name of the deparment
     department_acronym = models.CharField(max_length=4) #the acronym, e.g., ME for Mechanical Engineering
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE) #The faculty/school this department is in
+    faculty = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True) #The faculty/school this department is in
     
     def __str__(self):
         return self.department_name
@@ -70,7 +70,7 @@ class EmploymentTrack(models.Model):
     is_default = models.BooleanField(default=True, null=True)
 
     # Whether or not this is employed as external person (adjunct).
-    is_adjunct = models.BooleanField(default=False, null=True)
+    is_adjunct = models.BooleanField(default=False)
 
     # The faculty this employment track is associated with
     faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,null=True)

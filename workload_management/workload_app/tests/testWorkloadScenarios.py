@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department, EmploymentTrack, ServiceRole,Faculty,ProgrammeOffered, UniversityStaff
+from workload_app.models import Academicyear, Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department, EmploymentTrack, ServiceRole,Faculty,ProgrammeOffered, UniversityStaff
 
 
 class TestWorkloadScenarios(TestCase):
@@ -21,15 +21,21 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
         
-        response = self.client.get(reverse('workload_app:workloads_index'))
-        self.assertEqual(response.status_code, 200) #No issues
 
         self.assertEqual(WorkloadScenario.objects.all().count(),0)
         self.assertEqual(Module.objects.all().count(),0)
         self.assertEqual(Lecturer.objects.all().count(),0)
-        self.assertEqual(Department.objects.all().count(),1) #One created by default
+        self.assertEqual(Department.objects.all().count(),0)
 
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 200) #No issues
+
+        new_scen = WorkloadScenario.objects.create(label='test_scen',academic_year=acad_year,dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -53,12 +59,16 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
         first_scen = 'test_scen'
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        first_scenario = WorkloadScenario.objects.create(label=first_scen, dept = first_dept)
+        first_scenario = WorkloadScenario.objects.create(label=first_scen, dept = first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scenario.id}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertContains(response, "label")
@@ -66,8 +76,8 @@ class TestWorkloadScenarios(TestCase):
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
-        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
+        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8, faculty=new_fac)
+        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8, faculty=new_fac)
 
         #Add alecturer and a module to the default scenario
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scenario.id}),{'name':'bob','fraction_appointment' : '0.5',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
@@ -80,8 +90,9 @@ class TestWorkloadScenarios(TestCase):
         
         #Test the POST now by adding a scenario
         new_label = 'new_test_scen'
+        acad_year_2=Academicyear.objects.create(start_year=1234)
         self.client.post(reverse('workload_app:manage_scenario'),{'label':new_label, 'dept' : first_dept.id, 'fresh_record' : True, \
-                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : acad_year_2.id})
         new_scenario = WorkloadScenario.objects.filter(label=new_label)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
@@ -144,25 +155,27 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         
-        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         #create a new workload
         first_scen_label = 'test_scen'
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty = first_fac)
+        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept, academic_year=acad_year)
+        #Click on it
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scenario.id}))
+        self.assertEqual(response.status_code, 200) #No issues
 
         #Create a programme
         first_prog = ProgrammeOffered.objects.create(programme_name = "test_prog", primary_dept = first_dept)
 
-        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept)
-        #Click on it
-        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scenario.id}))
-        
-        self.assertEqual(response.status_code, 200) #No issues
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0)
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5)
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role, workload_scenario=first_scenario )
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role, workload_scenario=first_scenario )
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,employment_track=track_def,service_role=srvc_role, workload_scenario=first_scenario)
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
@@ -215,7 +228,7 @@ class TestWorkloadScenarios(TestCase):
         #Now create a new scenario, copying from the existing one
         new_label = "new_scenario"
         self.client.post(reverse('workload_app:manage_scenario'), {'label': new_label, 'dept' : first_dept.id, 'copy_from':first_scenario.id, \
-                                                                    'status': WorkloadScenario.DRAFT, 'fresh_record' : True, 'academic_year' : 1});
+                                                                    'status': WorkloadScenario.DRAFT, 'fresh_record' : True, 'academic_year' : acad_year.id});
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -257,7 +270,7 @@ class TestWorkloadScenarios(TestCase):
         #Now create another scenario, but empty
         third_scen_label = "third_scenario"
         self.client.post(reverse('workload_app:manage_scenario'), {'label': third_scen_label, 'dept' : first_dept.id, 'copy_from':'', \
-                                                                        'status': WorkloadScenario.DRAFT,'fresh_record' :  True,'academic_year' : 1});
+                                                                        'status': WorkloadScenario.DRAFT,'fresh_record' :  True,'academic_year' : acad_year.id});
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(WorkloadScenario.objects.all().count(),3)  #2 previously,plus one
@@ -287,12 +300,17 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
         self.assertEqual(WorkloadScenario.objects.all().count(),0) 
         first_scen_label = 'test_scen'
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        first_scenario = WorkloadScenario.objects.create(label=first_scen_label);
+        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept,academic_year=acad_year)
         self.assertEqual(WorkloadScenario.objects.all().count(),1) 
         
         #create one with the same name
@@ -310,17 +328,21 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(WorkloadScenario.objects.all().count(),0) 
         first_scen_label = 'test_scen'
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        first_scenario = WorkloadScenario.objects.create(label=first_scen_label);
+        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept,academic_year=acad_year)
         self.assertEqual(WorkloadScenario.objects.all().count(),1) 
 
-        new_name = 'hello';
+        new_name = 'hello'
         self.client.post(reverse('workload_app:manage_scenario'), {'label': new_name, 'dept' : first_dept.id,\
-             'fresh_record' : False, 'status': WorkloadScenario.DRAFT, 'scenario_id' : first_scenario.id, 'academic_year' : 1});
+             'fresh_record' : False, 'status': WorkloadScenario.DRAFT, 'scenario_id' : first_scenario.id, 'academic_year' : acad_year.id});
         self.assertEqual(WorkloadScenario.objects.filter(label=first_scen_label).count(),0)#Old name, not there
         self.assertEqual(WorkloadScenario.objects.filter(label=new_name).count(),1)#New name is there
         
@@ -330,18 +352,23 @@ class TestWorkloadScenarios(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+
         self.assertEqual(WorkloadScenario.objects.all().count(),0) 
         first_scen_label = 'test_scen'
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        first_scenario = WorkloadScenario.objects.create(label=first_scen_label);
+        first_scenario = WorkloadScenario.objects.create(label=first_scen_label, dept=first_dept,academic_year=acad_year)
         self.assertEqual(WorkloadScenario.objects.all().count(),1) 
         
         new_name = 'testing'
         #Create a new scenario with the new name
         self.client.post(reverse('workload_app:manage_scenario'), {'label': new_name, 'dept' : first_dept.id, 'copy_from': '', 
-        'fresh_record' : True, 'status': WorkloadScenario.DRAFT, 'academic_year' : 1});
+        'fresh_record' : True, 'status': WorkloadScenario.DRAFT, 'academic_year' : acad_year.id});
 
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(WorkloadScenario.objects.all().count(),2)
@@ -363,22 +390,28 @@ class TestWorkloadScenarios(TestCase):
 
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty = first_fac)
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 200) #No issues
         
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept=first_dept, academic_year=acad_year)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2);
+        acad_year_2 = Academicyear.objects.create(start_year=1234)
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept=first_dept, academic_year=acad_year_2)
         
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(WorkloadScenario.objects.all().count(),2)
 
-        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8, faculty=first_fac)
+        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8, faculty=first_fac)
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',    'service_role' : new_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
@@ -388,7 +421,7 @@ class TestWorkloadScenarios(TestCase):
         vice_dean = Lecturer.objects.filter(name = 'vice_dean').get()
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -477,8 +510,8 @@ class TestWorkloadScenarios(TestCase):
         
         #Now go to scenario 2  (simulate button click)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
-        scenario_1.refresh_from_db();
-        scenario_2.refresh_from_db();
+        scenario_1.refresh_from_db()
+        scenario_2.refresh_from_db()
 
         #Scenario 2 is active now
         #response = self.client.get(reverse('workload_app:index'))
@@ -507,16 +540,18 @@ class TestWorkloadScenarios(TestCase):
         '''This test simply checks the scenario forms for creating and editing the status of a workload scenario'''
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty = first_fac)
-        
+        first_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=first_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=first_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=first_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
         first_label = 'new_test_scen'
         #Create one in draft mode
         self.client.post(reverse('workload_app:manage_scenario'),{'label':first_label, 'dept' : first_dept.id, 'fresh_record' : True, \
-                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : acad_year.id})
         
         self.assertEqual(WorkloadScenario.objects.all().count(),1)
         #Default one is in draft mode
@@ -526,7 +561,7 @@ class TestWorkloadScenarios(TestCase):
         #Crate another one in OFFICIAL mode
         second_label = first_label+'2'
         self.client.post(reverse('workload_app:manage_scenario'),{'label':second_label, 'dept' : first_dept.id, 'fresh_record' : True, \
-                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : acad_year.id})
 
         self.assertEqual(WorkloadScenario.objects.all().count(),2)
         #Default one is in draft mode
@@ -536,7 +571,7 @@ class TestWorkloadScenarios(TestCase):
         #Edit the official into draft
         new_scen_obj = WorkloadScenario.objects.filter(label = second_label).get()
         self.client.post(reverse('workload_app:manage_scenario'),{'scenario_id' : new_scen_obj.id, 'label':second_label, 'dept' : first_dept.id, 'fresh_record' : False, \
-                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : acad_year.id})
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.DRAFT).count(),2)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).count(),0)
 
@@ -545,14 +580,14 @@ class TestWorkloadScenarios(TestCase):
         #Create a new scenario for this second department. Official one
         third_label = first_label+"3"
         self.client.post(reverse('workload_app:manage_scenario'),{'label':third_label, 'dept' : second_dept.id, 'fresh_record' : True, \
-                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : acad_year.id})
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.DRAFT).count(),2)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).count(),1)
 
         #Now, for the first dept, turn the first scenario to official
         first_scen_obj = WorkloadScenario.objects.filter(label = first_label).get()
         self.client.post(reverse('workload_app:manage_scenario'),{'scenario_id' : first_scen_obj.id, 'label':first_label, 'dept' : first_dept.id, 'fresh_record' : False, \
-                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : acad_year.id})
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.DRAFT).count(),1)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).count(),2)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).filter(label=third_label).count(),1)#
@@ -565,7 +600,7 @@ class TestWorkloadScenarios(TestCase):
         #The expected behaviour is that, being the latest, the second scenario remains offocial (latest modified)
         #while the first gets turned automatically back into draft
         self.client.post(reverse('workload_app:manage_scenario'),{'scenario_id' : new_scen_obj.id, 'label':second_label, 'dept' : first_dept.id, 'fresh_record' : False, \
-                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.OFFICIAL, 'academic_year' : acad_year.id})
 
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.DRAFT).count(),1)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).count(),2)
@@ -579,7 +614,7 @@ class TestWorkloadScenarios(TestCase):
         #Add a draft one to the fist dept, same academic year
         fourth_label = first_label+'4'
         self.client.post(reverse('workload_app:manage_scenario'),{'label':fourth_label, 'dept' : first_dept.id, 'fresh_record' : True, \
-                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : 1})
+                                                                    'status': WorkloadScenario.DRAFT, 'academic_year' : acad_year.id})
         
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.DRAFT).filter(label=fourth_label).count(),1)
         self.assertEqual(WorkloadScenario.objects.filter(status=WorkloadScenario.OFFICIAL).filter(label=fourth_label).count(),0)
