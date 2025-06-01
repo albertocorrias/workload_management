@@ -227,20 +227,22 @@ class TestAccreditationReport(TestCase):
         out_of_range_aa_1 = Academicyear.objects.create(start_year=start_year-30)
         out_of_range_aa_2 = Academicyear.objects.create(start_year=start_year-20)
 
-        #Create 4 worklaod scenarios
-        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1, status = WorkloadScenario.OFFICIAL)
-        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2, status = WorkloadScenario.OFFICIAL)
-        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3, status = WorkloadScenario.OFFICIAL)
-        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4, status = WorkloadScenario.OFFICIAL)
-        scenario_4_draft = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_1, status = WorkloadScenario.DRAFT)
-
         new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
         prog_to_accredit = ProgrammeOffered.objects.create(programme_name="test_prog", primary_dept = new_dept)
         prog_to_accredit_2 = ProgrammeOffered.objects.create(programme_name="test_prog_2", primary_dept = new_dept)
         prog_to_accredit_3 = ProgrammeOffered.objects.create(programme_name="test_prog_3", primary_dept = new_dept)
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False, faculty=new_fac)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
+
+        #Create 4 worklaod scenarios
+        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1, status = WorkloadScenario.OFFICIAL, dept = new_dept)
+        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2, status = WorkloadScenario.OFFICIAL,dept = new_dept)
+        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3, status = WorkloadScenario.OFFICIAL,dept = new_dept)
+        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4, status = WorkloadScenario.OFFICIAL,dept = new_dept)
+        scenario_4_draft = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_1, status = WorkloadScenario.DRAFT,dept = new_dept)
+
+
 
         #Create SLOs
         slo_1_prog_1 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_1', \
@@ -508,18 +510,20 @@ class TestAccreditationReport(TestCase):
         out_of_range_aa_1 = Academicyear.objects.create(start_year=start_year-30)
         out_of_range_aa_2 = Academicyear.objects.create(start_year=start_year-20)
 
-        #Create 4 worklaod scenarios
-        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1, status = WorkloadScenario.OFFICIAL)
-        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2, status = WorkloadScenario.OFFICIAL)
-        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3, status = WorkloadScenario.OFFICIAL)
-        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4, status = WorkloadScenario.OFFICIAL)
-        scenario_4_draft = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_1, status = WorkloadScenario.DRAFT)
 
         new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
         prog_to_accredit = ProgrammeOffered.objects.create(programme_name="test_prog", primary_dept = new_dept)
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False,faculty = new_fac)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
+
+        #Create 4 worklaod scenarios
+        scenario_1 = WorkloadScenario.objects.create(label='a workload 1', academic_year=acad_year_1, status = WorkloadScenario.OFFICIAL, dept = new_dept)
+        scenario_2 = WorkloadScenario.objects.create(label='a workload 2', academic_year=acad_year_2, status = WorkloadScenario.OFFICIAL, dept = new_dept)
+        scenario_3 = WorkloadScenario.objects.create(label='a workload 3', academic_year=acad_year_3, status = WorkloadScenario.OFFICIAL, dept = new_dept)
+        scenario_4 = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_4, status = WorkloadScenario.OFFICIAL, dept = new_dept)
+        scenario_4_draft = WorkloadScenario.objects.create(label='a workload 4', academic_year=acad_year_1, status = WorkloadScenario.DRAFT, dept = new_dept)
+
         #Create a lecturer (these will be in charge of all modules)
         new_lec_1 = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_1,employment_track = track_1, service_role=service_role_1)
         new_lec_2 = Lecturer.objects.create(name='Bob', fraction_appointment=1.0,workload_scenario=scenario_2,employment_track = track_1, service_role=service_role_1)
@@ -1555,7 +1559,7 @@ class TestAccreditationReport(TestCase):
         #Generate table for SLO 1
         slo_1_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_1_survey_table),1)
-        self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
+        self.assertEqual(slo_1_survey_table[0]['question'],alternate_question + ', ' + slo_1.slo_description)
         expected_perc = 0.5*(props_slo_1['percentage_positive']+ props_slo_alternate['percentage_positive'])
         self.assertAlmostEqual(slo_1_survey_table[0]['percent_positive'],expected_perc)
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now
@@ -1597,7 +1601,7 @@ class TestAccreditationReport(TestCase):
         #Generate table for SLO 1 - UNCHANGED
         slo_1_survey_table, slo_survey_attn_scores = CalculateTableForSLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(slo_1_survey_table),1)
-        self.assertEqual(slo_1_survey_table[0]['question'],slo_1.slo_description + ', ' + alternate_question)
+        self.assertEqual(slo_1_survey_table[0]['question'],alternate_question + ', ' + slo_1.slo_description)
         expected_perc = 0.5*(props_slo_1['percentage_positive'] + props_slo_alternate['percentage_positive'])
         self.assertAlmostEqual(slo_1_survey_table[0]['percent_positive'],expected_perc)
         self.assertEqual(slo_1_survey_table[0]['n_questions'],2)#2 questions now

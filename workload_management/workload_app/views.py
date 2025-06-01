@@ -263,21 +263,21 @@ def workloads_index(request):
         }
         return HttpResponse(template.render(context, request))
     
-    #If no Faculty, create a default one
-    if (Faculty.objects.all().count() == 0):
-        Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
+    # #If no Faculty, create a default one
+    # if (Faculty.objects.all().count() == 0):
+    #     Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
     
-    #If no Department, create a default one
-    if (Department.objects.all().count() == 0):
-        Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
+    # #If no Department, create a default one
+    # if (Department.objects.all().count() == 0):
+    #     Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
 
-    #If no track adjustment, create a default one
-    if (EmploymentTrack.objects.all().count() == 0):
-        EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, is_adjunct = False, track_adjustment = 1.0)
+    # #If no track adjustment, create a default one
+    # if (EmploymentTrack.objects.all().count() == 0):
+    #     EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, is_adjunct = False, track_adjustment = 1.0)
 
-    #If no role, create a default one
-    if (ServiceRole.objects.all().count() == 0):
-        ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
+    # #If no role, create a default one
+    # if (ServiceRole.objects.all().count() == 0):
+    #     ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
 
     #If no academic year, create a few ones
     if (Academicyear.objects.all().count() == 0):
@@ -1966,7 +1966,7 @@ def add_professor(request, workloadscenario_id):
             return HttpResponse(template.render(context, request))   
     
     #Otherwise just go back to workload view
-    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get();
+    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': selected_scen.id}))
 
 def remove_professor(request,workloadscenario_id):

@@ -42,7 +42,7 @@ class Department(models.Model):
     """
     department_name = models.CharField(max_length=300) #the full name of the deparment
     department_acronym = models.CharField(max_length=4) #the acronym, e.g., ME for Mechanical Engineering
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, default=1) #The faculty/school this department is in
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE) #The faculty/school this department is in
     
     def __str__(self):
         return self.department_name
@@ -73,7 +73,7 @@ class EmploymentTrack(models.Model):
     is_adjunct = models.BooleanField(default=False, null=True)
 
     # The faculty this employment track is associated with
-    faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,null=True,default=1)
+    faculty = models.ForeignKey(Faculty,on_delete=models.SET_NULL,null=True)
 
     def __str__(self):
         return self.track_name
@@ -125,8 +125,8 @@ class WorkloadScenario(models.Model):
 
     label = models.CharField(max_length=300) #the name of the scenario. E.g., dept / academic year
     date_created = models.DateField(auto_now=False, auto_now_add=False,default=datetime.date.today)
-    dept = models.ForeignKey(Department, on_delete=models.CASCADE, default=1) #The dept this workload is relevant to
-    academic_year = models.ForeignKey(Academicyear, on_delete=models.CASCADE, default=1) #The academic year this workload refers to
+    dept = models.ForeignKey(Department, on_delete=models.CASCADE) #The dept this workload is relevant to
+    academic_year = models.ForeignKey(Academicyear, on_delete=models.CASCADE) #The academic year this workload refers to
     status = models.CharField(max_length = 50, choices = WORKLOAD_STATUS, default=DRAFT)
 
     def __str__(self):
@@ -151,13 +151,13 @@ class Lecturer(models.Model):
         ])
 
     #The workload scenario this lecturer appears in
-    workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE, default=1)
+    workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)
 
     #The employment track of this lecturer
-    employment_track = models.ForeignKey(EmploymentTrack, on_delete=models.CASCADE, default=1)
+    employment_track = models.ForeignKey(EmploymentTrack, on_delete=models.CASCADE)
 
     #The service role of this lecturer (e.g. head of department, director, etc)
-    service_role = models.ForeignKey(ServiceRole, on_delete=models.CASCADE, default=1)
+    service_role = models.ForeignKey(ServiceRole, on_delete=models.CASCADE)
 
     #A flag to say whether this lecturer is external to the department that the workload is associated with
     is_external = models.BooleanField(default=False)
@@ -392,7 +392,7 @@ class ModuleType(models.Model):
     A simple model to describe the module type
     """
     type_name = models.CharField(max_length=300)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE,default=1)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.type_name
@@ -430,7 +430,7 @@ class Module(models.Model):
     #The module title
     module_title = models.CharField(max_length=300)
     #The workload scenario in which it appears
-    scenario_ref = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE, default=1)
+    scenario_ref = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)
     #Total expected hours to be taught
     total_hours = models.PositiveIntegerField(null=True)
     #The type of module
@@ -442,7 +442,7 @@ class Module(models.Model):
     #The semester in which it is offered
     semester_offered = models.CharField(max_length=300, choices=SEMESTER_OFFERED,default=UNASSIGNED)
     #The number of student groups
-    number_of_tutorial_groups = models.PositiveIntegerField(default=1);
+    number_of_tutorial_groups = models.PositiveIntegerField(default=1)
     
     #The primary programme this module belongs to
     primary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="primary_programme")

@@ -121,10 +121,16 @@ else: #Not the production branch
         DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'OPTIONS': {
-                'service': 'workload_service',
-                'passfile': '.pgpass',
-            },
+            'NAME' : 'workload_db',
+            'USER': 'workload_user',
+            'PASSWORD' : 'A$ino189',
+            'HOST' : 'localhost',
+            'PORT' : '5432'
+
+            #'OPTIONS': {
+            #    'service': 'workload_service',
+            #    'passfile': '.mypgpass',
+            #},
         }
         }
         print('**** We are using devel settings  *****')
