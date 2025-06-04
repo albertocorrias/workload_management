@@ -54,19 +54,6 @@ INTERNAL_IPS = [
     # ...
 ]
 
-#Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
-TESTING = "test" in sys.argv
-if not TESTING:
-    INSTALLED_APPS = [
-        *INSTALLED_APPS,
-        "debug_toolbar",
-    ]
-    MIDDLEWARE = [
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-        *MIDDLEWARE,
-    ]
-#############################################
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -116,6 +103,19 @@ else: #Not the production branch
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     if ('devel' in str(branch_name)): 
         DEBUG = True# Development settings have debug=true
+        #Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
+        TESTING = "test" in sys.argv
+        if not TESTING:
+            INSTALLED_APPS = [
+                *INSTALLED_APPS,
+                "debug_toolbar",
+            ]
+            MIDDLEWARE = [
+                "debug_toolbar.middleware.DebugToolbarMiddleware",
+                *MIDDLEWARE,
+            ]
+        #############################################
+
         DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
