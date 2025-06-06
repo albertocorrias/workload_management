@@ -20,7 +20,7 @@ import sys
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['104.248.157.119','localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -43,10 +43,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://127.0.0.1']
+#SECURE_SSL_REDIRECT = True
+CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'https://127.0.0.1']
 ROOT_URLCONF = 'workload_management.urls'
+SESSION_COOKIE_DOMAIN = 'eabworkload.org'
+SESSION_COOKIE_HTTPONLY = True
 
 INTERNAL_IPS = [
     # ...
@@ -141,6 +144,7 @@ else: #Not the production branch
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -173,7 +177,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
