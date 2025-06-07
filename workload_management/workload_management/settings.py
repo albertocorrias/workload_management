@@ -90,7 +90,7 @@ for line in content:
 
 
 if ('production' in str(branch_name)):
-    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
+    SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DEBUG = False #Must be false in proiduction!
     DATABASES = {
     'default': {
