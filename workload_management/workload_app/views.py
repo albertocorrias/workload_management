@@ -27,9 +27,8 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
                    CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,EditSurveySettingsForm
 
-from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
-                              DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
+from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
+                             accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -44,20 +43,26 @@ from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartm
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
 from .helper_methods_demo import populate_database
 
+def home_page(request):
+    if request.user.is_authenticated:
+        return post_login_landing(request)
+    else: #anonymous users -> send to login page
+        return HttpResponseRedirect('/accounts/login')
+    
 def post_login_landing(request):
     myerror = "error"
-    home_page  = DetermineUserHomePage(request.user.id,request.user.is_superuser,error_text = myerror)
-    if (home_page == myerror):
+    user_home_page  = DetermineUserHomePage(request.user.id,request.user.is_superuser,error_text = myerror)
+    if (user_home_page == myerror):
         user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
                 'user_menu' : user_menu,
-                'user_homepage' : home_page
+                'user_homepage' : user_home_page
         }
         return HttpResponse(template.render(context, request))
     
-    return HttpResponseRedirect('/workload_app'+home_page)
+    return HttpResponseRedirect('/workload_app'+user_home_page)
 
 ##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
