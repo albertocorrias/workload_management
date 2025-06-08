@@ -1,6 +1,4 @@
 import datetime
-import math
-import os
 from django.http import HttpResponse,HttpResponseRedirect
 from django.urls import reverse
 from django.template import loader
@@ -10,7 +8,6 @@ from django.forms import ValidationError
 from django.conf import settings
 from django.db.models import F
 from django.core.files.storage import default_storage
-
 
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
