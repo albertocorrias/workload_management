@@ -83,7 +83,7 @@ class ModuleForm(ModelForm):
         This is a flag that differentiate when the form is for adding a 
         fresh record or when it is for editing an existing one
     """    
-    manual_hours_checked = forms.BooleanField(initial=False, required=False, label="Specify custom number of hours? (if left unticked, number of hours will be assigned automatically based on module type and number of tutorial groups)")    
+    manual_hours_checked = forms.BooleanField(initial=False, required=False, label="Specify custom number of hours? (if left unticked, number of hours will be assigned automatically based on course type and number of tutorial groups)")    
 
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     
@@ -93,19 +93,19 @@ class ModuleForm(ModelForm):
                   'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
                   'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
                   'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
-        labels = {'module_code' : _('Module Code'),
-                  'module_title' : _('Module title'),
+        labels = {'module_code' : _('Course Code'),
+                  'module_title' : _('Course title'),
                   'module_type' : _('Type of module'),
                   'semester_offered' : _('Semester offered'),
-                  'students_year_of_study': _('Year of study of students taking this module'),
-                  'primary_programme' : _('Primary  programme the module is part of'),
+                  'students_year_of_study': _('Year of study of students taking this course'),
+                  'primary_programme' : _('Primary  programme the course is part of'),
                   'compulsory_in_primary_programme': _('Compulsory in primary programme?'),
-                  'secondary_programme' : _('A second programme the module may be part of'),
+                  'secondary_programme' : _('A second programme the course may be part of'),
                   'compulsory_in_secondary_programme' : _('Compulsory in this second programme?'),
-                  'tertiary_programme' : _('A third  programme the module may be part of'),
+                  'tertiary_programme' : _('A third  programme the course may be part of'),
                   'compulsory_in_tertiary_programme' : _('Compulsory in this third programme?'),
-                  'sub_programme' : _('Sub-programme this module may be part of'),
-                  'secondary_sub_programme' : _('Another sub-programme this module is also part of'),
+                  'sub_programme' : _('Sub-programme this course may be part of'),
+                  'secondary_sub_programme' : _('Another sub-programme this course is also part of'),
                   'number_of_tutorial_groups' : _('Number of tutorial groups'),
                   'total_hours' : _('Total hours')
                   }
@@ -164,14 +164,14 @@ class RemoveModuleForm(forms.Form):
     """
     REMOVE_COMPLETELY = 'Remove'
     RETIRE_ONLY = 'Retire'
-    REMOVE_CHOICES = [(RETIRE_ONLY , 'No, remove only the assignments for this module'), (REMOVE_COMPLETELY, 'Yes, remove it from the list of modules')]
+    REMOVE_CHOICES = [(RETIRE_ONLY , 'No, remove only the assignments for this course'), (REMOVE_COMPLETELY, 'Yes, remove it from the list of courses')]
 
     def __init__(self, *args, **kwargs):
         workload_scenario_id = kwargs.pop('workloadscenario_id')
         super(RemoveModuleForm, self).__init__(*args, **kwargs)
-        self.fields['select_module_to_remove'] = forms.ModelChoiceField(label = 'Select the module to remove or retire',\
+        self.fields['select_module_to_remove'] = forms.ModelChoiceField(label = 'Select the course to remove or retire',\
                                                     queryset=Module.objects.filter(scenario_ref__id = workload_scenario_id));
-        self.fields['wipe_from_table'] = forms.ChoiceField(label = 'Remove module entirely from the list of modules?', required=False,\
+        self.fields['wipe_from_table'] = forms.ChoiceField(label = 'Remove course entirely from the list of courses?', required=False,\
                                                       choices=self.REMOVE_CHOICES)
     
 class ModuleTypeForm(forms.ModelForm):
@@ -185,7 +185,7 @@ class RemoveModuleTypeForm(forms.Form):
         dept_id = kwargs.pop('department_id')
         super(RemoveModuleTypeForm, self).__init__(*args, **kwargs)
         #Make user select type only relevant to this department
-        self.fields['select_module_type_to_remove'] = forms.ModelChoiceField(label = 'Select the module type to remove', queryset=ModuleType.objects.filter(department__id = dept_id))
+        self.fields['select_module_type_to_remove'] = forms.ModelChoiceField(label = 'Select the course type to remove', queryset=ModuleType.objects.filter(department__id = dept_id))
 
 class DepartmentForm(forms.ModelForm):
     #A flag to establish whether it's a new record or editing an existing one
@@ -221,7 +221,7 @@ class FacultyForm(forms.ModelForm):
     fac_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
     
     class Meta:
-        model = Faculty;
+        model = Faculty
         fields = ['faculty_name', 'faculty_acronym']
         labels = {'faculty_name' : _('Faculty name'),
                   'faculty_acronym' : _('Acronym to be used (max 4 letters)')}
@@ -400,8 +400,8 @@ class MLOForm(forms.ModelForm):
     class Meta:
         model = ModuleLearningOutcome
         fields = ['mlo_description', 'mlo_short_description','mlo_valid_from','mlo_valid_to']
-        labels = {'mlo_description' : _('Description of the MLO'),
-                  'mlo_short_description' : _('A shorter description of the MLO'),
+        labels = {'mlo_description' : _('Description of the CLO'),
+                  'mlo_short_description' : _('A shorter description of the CLO'),
                   'mlo_valid_from': _('Valid from '),
                   'mlo_valid_to': _('Valid to '),}
         widgets = {'mlo_description' : forms.Textarea}
@@ -437,7 +437,7 @@ class RemoveMLOForm(forms.Form):
         module_code = kwargs.pop('module_code')
         super(RemoveMLOForm, self).__init__(*args, **kwargs)
         #Make user select only MLO of this module
-        self.fields['select_mlo_to_remove'] = forms.ModelChoiceField(label = 'Select the MLO to remove', queryset=ModuleLearningOutcome.objects.filter(module_code = module_code))
+        self.fields['select_mlo_to_remove'] = forms.ModelChoiceField(label = 'Select the CLO to remove', queryset=ModuleLearningOutcome.objects.filter(module_code = module_code))
 
 class RemoveSLOForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -587,10 +587,10 @@ class AddMLOSurveyForm(forms.Form):
             years_to_show.append(datetime.datetime.now().year + gap)
         module_code = kwargs.pop('module_code')
         super(AddMLOSurveyForm, self).__init__(*args, **kwargs)
-        self.fields['survey_title'] = forms.CharField(label="Titleof the survey (e.g., module survey 2026)", max_length=300)
+        self.fields['survey_title'] = forms.CharField(label="Titleof the survey (e.g., course survey 2026)", max_length=300)
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
-        self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the module surveyed', required=False,\
+        self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the course surveyed', required=False,\
                                                       queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
@@ -643,9 +643,9 @@ class MLOPerformanceMeasureForm(forms.Form):
         self.fields['academic_year'] = forms.ModelChoiceField(queryset=Academicyear.objects.filter(start_year__gte =  datetime.datetime.now().year - 5).filter(start_year__lte =  datetime.datetime.now().year + 5))
         self.fields['measure_description'] = forms.CharField(widget=forms.Textarea, label='Description (e.g., Final exam question 3, or Group presentation)')
         self.fields['percentage_score'] = forms.DecimalField(min_value=0, max_value=100, label="Percentage score (0 to 100)")
-        self.fields['mlo_mapped_1']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Associated MLO")
-        self.fields['mlo_mapped_2']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Other assocuated MLO (if any)", required=False)
-        self.fields['mlo_mapped_3']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Other assocuated MLO (if any)", required=False)
+        self.fields['mlo_mapped_1']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Associated CLO")
+        self.fields['mlo_mapped_2']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Other assocuated CLO (if any)", required=False)
+        self.fields['mlo_mapped_3']  = forms.ModelChoiceField(queryset=ModuleLearningOutcome.objects.filter(module_code = module_code), label="Other assocuated CLO (if any)", required=False)
         self.fields['original_file'] = forms.FileField(label="Upload original file (e.g., the exam questions)", required=False)
 
 class RemoveMLOPerformanceMeasureForm(forms.Form):
@@ -907,4 +907,4 @@ class SelectAccreditationReportForm(forms.Form):
     this_year = datetime.datetime.now().year
     academic_year_start = forms.ModelChoiceField(label = "From cohort matriculated in ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
     academic_year_end = forms.ModelChoiceField(label = "To cohort matriculated in (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
-    only_core = forms.ChoiceField(label="Include only compulsory modules?", choices=YES_NO_CHOICES)
+    only_core = forms.ChoiceField(label="Include only compulsory courses?", choices=YES_NO_CHOICES)

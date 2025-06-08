@@ -115,7 +115,7 @@
                 <table class="settings_tables table table-striped table-sm">
                   <thead class="table-dark table-sm">
                   <tr> 
-                      <th>Module types</th>
+                      <th>Course types</th>
                   </tr>
                   <tr>
                     <th>Name</th>
@@ -131,7 +131,7 @@
                   {% endfor %}
                   <tr> 
                     <td> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageModuleTypeModal">
-                      Add/Remove types of modules...
+                      Add/Remove types of course...
                       </button>
                     </td>
                   </tr>
@@ -173,10 +173,10 @@
                       </tr>
                       <tr>
                         <th style="background-color:{{ table.colour_scheme.medium }};"> </th> 
-                        <th style="background-color:{{ table.colour_scheme.medium }};"> Module </th>
+                        <th style="background-color:{{ table.colour_scheme.medium }};"> Course </th>
                         <th style="background-color:{{ table.colour_scheme.medium }};"> Hours </th>
                         <th style="background-color:{{ table.colour_scheme.medium }};"> </th> 
-                        <th style="background-color:{{ table.colour_scheme.medium }};"> Module </th>
+                        <th style="background-color:{{ table.colour_scheme.medium }};"> Course </th>
                         <th style="background-color:{{ table.colour_scheme.medium }};"> Hours </th>
                       </tr>
                       </thead>
@@ -212,7 +212,7 @@
                         </thead>
                         <tbody>
                           <tr> 
-                            <td colspan="6">Other modules (not offered)</td>
+                            <td colspan="6">Other courses (not offered)</td>
                           </tr>
                           <tr> 
                             <td colspan=3 style="background-color:Gainsboro; color:black;"> Semester 1 </th>
@@ -244,7 +244,7 @@
                     <table id="TABLE_{{ workload_id }}-{{ table.prog_id }}-modtypes" class="workload_tables table table-striped">
                         <thead class="table-dark" id="workload_module_table_id">
                         <tr> 
-                            <th colspan=5 style="background-color:{{ table.colour_scheme.darkest }};">{{ table.table_with_mod_types.programme_name }}, {{ acad_year }} Module types</th>
+                            <th colspan=5 style="background-color:{{ table.colour_scheme.darkest }};">{{ table.table_with_mod_types.programme_name }}, {{ acad_year }} Course types</th>
                         </tr>
                         <tr>
                           <th style="background-color:Gainsboro; color:black;"></th>
@@ -252,7 +252,7 @@
                           <th colspan=2 style="background-color:Gainsboro; color:black;"> Semester 2 </th>
                         </tr>
                         <tr> 
-                          <th style="background-color:{{ table.colour_scheme.medium }};"> Module type</th>
+                          <th style="background-color:{{ table.colour_scheme.medium }};"> Course type</th>
                           <th style="background-color:{{ table.colour_scheme.medium }};"> # mods </th>
                           <th style="background-color:{{ table.colour_scheme.medium }};"> hours </th>
                           <th style="background-color:{{ table.colour_scheme.medium }};"> # mods </th>
@@ -304,10 +304,10 @@
                           </tr>
                           <tr>
                             <th style="background-color:{{ table.colour_scheme.medium }};"> </th> 
-                            <th style="background-color:{{ table.colour_scheme.medium }};"> Module </th>
+                            <th style="background-color:{{ table.colour_scheme.medium }};"> Course </th>
                             <th style="background-color:{{ table.colour_scheme.medium }};"> Hours </th>
                             <th style="background-color:{{ table.colour_scheme.medium }};"> </th> 
-                            <th style="background-color:{{ table.colour_scheme.medium }};"> Module </th>
+                            <th style="background-color:{{ table.colour_scheme.medium }};"> Course </th>
                             <th style="background-color:{{ table.colour_scheme.medium }};"> Hours </th>
                           </tr>
                           </thead>
@@ -383,7 +383,7 @@
                   <div class="modal-body">
                             {{ remove_prog_form }}
                             <br>
-                        <p>Note: all modules within the removed programme will be retained and become not assigned to any programme</p>
+                        <p>Note: all courses within the removed programme will be retained and become not assigned to any programme</p>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
@@ -510,7 +510,7 @@
                   <div class="modal-body">
                             {{ remove_sub_prog_form }}
                             <br>
-                        <p>Note: all modules within the removed sub-programme will be retained and become not assigned to any sub-programme</p>
+                        <p>Note: all courses within the removed sub-programme will be retained and become not assigned to any sub-programme</p>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
@@ -560,7 +560,7 @@
                     <div class="modal-dialog  modal-lg" role="document">
                       <div class="modal-content">
                             <div class="modal-header">
-                              <h5 class="modal-title" id="EditModule{{ row.regularized_mod_code_sem_1 }}Modal{{ workload_id }}Label">Edit module</h5>
+                              <h5 class="modal-title" id="EditModule{{ row.regularized_mod_code_sem_1 }}Modal{{ workload_id }}Label">Edit course</h5>
                               <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
                                 <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
                               </button>
@@ -584,7 +584,7 @@
                     <div class="modal-dialog" role="document">
                       <div class="modal-content">
                             <div class="modal-header">
-                              <h5 class="modal-title" id="EditModule{{ row.regularized_mod_code_sem_2 }}Modal{{ workload_id }}Label">Edit module</h5>
+                              <h5 class="modal-title" id="EditModule{{ row.regularized_mod_code_sem_2 }}Modal{{ workload_id }}Label">Edit course</h5>
                               <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
                                 <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
                               </button>
@@ -610,7 +610,7 @@
                     <div class="modal-dialog  modal-lg" role="document">
                       <div class="modal-content">
                             <div class="modal-header">
-                              <h5 class="modal-title" id="EditModule{{ row.regularized_unused_mod_code_sem_1 }}Modal{{ workload_id }}Label">Edit module</h5>
+                              <h5 class="modal-title" id="EditModule{{ row.regularized_unused_mod_code_sem_1 }}Modal{{ workload_id }}Label">Edit course</h5>
                               <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
                                 <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
                               </button>
@@ -634,7 +634,7 @@
                   <div class="modal-dialog  modal-lg" role="document">
                     <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="EditModule{{ row.regularized_unused_mod_code_sem_2 }}Modal{{ workload_id }}Label">Edit module</h5>
+                            <h5 class="modal-title" id="EditModule{{ row.regularized_unused_mod_code_sem_2 }}Modal{{ workload_id }}Label">Edit course</h5>
                             <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
                               <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
                             </button>
@@ -661,7 +661,7 @@
               <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                       <div class="modal-header">
-                        <h5 class="modal-title" id="ManageModuleTypeModalLabel">Add a new module type</h5>
+                        <h5 class="modal-title" id="ManageModuleTypeModalLabel">Add a new course type</h5>
                         <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
                           <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
                         </button>
@@ -678,7 +678,7 @@
                     </form>
                     
                     <div class="modal-header">
-                        <h5 class="modal-title" id="ManageModuleTypeModalLabel">Remove existing module type</h5>
+                        <h5 class="modal-title" id="ManageModuleTypeModalLabel">Remove existing course type</h5>
                     </div>
                       <form action="{% url 'workload_app:remove_module_type' dept_id %}" method="post">
                       {% csrf_token %}

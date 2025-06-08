@@ -154,7 +154,7 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                     
                     mlo_survey_measures.append(single_survey_mlo_measure)
 
-    #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
+    #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey measures
     mlo_slo_survey_table_rows = []
 
     #Before starting, we allocate memory for the grand total (weigthed average) of the table. One number per year
