@@ -28,7 +28,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,EditSurveySettingsForm
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
-                             accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
+                              accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
 from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -44,7 +44,7 @@ from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartm
 from .helper_methods_demo import populate_database
 
 def home_page(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated: #logged in user ->Figure out home page and send there
         return post_login_landing(request)
     else: #anonymous users -> send to login page
         return HttpResponseRedirect('/accounts/login')
