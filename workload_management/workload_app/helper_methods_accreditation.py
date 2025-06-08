@@ -68,6 +68,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
         if (slo.IsValidForYear(year_of_cohort_targeted)):
             single_slo_survey_measure = {
                 'date' : survey.opening_date,
+                'target_cohort' : year_of_cohort_targeted,
                 'survey' : survey.survey_title,
                 'question' : '',
                 'percent_positive' : 0,
@@ -90,7 +91,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
     year_index = 0
     for year in range(start_year, end_year+1):
         for meas in slo_survey_measures:
-            if meas['date'].year == year:
+            if meas['target_cohort'] == year:
                 slo_attention_scores[year_index] += meas['n_questions'] 
         year_index += 1
     return slo_survey_measures, slo_attention_scores
@@ -395,7 +396,7 @@ def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year,compulsory_only):
     for srv in all_slo_surveys:
         for i in range (0,len(years)):
             n_for_year = 0
-            if (srv["date"].year == years[i]):
+            if (srv["target_cohort"] == years[i]):
                 slo_survey_plot[i] += srv["percent_positive"]
                 n_for_year +=1
             #calculate average for year

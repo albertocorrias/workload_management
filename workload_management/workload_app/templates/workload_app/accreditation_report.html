@@ -14,7 +14,14 @@
       <h1>Accreditation report for {{ programme_name }}</h1>
       <h4>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
       <hr>
+      <h4>Overall Picture for the period</h4>
+      <p>The table below shows all the courses involved and, for each, how they map to each SLO. The mapping shown is the highest mapping of all the MLO of each course across the given period. 
+            The total number of MLO is reported in the second last row and plotted in the bar chart. The total overall strength (summation of the mapping strength of each MLO from 0 to 3) 
+            is reported in the last row and plotted in the bar chart. 
+      </p>
       <div class="accr_report_overall_summary">
+
+
         <div class="accr_report_overall_summary_item"> <!--Table container-->
           <table id="OverallMLOSLOMAPPINGS" class="workload_tables table table-striped">
             <thead class="table-dark">
@@ -66,6 +73,12 @@
             <script src="{% static   'workload_app/mlo_slo_mapping_summary.js' %}"></script>
           </div>
       </div><!--end of flex container for overall summary part-->
+      <hr>
+      <h4>How much attention each SLO received in the period</h4>
+      <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each MLO are added up for each year. If the mapping strength is 3 (maximum), then 
+        the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (MLO survey measures). 
+        Attention from SLO surveys is computed by adding up the number of questions every year.  
+      </p>
       <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
         <table id="AttentionScores" class="workload_tables table">
           <thead class="table-dark">

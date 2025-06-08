@@ -46,10 +46,9 @@ MIDDLEWARE = [
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True
 #SECURE_SSL_REDIRECT = True
-CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'https://127.0.0.1']
+CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'http://127.0.0.1:8000']
 ROOT_URLCONF = 'workload_management.urls'
-SESSION_COOKIE_DOMAIN = 'eabworkload.org'
-SESSION_COOKIE_HTTPONLY = True
+
 
 INTERNAL_IPS = [
     # ...
@@ -90,6 +89,8 @@ for line in content:
 
 
 if ('production' in str(branch_name)):
+    SESSION_COOKIE_DOMAIN = 'eabworkload.org'
+    SESSION_COOKIE_HTTPONLY = True
     SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DEBUG = False #Must be false in proiduction!
     DATABASES = {
@@ -106,9 +107,31 @@ else: #Not the production branch
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     if ('devel' in str(branch_name)): 
         DEBUG = True# Development settings have debug=true
-        #Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
         TESTING = "test" in sys.argv
-        if not TESTING:
+        if TESTING:
+            #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
+            DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME' : 'workload_db',
+                'USER': 'workload_user',
+                'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+                'HOST' : 'localhost',
+                'PORT' : '5432'
+            }
+            }
+        else: #NOT testing.  
+            DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'OPTIONS': {
+                    'service': 'workload_service',
+                    'passfile': '.pgpass',
+                },
+            }
+            }
+            
+            #add the debug toolbar, disabled for testing - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process 
             INSTALLED_APPS = [
                 *INSTALLED_APPS,
                 "debug_toolbar",
@@ -117,18 +140,9 @@ else: #Not the production branch
                 "debug_toolbar.middleware.DebugToolbarMiddleware",
                 *MIDDLEWARE,
             ]
-        #############################################
+            #############################################
 
-        DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME' : 'workload_db',
-            'USER': 'workload_user',
-            'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
-            'HOST' : 'localhost',
-            'PORT' : '5432'
-        }
-        }
+
         print('**** We are using devel settings  *****')
     else:
         db_to_use = 'db.sqlite3'

@@ -2,6 +2,7 @@
 .pgpass
 .env
 .coverage
+.pg_service.conf
 workload_env
 workload_management/media/surveys/*
 !workload_management/media/surveys/README

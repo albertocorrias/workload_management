@@ -905,6 +905,6 @@ class SelectAccreditationReportForm(forms.Form):
     NO = 0
     YES_NO_CHOICES = [(NO,'No'),(YES,'Yes')]
     this_year = datetime.datetime.now().year
-    academic_year_start = forms.ModelChoiceField(label = "From cohort ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
-    academic_year_end = forms.ModelChoiceField(label = "To cohort (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_start = forms.ModelChoiceField(label = "From cohort matriculated in ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_end = forms.ModelChoiceField(label = "To cohort matriculated in (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
     only_core = forms.ChoiceField(label="Include only compulsory modules?", choices=YES_NO_CHOICES)
