@@ -458,7 +458,7 @@ class AddSLOSurveyForm(forms.Form):
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Cohort targeted', required=False,\
-                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
+                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-9).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         
@@ -591,7 +591,7 @@ class AddMLOSurveyForm(forms.Form):
         self.fields['start_date'] = forms.DateField(label="Start date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years=years_to_show))
         self.fields['end_date'] = forms.DateField(label="End date of the survey distribution",widget=SelectDateWidget(empty_label="Nothing", years = years_to_show))
         self.fields['cohort_targeted'] = forms.ModelChoiceField(label='Academic year of delivery of the course surveyed', required=False,\
-                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-5).filter(start_year__lte=year_now+1))
+                                                      queryset=Academicyear.objects.filter(start_year__gte = year_now-9).filter(start_year__lte=year_now+1))
         self.fields['totoal_N_recipients'] = forms.IntegerField(label="Total number of recipients")
         self.fields['comments'] = forms.CharField(label="Notes", widget=forms.Textarea, required=False)
         
@@ -905,6 +905,6 @@ class SelectAccreditationReportForm(forms.Form):
     NO = 0
     YES_NO_CHOICES = [(NO,'No'),(YES,'Yes')]
     this_year = datetime.datetime.now().year
-    academic_year_start = forms.ModelChoiceField(label = "From cohort matriculated in ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
-    academic_year_end = forms.ModelChoiceField(label = "To cohort matriculated in (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-7)).filter(start_year__lt=(this_year+5)))
+    academic_year_start = forms.ModelChoiceField(label = "From cohort matriculated in ", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-9)).filter(start_year__lt=(this_year+5)))
+    academic_year_end = forms.ModelChoiceField(label = "To cohort matriculated in (included)", widget=forms.Select(attrs={'class': 'form-select'}), queryset=Academicyear.objects.filter(start_year__gt=(this_year-9)).filter(start_year__lt=(this_year+5)))
     only_core = forms.ChoiceField(label="Include only compulsory courses?", choices=YES_NO_CHOICES)

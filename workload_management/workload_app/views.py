@@ -1165,7 +1165,7 @@ def accreditation(request,programme_id):
         max_labels = max(len(survey_settings["slo_survey_labels"]), len(survey_settings["mlo_survey_labels"]),len(survey_settings["peo_survey_labels"]))
         peo_row = ['PEO survey labels']
         slo_row = ['SLO survey labels']
-        mlo_row = ['MLO survey labels']
+        mlo_row = ['CLO survey labels']
         for i in range(0,max_labels):
             peo_row.append(survey_settings["peo_survey_labels_object"].GetFullListOfLabels()[i])
             slo_row.append(survey_settings["slo_survey_labels_object"].GetFullListOfLabels()[i])
