@@ -89,7 +89,7 @@ for line in content:
 
 
 if ('production' in str(branch_name)):
-    SESSION_COOKIE_DOMAIN = 'eabworkload.org'
+    #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
     SESSION_COOKIE_HTTPONLY = True
     SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DEBUG = False #Must be false in proiduction!
