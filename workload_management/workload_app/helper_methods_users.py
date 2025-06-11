@@ -17,7 +17,7 @@ def DetermineUserHomePage(user_id,is_super_user = False, error_text = "ERROR"):
         if usr.user.groups.filter(name__in = ['LecturerStaff']):
             if (usr.lecturer is None): return error_text
             lec_id = usr.lecturer.id
-            return '/lecturer/' + str(lec_id)
+            return '/lecturer_page/' + str(lec_id)
     return error_text
 
 def CanUserAdminUniversity(user_id,is_super_user = False):
@@ -75,8 +75,9 @@ def CanUserAdminThisModule(user_id, module_code,is_super_user = False):
             if usr.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
                 if usr.lecturer is None: return False #Must be assigned a lecturer
                 lec_id = usr.lecturer.id
+                lec_name=Lecturer.objects.filter(id = lec_id).get().name
                 #we return true only if the lecturer has been assigned to teach the module, at least once...
-                if (TeachingAssignment.objects.filter(assigned_module__module_code = module_code).filter(assigned_lecturer__id = lec_id).exists()):
+                if (TeachingAssignment.objects.filter(assigned_module__module_code = module_code).filter(assigned_lecturer__name = lec_name).exists()):
                     return True
     return False
 
