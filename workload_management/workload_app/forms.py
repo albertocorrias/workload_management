@@ -699,7 +699,7 @@ class AddTeachingAssignmentForm(forms.Form):
         workload_scenario_id = kwargs.pop('workloadscenario_id')
         super(AddTeachingAssignmentForm, self).__init__(*args, **kwargs)
         self.fields['select_lecturer'] = forms.ModelChoiceField(queryset=Lecturer.objects.filter(workload_scenario__id = int(workload_scenario_id)).order_by('name'));
-        self.fields['select_module'] = forms.ModelChoiceField(queryset=Module.objects.filter(scenario_ref__id = int(workload_scenario_id)));
+        self.fields['select_module'] = forms.ModelChoiceField(label = "Select course",queryset=Module.objects.filter(scenario_ref__id = int(workload_scenario_id)));
 
         if str(id_of_prof_involved) != str(-1): # a bit dodgy, but comparing against -1 works to check if name is found
             self.fields['select_lecturer'].widget = forms.HiddenInput()#Hides the name alltogether

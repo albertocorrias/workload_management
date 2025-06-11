@@ -77,7 +77,7 @@
                   {% endfor %}
                  </div>
                   <div class="modal-footer">
-                    <p>Note: if you indicate 0 hours, the course will be removed from those assigned to {{ entry.full_name }}</p>
+                    <p>Note: if you indicate 0 hours, the course will be removed from those assigned to {{ entry.prof_name }}</p>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
                     <button type="submit" class="btn btn-primary">Save changes</button>
                   </div>
@@ -93,7 +93,7 @@
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="AddToProf{{ entry.prof_id }}AddAssignmentModal">Add assignment for {{ entry.full_name }}</h5>
+            <h5 class="modal-title" id="AddToProf{{ entry.prof_id }}AddAssignmentModal">Add assignment for {{ entry.prof_name }}</h5>
             <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
               <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
             </button>
