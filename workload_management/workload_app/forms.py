@@ -93,9 +93,9 @@ class ModuleForm(ModelForm):
                   'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
                   'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
                   'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
-        labels = {'module_code' : _('Course Code'),
+        labels = {'module_code' : _('Course code'),
                   'module_title' : _('Course title'),
-                  'module_type' : _('Type of module'),
+                  'module_type' : _('Type of course'),
                   'semester_offered' : _('Semester offered'),
                   'students_year_of_study': _('Year of study of students taking this course'),
                   'primary_programme' : _('Primary  programme the course is part of'),
@@ -125,7 +125,7 @@ class ModuleForm(ModelForm):
         self.fields['tertiary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
         self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
         self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
-        self.fields['module_type'] = forms.ModelChoiceField(queryset=ModuleType.objects.filter(department__id=dept_id))
+        self.fields['module_type'] = forms.ModelChoiceField(label="Course type",queryset=ModuleType.objects.filter(department__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
         self.fields['compulsory_in_primary_programme'].required=False
