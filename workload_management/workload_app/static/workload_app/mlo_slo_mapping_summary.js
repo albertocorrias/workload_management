@@ -27,7 +27,7 @@ const data = {
     }, 
     {
         data: n_mlo_results,
-        label: 'Overall # of MLOs',
+        label: 'Overall # of CLOs',
         backgroundColor: bar_background_colors_2,
         yAxisID: 'y2',
     }, 
@@ -65,7 +65,7 @@ const config = {
             beginAtZero: true,
             title:{
                 display: true,
-                text:'Overall # MLOs',
+                text:'Overall # CLOs',
                 color:bar_background_colors_2[0],
                 font: {size: 17}
             },

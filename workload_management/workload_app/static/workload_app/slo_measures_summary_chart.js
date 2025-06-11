@@ -13,14 +13,14 @@ for (let i = 0; i < all_slo_IDs.length; i++) {
     const data = {
       labels: label_years,
       datasets: [{
-        label: 'MLO direct measures',
+        label: 'CLO direct measures',
         data: mlo_direct_measures,
         fill: false,
         borderColor: 'rgba(91, 160, 0, 0.7)',
         backgroundColor: 'rgba(91, 160, 0, 0.7)'
       },
       {
-        label: 'MLO survey measures',
+        label: 'CLO survey measures',
         data: mlo_survey_measures,
         fill: false,
         borderColor: 'rgba(151, 60, 71, 0.7)',

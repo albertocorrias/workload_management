@@ -15,8 +15,8 @@
       <h4>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
       <hr>
       <h4>Overall Picture for the period</h4>
-      <p>The table below shows all the courses involved and, for each, how they map to each SLO. The mapping shown is the highest mapping of all the MLO of each course across the given period. 
-            The total number of MLO is reported in the second last row and plotted in the bar chart. The total overall strength (summation of the mapping strength of each MLO from 0 to 3) 
+      <p>The table below shows all the courses involved and, for each, how they map to each SLO. The mapping shown is the highest mapping of all the CLO of each course across the given period. 
+            The total number of CLO is reported in the second last row and plotted in the bar chart. The total overall strength (summation of the mapping strength of each CLO from 0 to 3) 
             is reported in the last row and plotted in the bar chart. 
       </p>
       <div class="accr_report_overall_summary">
@@ -208,7 +208,7 @@
                           <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                             <thead class="table-dark">
                             <tr>
-                              <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO direct measures</th>
+                              <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO direct measures</th>
                             </tr>
                               <tr>
                                 <th>  </th> 
@@ -236,7 +236,7 @@
                             </tbody>
                           </table>
                           {% else %} <!-- no MLO direct measures were found -->
-                              <p> No direct measures of mapped MLO were reported for this SLO </p>
+                              <p> No direct measures of mapped CLO were reported for this SLO </p>
                     
                           {% endif %}
                         </div><!--end of slo measures item-->
