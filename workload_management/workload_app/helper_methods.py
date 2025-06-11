@@ -225,9 +225,11 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
         formatted_string = ''
         not_counted_formatted_string = ''
         for assign in assignment_for_this_prof:
-            if (assign.counted_towards_workload == True):
+            if (assign.counted_towards_workload == True and prof.is_external==False):
                 formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
-                prof_total_assigned_hours = prof_total_assigned_hours + assign.number_of_hours
+                hours_to_assign = assign.number_of_hours
+                if (assign.assigned_module.semester_offered == Module.BOTH_SEMESTERS) : hours_to_assign = 2*hours_to_assign
+                prof_total_assigned_hours = prof_total_assigned_hours + hours_to_assign
             else:
                 not_counted_formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
                 not_counted_total_hours += assign.number_of_hours
@@ -264,7 +266,8 @@ def CalculateDepartmentWorkloadTable(workloadscenario_id):
         #Keep track of dept total assigned hours
         total_assigned_hours = total_assigned_hours + prof_total_assigned_hours
         #Keep track of dept total assigned hours
-        total_workload_FTE = total_workload_FTE + prof_fte
+        if (prof.is_external==False):
+            total_workload_FTE = total_workload_FTE + prof_fte
         ret.append(item)
 
     #Now that we calculated total tFTE and total hours, we re-loop to assign expectations and balance
@@ -366,8 +369,6 @@ def CalculateModuleWorkloadTable(workloadscenario_id):
 #It looks at the workload scenario whose id is passed in
 def CalculateSummaryData(workload_scenario_id):
     
-    all_teaching_assignments = TeachingAssignment.objects.filter(workload_scenario__id = workload_scenario_id)
-
     total_FTE_for_workload = 0
     total_hrs_for_workload = 0
     total_hours_not_counted = 0
@@ -381,10 +382,10 @@ def CalculateSummaryData(workload_scenario_id):
     hours_prog = []
     labels_prog = []
     dept_id = WorkloadScenario.objects.filter(id = workload_scenario_id).get().dept.id
-    for assign in all_teaching_assignments:
+    for assign in TeachingAssignment.objects.filter(workload_scenario__id = workload_scenario_id):
         mod_involved = assign.assigned_module
         prof_involved = assign.assigned_lecturer
-        #make sure we don'tcount towards the workload the assignments to external profs
+        #make sure we don't count towards the workload the assignments to external profs
         if (prof_involved.is_external == True):
             assign.counted_towards_workload = False #no matter what was stored... 
 
@@ -421,11 +422,10 @@ def CalculateSummaryData(workload_scenario_id):
                 track_adj = prof_involved.employment_track.track_adjustment
                 empl_adj = prof_involved.service_role.role_adjustment
                 total_FTE_for_workload = total_FTE_for_workload + prof_involved.fraction_appointment*track_adj*empl_adj
-        
-            total_hrs_for_workload = total_hrs_for_workload + assign.number_of_hours
         else:
             total_hours_not_counted = total_hours_not_counted + assign.number_of_hours
 
+        
         #Calculate hours by programme offered
         no_programme_string = 'No programme'
         if (mod_involved.primary_programme is None):
@@ -443,7 +443,8 @@ def CalculateSummaryData(workload_scenario_id):
             else: #not there, add at the end
                 labels_prog.append(prog_name)
                 hours_prog.append(assign.number_of_hours)
-
+    
+    total_hrs_for_workload = hours_sem_1 + hours_sem_2 + hours_other
     total_dept_fte = 0
     total_module_hours = 0
     total_adjunct_tFTE = 0
@@ -483,7 +484,8 @@ def CalculateSummaryData(workload_scenario_id):
             'total_adjunct_tFTE' : total_adjunct_tFTE,
             'total_number_of_adjuncts' : total_number_of_adjuncts,
             'total_number_of_external' : total_number_external_staff,
-            'total_hours_not_counted' : total_hours_not_counted
+            'total_hours_not_counted' : total_hours_not_counted,
+            'total_hours_delivered' : total_hrs_for_workload + total_hours_not_counted
             }
     return ret
 
