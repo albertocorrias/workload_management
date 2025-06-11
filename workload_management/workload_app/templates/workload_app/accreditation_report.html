@@ -76,7 +76,7 @@
       <hr>
       <h4>How much attention each SLO received in the period</h4>
       <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each MLO are added up for each year. If the mapping strength is 3 (maximum), then 
-        the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (MLO survey measures). 
+        the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (CLO survey measures). 
         Attention from SLO surveys is computed by adding up the number of questions every year.  
       </p>
       <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
@@ -114,7 +114,7 @@
               {% endfor %}
             </tr>
             <tr>
-              <td>MLO survey measures</td>
+              <td>CLO survey measures</td>
               {% for mlo_att_score,mlo_att_color in slo_item.zipped_attn_scores_mlo_survey %}
               <td style="background-color: {{ mlo_att_color }};">
                 {{ mlo_att_score|floatformat }}
@@ -245,7 +245,7 @@
                             <table id="SLO_MLOSurveyMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                                 <thead class="table-dark">
                                 <tr>
-                                  <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO survey measures</th>
+                                  <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO survey measures</th>
                                 </tr>
                                 <tr>
                                     <th>  </th> 
@@ -274,7 +274,7 @@
                               </table>
         
                           {% else %}
-                            <p> No MLO survey measures for a mapped MLO were reported for this SLO </p>
+                            <p> No CLO survey measures for a mapped CLO were reported for this SLO </p>
                           {% endif %}
                         </div><!-- end of slo emausre item-->
               </div><!--End of slo emasures container-->
