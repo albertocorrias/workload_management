@@ -41,7 +41,7 @@ def populate_database():
     f = open("workload_app/others/random_names.txt", "r")
     names = []
     for x in f:
-        names.append(x)
+        names.append(x.strip())
     start_year = 2020
 
     acad_year_0,created = Academicyear.objects.get_or_create(start_year=start_year)
