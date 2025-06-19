@@ -30,7 +30,7 @@ from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWor
                             CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                            CalculateSingleModuleInformationTable, HandleScenarioForm
+                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
@@ -88,6 +88,7 @@ def scenario_view(request, workloadscenario_id):
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
 
+    table_by_prof = CalculateAllWorkloadTables(workloadscenario_id)["table_by_prof"]
     workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id)
     modules_table = CalculateModuleWorkloadTable(workloadscenario_id)
     summary_data = CalculateSummaryData(workloadscenario_id)
@@ -111,6 +112,7 @@ def scenario_view(request, workloadscenario_id):
         'workloadscenario_id' : workloadscenario_id,
         'name_of_active_scenario' : name_of_active_scenario,
         'edit_active_scenario_form' : edit_active_scenario_form,
+        'workload_table_by_prof' : table_by_prof,
         'wl_table': workload_table,
         'mod_table':modules_table,
         'summary_data' : summary_data,
