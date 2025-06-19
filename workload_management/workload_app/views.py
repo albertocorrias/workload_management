@@ -708,7 +708,7 @@ def module(request, module_code):
                     "mlo_list" : None
                 }
                 mlo_list = []#List of dictionaries
-                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code).order_by('mlo_short_description'):
                     mlo_edit_form = MLOForm(initial = {'fresh_rescord' : False, 'mlo_id' : mlo.id,\
                                                         'mlo_description' : mlo.mlo_description,\
                                                         'mlo_short_description' : mlo.mlo_short_description,\

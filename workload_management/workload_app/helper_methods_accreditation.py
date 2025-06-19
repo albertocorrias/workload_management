@@ -78,7 +78,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
             perc_positive = 0
             questions = ''
             #Look, within this survey for all responses associated with this SLO. We will condense them in one line of the table
-            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id):
+            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id).order_by('-question_text'):
                 props = response.CalculateRepsonsesProprties()
                 perc_positive += props['percentage_positive']
                 questions += response.question_text + ', '

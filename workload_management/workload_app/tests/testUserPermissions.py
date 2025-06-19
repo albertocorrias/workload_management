@@ -110,7 +110,7 @@ class TestUserPermissions(TestCase):
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
-        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer/"+str(lecturer_1.id))
+        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours=39, workload_scenario=scenario_1)
         self.assertEqual(TeachingAssignment.objects.all().count(),1)
