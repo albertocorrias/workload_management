@@ -131,9 +131,9 @@ class WorkloadScenario(models.Model):
 
     #Some metrics that are calculated and stored every time the workload page is calculated
     #For usage by other summary methods
-    total_hours_delivered = models.DecimalField(max_digits=5, decimal_places=2,default=-1)
-    total_tfte_used = models.DecimalField(max_digits=5,decimal_places=2,default=-1)
-    expected_hrs_per_tfte = models.DecimalField(max_digits=5, decimal_places=2,default=-1)
+    total_hours_delivered = models.DecimalField(max_digits=10, decimal_places=2,default=-1)
+    total_tfte_overall = models.DecimalField(max_digits=10,decimal_places=2,default=-1)
+    expected_hrs_per_tfte = models.DecimalField(max_digits=10, decimal_places=2,default=-1)
 
     def __str__(self):
         return self.label

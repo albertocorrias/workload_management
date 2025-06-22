@@ -19,16 +19,24 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
     if (faculty_id>0):
         queryset = WorkloadScenario.objects.filter(dept__faculty__id = faculty_id)
     for wl_scen in queryset.order_by('label'):
-        summary_data = CalculateSummaryData(wl_scen.id)
+        if (wl_scen.expected_hrs_per_tfte>-1):#already calculated, if not, it is -1
+            total_hrs_delivered = wl_scen.total_hours_delivered
+            total_fte = wl_scen.total_tfte_overall
+            expected_hrs = wl_scen.expected_hrs_per_tfte
+        else:#need to reecalculate
+            summary_data = CalculateAllWorkloadTables(wl_scen.id)['summary_data']
+            total_hrs_delivered = summary_data["total_hours_for_workload"]
+            total_fte = summary_data["total_department_tFTE"],
+            expected_hrs = summary_data["expected_hours_per_tFTE"]
         item = {"wl_name" : wl_scen.label,
                 "wl_id" : wl_scen.id,
                 "acad_year" : wl_scen.academic_year.__str__(),
                 "dept_acronym" : wl_scen.dept.department_acronym,
                 "faculty_acronym" : wl_scen.dept.faculty.faculty_acronym,
                 "status" : wl_scen.status,
-                "total_hours_delivered" : summary_data["total_hours_for_workload"],
-                "total_fte" : summary_data["total_department_tFTE"],
-                "expected_hrs" : summary_data["expected_hours_per_tFTE"]
+                "total_hours_delivered" : total_hrs_delivered,
+                "total_fte" : total_fte,
+                "expected_hrs" : expected_hrs
                 }
         ret.append(item)
     return ret
@@ -407,6 +415,11 @@ def CalculateAllWorkloadTables(workloadscenario_id):
         mod_item["module_lecturers"] = mod_item["module_lecturers"][:-2]
         mod_item["module_lecturers_not_counted"] = mod_item["module_lecturers_not_counted"][:-2]
 
+    #Store some quantities into DB for usage
+    WorkloadScenario.objects.filter(id=workloadscenario_id).update(\
+    total_hours_delivered = summary_data["total_hours_for_workload"],
+    total_tfte_overall = summary_data["total_tFTE_for_workload"],
+    expected_hrs_per_tfte = summary_data["expected_hours_per_tFTE"])
     return {
         'table_by_prof' : all_lecturer_items,
         'table_by_mod' : all_mod_items,

@@ -37,15 +37,26 @@ class testHelperMethods(TestCase):
         new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
         acad_year = Academicyear.objects.create(start_year=2025)
         srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
          
         #Create a new scenario
         first_label = 'test_scen'
         first_scen = WorkloadScenario.objects.create(label=first_label, dept=new_dept, academic_year=acad_year)
+        
+        #Deafult values for workload scenario parameters
+        self.assertEqual(first_scen.total_hours_delivered,-1)
+        self.assertEqual(first_scen.total_tfte_overall,-1)
+        self.assertEqual(first_scen.expected_hrs_per_tfte,-1)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
+        #The method shoul caluclate 0 here (no profs no assignments) for the stored parameters
+        self.assertEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_hours_delivered,0)
+        self.assertEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_tfte_overall,0)
+        self.assertEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().expected_hrs_per_tfte,0)
+        
         #create three tracks
         track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, faculty=new_fac)
@@ -542,6 +553,11 @@ class testHelperMethods(TestCase):
         #But the not counted hours have changed beacuse of the assignment to the external staff
         self.assertAlmostEqual(obtained_summary_data["total_hours_not_counted"],Decimal(1320+2340))#From one assignment not counted, plus one to external staff
 
+         #The method shoul caluclate appropriate values for the stored parameters
+        self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_hours_delivered,obtained_summary_data["total_hours_for_workload"],2)
+        self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_tfte_overall,obtained_summary_data["total_tFTE_for_workload"],2)
+        self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().expected_hrs_per_tfte,obtained_summary_data["expected_hours_per_tFTE"],2)
+
         #Create another scenario
         new_label = "new_scenario"
         acad_year = Academicyear.objects.create(start_year=2200)
@@ -558,8 +574,8 @@ class testHelperMethods(TestCase):
         self.assertAlmostEqual(obtained_summary_data["total_tFTE_for_workload"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_department_tFTE"],Decimal(0))#
         self.assertAlmostEqual(obtained_summary_data["total_module_hours_for_dept"],Decimal(0))#
-        self.assertAlmostEqual(obtained_summary_data["total_hours_for_workload"],Decimal(0));
-        self.assertAlmostEqual(obtained_summary_data["expected_hours_per_tFTE"],Decimal(0));
+        self.assertAlmostEqual(obtained_summary_data["total_hours_for_workload"],Decimal(0))
+        self.assertAlmostEqual(obtained_summary_data["expected_hours_per_tFTE"],Decimal(0))
         
         #Add a module in new scenario
         self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': new_scenario.get().id}), {'module_code': 'in_new_scenario',  'module_title' : 'new_scen_mod', 'total_hours' : '8252', 'module_type' : mod_type_faculty.id, 'semester_offered' : Module.SEM_2, 'number_of_tutorial_groups' : '3',  'fresh_record' : True})        
@@ -570,8 +586,6 @@ class testHelperMethods(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         obtained_summary_data = response.context['summary_data']
         self.assertAlmostEqual(obtained_summary_data["total_module_hours_for_dept"],Decimal(8252))#
-    
- 
 
     def testCalculateModuleTableOverYears(self):
         calc = CalculateSingleModuleInformationTable("BN301")
