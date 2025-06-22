@@ -194,6 +194,42 @@ def HandleScenarioForm(form,department_id):
         WorkloadScenario.objects.filter(academic_year = supplied_acad_year).filter(dept = supplied_dept.get()).exclude(id=id_involved)\
                                     .update(status=WorkloadScenario.DRAFT)
 
+#This helper method queries the database and returrns 3 dictionaries.
+# One key is 'table_by_prof' which is a list of items, one per professor
+# For each professor, the dictionary has the following items
+# prof_name : Name of the lecturer 
+# assignments: modules assigned to this lecturer by module code with hours (one formatted string, ready for display)
+#              If no assignments, then this string will be "No teaching assignments"
+# total_hours_for_prof: the total number of assigned hours to the lecturer 
+# prof_tfte: the teaching FTE for the professor
+# prof_expected_hours: the expected hours to be taught by that professor: calculated based on equal distribution
+#                      of the total workload hours, scaled by tFTE
+# prof_balance: the balance(actualk minus expected): total_hours_for_prof - prof_expected_hours
+# prof_hex_code: the HEX code (a string) of the balance (e..g, red if negative, green if positive, etc)
+# "prof_id": the Id of the prof in the database
+# "prof_form": a form, initialized to current prof details, for editing purposes
+# "edit_assign_form" : a form to edit the teaching assignments of the prof.
+# "add_assignment_for_prof_form": a form to add new teaching assignment to the prof
+# "num_assigns_for_prof": the number of assignment for the prof. Includes both counted and not counted
+# 
+# Another key is table_by_mod
+# For each module, the dictionary contains
+# "module_code" :the moduel code,
+# "module_title" : The module ttile as a shortened string (see ShortenString method)
+# "module_lecturers" : a formatted string with the list of lecturers and, for each, the hours
+# "module_assigned_hours" : the total hours assigned forr this module
+# "module_type" : the module type
+# "num_tut_groups" : Number of tutroial groups
+# "module_hours_needed" :The hours needed as stored in the module object
+# "module_id" : the Id of the module
+# "mod_form" : a form to edit module details. initialised to the current module data
+# "edit_module_assign_form" : A form to edit the assignments for this module
+# "add_assignment_for_mod_form" : A form to add a fresh assignment to this module
+# "num_assigns_for_module" : The total number of teachinga ssignments for this module (includes counted and not counted)
+#
+# Another key is summary_data which is a table with some summary data on the workload scenario
+# 
+#The input parameter is the id of the workload scenario
 def CalculateAllWorkloadTables(workloadscenario_id):
 
     summary_data =   {
@@ -208,7 +244,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
         'hours_sem_2' : 0,
         'hours_other_sems' : 0,
         'total_department_tFTE' : 0,
-        'total_module_hours_for_dept' : 0,
+        'total_module_hours_for_dept' : 0, #these are the hours stored within the module object
         'total_adjunct_tFTE' : 0,
         'total_number_of_adjuncts' : 0,
         'total_number_of_external' : 0,
@@ -254,6 +290,9 @@ def CalculateAllWorkloadTables(workloadscenario_id):
         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
         display_mod_type = DEFAULT_MODULE_TYPE_NAME
         if (mod.module_type is not None): display_mod_type = mod.module_type.type_name
+        display_prg_name = "No programme"
+        if (mod.primary_programme is not None): display_prg_name = mod.primary_programme.programme_name
+
         single_mod_item = {
             "module_code" : mod.module_code,
             "module_title" : ShortenString(mod.module_title),
@@ -263,6 +302,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "module_assigned_hours" : 0,  #Placeholder, will update later
             "module_assigned_hours_not_counted" : 0,   #Placeholder, will update later
             "module_type" : display_mod_type,
+            "primary_programme" : display_prg_name,
             "num_tut_groups" : mod.number_of_tutorial_groups,
             "module_hours_needed" : mod.total_hours,
             "module_id" : mod.id,
@@ -299,39 +339,73 @@ def CalculateAllWorkloadTables(workloadscenario_id):
                 lec_item["not_counted_assignments"] += assign.assigned_module.module_code + ' (' + str(num_hours) + '), '
                 lec_item["not_counted_total_hours"] += num_hours
             lec_item["num_assigns_for_prof"] += 1
-            summary_data["total_tFTE_for_workload"] += lec_item["prof_tfte"]
+            
         #Find the module item for this module_id (None if not found)
-        mod_item = next((mod_item for mod_item in all_mod_items if mod_item["module_id"] == mod_id))
+        mod_item = next((mod_item for mod_item in all_mod_items if mod_item["module_id"] == mod_id), None)
         if (mod_item is not None):
             if (assign.counted_towards_workload == True):
                 mod_item["module_lecturers"] += assign.assigned_lecturer.name + ' (' + str(num_hours) + '), '
                 mod_item["module_assigned_hours"] += num_hours
                 summary_data["total_hours_for_workload"] += num_hours
+                if (mod_item["semester_offered"] == Module.SEM_1 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
+                    summary_data["hours_sem_1"] += num_hours
+                if (mod_item["semester_offered"] == Module.SEM_2 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
+                    summary_data["hours_sem_2"] += num_hours
+                if (mod_item["semester_offered"] == Module.SPECIAL_TERM_1 \
+                    or mod_item["semester_offered"] == Module.SPECIAL_TERM_2\
+                    or mod_item["semester_offered"] == Module.UNASSIGNED):
+                    summary_data["hours_other_sems"] += num_hours
             else:
                 mod_item["module_lecturers_not_counted"] += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
                 mod_item["module_assigned_hours_not_counted"] += num_hours
                 summary_data["total_hours_not_counted"] += num_hours
-            if (mod_item["semester_offered"] == Module.SEM_1 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
-                summary_data["hours_sem_1"] += num_hours
-            if (mod_item["semester_offered"] == Module.SEM_2 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
-                summary_data["hours_sem_2"] += num_hours
-            if (mod_item["semester_offered"] == Module.SPECIAL_TERM_1 or mod_item["semester_offered"] == Module.SPECIAL_TERM_2):
-                summary_data["hours_other_sems"] += num_hours
+
             mod_item["num_assigns_for_module"] += 1
+            
+            #Some summary data
+            if (mod_item["module_type"] not in summary_data["module_type_labels"]): #if mod type not yet stored...
+                summary_data["module_type_labels"].append(mod_item["module_type"])
+                summary_data["hours_by_type"].append(num_hours)
+            else: #module type is already there, must add to the tally
+                mod_type_index = summary_data["module_type_labels"].index(mod_item["module_type"])
+                summary_data["hours_by_type"][mod_type_index] += num_hours
+            
+            if (mod_item["primary_programme"] not in summary_data["labels_prog"]): #if programme not yet stored
+                summary_data["labels_prog"].append(mod_item["primary_programme"])
+                summary_data["hours_prog"].append(num_hours)
+            else: #already stored, we must add to the tally
+                prog_indx = summary_data["labels_prog"].index(mod_item["primary_programme"])
+                summary_data["hours_prog"][prog_indx] += num_hours
 
-        #if (assign_counter==0): formatted_string = "No lecturer assigned  " #Note the two spaces at the end
-        #if (formatted_string == ''): formatted_string = '  '
-        #if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
 
+    #Other key summary metrics
+    if (summary_data["total_hours_for_workload"] > 0):
+        summary_data["expected_hours_per_tFTE"] = summary_data["total_hours_for_workload"]/summary_data["total_department_tFTE"]
+    summary_data["total_hours_delivered"] = summary_data["total_hours_for_workload"] + summary_data["total_hours_not_counted"]
 
+    #Calculate the tFTE actually used in this workload -loop over data structure, leave DB alone here
+    for prof_item in all_lecturer_items:
+        if (prof_item["num_assigns_for_prof"]>0):
+            summary_data["total_tFTE_for_workload"] += prof_item["prof_tfte"]
+        if (prof_item["assignments"] == ''):
+            prof_item["assignments"] = 'No teaching assignments  ' #Note the two spaces at the end, chopped off later
+        if (prof_item["not_counted_assignments"] == ''):
+            prof_item["not_counted_assignments"] = '  '#Two spaces to be chopped later
+        prof_item["assignments"] = prof_item["assignments"][:-2] #chop off last two characters
+        prof_item["not_counted_assignments"] = prof_item["not_counted_assignments"][:-2] #chop off last two characters
 
-
-
-
-
-        # if (assign_counter == 0): formatted_string = 'No teaching assignments  ' #Note the two spaces at the end, chopped off later
-        # if (formatted_string == ''): formatted_string = '  '
-        # if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
+        prof_item["prof_expected_hours"] = summary_data["expected_hours_per_tFTE"]*prof_item["prof_tfte"]
+        prof_item["prof_balance"] = prof_item["total_hours_for_prof"] - prof_item["prof_expected_hours"]
+        prof_item["prof_hex_code"] = DetermineColorBasedOnBalance(prof_item["prof_balance"])
+    for mod_item in all_mod_items:
+        summary_data["total_module_hours_for_dept"] += mod_item["module_hours_needed"]
+        if (mod_item["module_lecturers"] == ''):
+            mod_item["module_lecturers"] = 'No lecturer assigned  ' #Note the two spaces at the end, chopped off later
+        if (mod_item["module_lecturers_not_counted"] == ''):
+            mod_item["module_lecturers_not_counted"] = '  ' #Two spaces, chopped later
+        #Chop off last two characters
+        mod_item["module_lecturers"] = mod_item["module_lecturers"][:-2]
+        mod_item["module_lecturers_not_counted"] = mod_item["module_lecturers_not_counted"][:-2]
 
     return {
         'table_by_prof' : all_lecturer_items,
@@ -343,171 +417,145 @@ def CalculateAllWorkloadTables(workloadscenario_id):
 # Helper method to compute the workload table by professor
 # It queries the database and returns a list of dictonaries
 # The list has as many items as professors in the database 
-# For each professor, there dictionary has the following items
-# prof_name : Name of the lecturer 
-# assignments: modules assigned to this lecturer by module code with hours (one formatted string, ready for display)
-#              If no assignments, then this string will be "No teaching assignments"
-# total_hours_for_prof: the total number of assigned hours to the lecturer 
-# prof_tfte: the teaching FTE for the professor
-# prof_expected_hours: the expected hours to be taught by that professor: calculated based on equal distribution
-#                      of the total workload hours, scaled by tFTE
-# prof_balance: the balance(actualk minus expected): total_hours_for_prof - prof_expected_hours
-# prof_hex_code: the HEX code (a string) of the balance (e..g, red if negative, green if positive, etc)
-# "prof_id": the Id of the prof in the database
-# "prof_form": a form, initialized to current prof details, for editing purposes
-# "edit_assign_form" : a form to edit the teaching assignments of the prof.
-# "add_assignment_for_prof_form": a form to add new teaching assignment to the prof
-# "num_assigns_for_prof": the number of assignment for the prof. Includes both counted and not counted
-def CalculateDepartmentWorkloadTable(workloadscenario_id):
-    ret = []
-    total_assigned_hours = 0
-    total_workload_FTE = 0
-    for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
 
-        assignment_for_this_prof = TeachingAssignment.objects.filter(assigned_lecturer__name = prof.name).filter(workload_scenario__id = workloadscenario_id)
-        prof_total_assigned_hours = 0
-        not_counted_total_hours = 0
-        assign_counter = 0
-        formatted_string = ''
-        not_counted_formatted_string = ''
-        for assign in assignment_for_this_prof:
-            if (assign.counted_towards_workload == True and prof.is_external==False):
-                formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
-                hours_to_assign = assign.number_of_hours
-                if (assign.assigned_module.semester_offered == Module.BOTH_SEMESTERS) : hours_to_assign = 2*hours_to_assign
-                prof_total_assigned_hours = prof_total_assigned_hours + hours_to_assign
-            else:
-                not_counted_formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
-                not_counted_total_hours += assign.number_of_hours
-            assign_counter = assign_counter + 1
+# def CalculateDepartmentWorkloadTable(workloadscenario_id):
+#     ret = []
+#     total_assigned_hours = 0
+#     total_workload_FTE = 0
+#     for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
 
-        if (assign_counter == 0): formatted_string = 'No teaching assignments  ' #Note the two spaces at the end, chopped off later
-        if (formatted_string == ''): formatted_string = '  '
-        if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
+#         assignment_for_this_prof = TeachingAssignment.objects.filter(assigned_lecturer__name = prof.name).filter(workload_scenario__id = workloadscenario_id)
+#         prof_total_assigned_hours = 0
+#         not_counted_total_hours = 0
+#         assign_counter = 0
+#         formatted_string = ''
+#         not_counted_formatted_string = ''
+#         for assign in assignment_for_this_prof:
+#             if (assign.counted_towards_workload == True and prof.is_external==False):
+#                 formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
+#                 hours_to_assign = assign.number_of_hours
+#                 if (assign.assigned_module.semester_offered == Module.BOTH_SEMESTERS) : hours_to_assign = 2*hours_to_assign
+#                 prof_total_assigned_hours = prof_total_assigned_hours + hours_to_assign
+#             else:
+#                 not_counted_formatted_string += assign.assigned_module.module_code + ' (' + str(assign.number_of_hours) + '), '
+#                 not_counted_total_hours += assign.number_of_hours
+#             assign_counter = assign_counter + 1
+
+#         if (assign_counter == 0): formatted_string = 'No teaching assignments  ' #Note the two spaces at the end, chopped off later
+#         if (formatted_string == ''): formatted_string = '  '
+#         if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
         
-        #Calculate and store teaching FTE
-        empl_track_adj = prof.employment_track.track_adjustment
-        service_role_adj = prof.service_role.role_adjustment
-        prof_fte = prof.fraction_appointment * empl_track_adj * service_role_adj
+#         #Calculate and store teaching FTE
+#         empl_track_adj = prof.employment_track.track_adjustment
+#         service_role_adj = prof.service_role.role_adjustment
+#         prof_fte = prof.fraction_appointment * empl_track_adj * service_role_adj
 
-        item  = {
-            "prof_name" : prof.name,
-            "assignments" : formatted_string[:-2],
-            "not_counted_assignments" : not_counted_formatted_string[:-2],
-            "not_counted_total_hours" : not_counted_total_hours,
-            "total_hours_for_prof" : prof_total_assigned_hours,
-            "prof_tfte" : prof_fte,
-            "prof_expected_hours" : 0, #Placeholder, will update later
-            "prof_balance" : 0,#Placeholder, will update later
-            "prof_hex_code" : '#FFFFFF', #White as default. May be updated later
-            "no_space_name" : RegularizeName(prof.name),
-            "prof_id" : prof.id,
-            "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
-                                                       'employment_track' : prof.employment_track.id, \
-                                                        'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
-            "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
-            "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
-            "num_assigns_for_prof" : TeachingAssignment.objects.filter(assigned_lecturer__id = prof.id).count()
-        }
-        #Keep track of dept total assigned hours
-        total_assigned_hours = total_assigned_hours + prof_total_assigned_hours
-        #Keep track of dept total assigned hours
-        if (prof.is_external==False):
-            total_workload_FTE = total_workload_FTE + prof_fte
-        ret.append(item)
+#         item  = {
+#             "prof_name" : prof.name,
+#             "assignments" : formatted_string[:-2],
+#             "not_counted_assignments" : not_counted_formatted_string[:-2],
+#             "not_counted_total_hours" : not_counted_total_hours,
+#             "total_hours_for_prof" : prof_total_assigned_hours,
+#             "prof_tfte" : prof_fte,
+#             "prof_expected_hours" : 0, #Placeholder, will update later
+#             "prof_balance" : 0,#Placeholder, will update later
+#             "prof_hex_code" : '#FFFFFF', #White as default. May be updated later
+#             "no_space_name" : RegularizeName(prof.name),
+#             "prof_id" : prof.id,
+#             "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
+#                                                        'employment_track' : prof.employment_track.id, \
+#                                                         'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
+#             "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
+#             "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
+#             "num_assigns_for_prof" : TeachingAssignment.objects.filter(assigned_lecturer__id = prof.id).count()
+#         }
+#         #Keep track of dept total assigned hours
+#         total_assigned_hours = total_assigned_hours + prof_total_assigned_hours
+#         #Keep track of dept total assigned hours
+#         if (prof.is_external==False):
+#             total_workload_FTE = total_workload_FTE + prof_fte
+#         ret.append(item)
 
-    #Now that we calculated total tFTE and total hours, we re-loop to assign expectations and balance
-    index = 0
-    for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
-        #Update expectation
-        expectation = total_assigned_hours * ret[index]['prof_tfte']/total_workload_FTE
-        ret[index]['prof_expected_hours'] = expectation
-        #Calculate balance
-        balance = float(float(ret[index]['total_hours_for_prof']) - float(ret[index]['prof_expected_hours']))
-        #Store the difference, just for ease of HTML displaying later
-        ret[index]['prof_balance'] = balance
-        ret[index]['prof_hex_code'] = DetermineColorBasedOnBalance(balance)
-        index = index + 1
+#     #Now that we calculated total tFTE and total hours, we re-loop to assign expectations and balance
+#     index = 0
+#     for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
+#         #Update expectation
+#         expectation = total_assigned_hours * ret[index]['prof_tfte']/total_workload_FTE
+#         ret[index]['prof_expected_hours'] = expectation
+#         #Calculate balance
+#         balance = float(float(ret[index]['total_hours_for_prof']) - float(ret[index]['prof_expected_hours']))
+#         #Store the difference, just for ease of HTML displaying later
+#         ret[index]['prof_balance'] = balance
+#         ret[index]['prof_hex_code'] = DetermineColorBasedOnBalance(balance)
+#         index = index + 1
     
-    return ret
+#     return ret
 
 
 # Helper method to compute the module table with allocations
 # It queries the database and returns a list of dictioanries
 # The list has as many items as modules in the database.
-# For each module, the dictionary contains
-# "module_code" :the moduel code,
-# "module_title" : The module ttile as a shortened string (see ShortenString method)
-# "module_lecturers" : a formatted string with the list of lecturers and, for each, the hours
-# "module_assigned_hours" : the total hours assigned forr this module
-# "module_type" : the module type
-# "num_tut_groups" : Number of tutroial groups
-# "module_hours_needed" :The hours needed as stored in the module object
-# "module_id" : the Id of the module
-# "mod_form" : a form to edit module details. initialised to the current module data
-# "edit_module_assign_form" : A form to edit the assignments for this module
-# "add_assignment_for_mod_form" : A form to add a fresh assignment to this module
-# "num_assigns_for_module" : The total number of teachinga ssignments for this module (includes counted and not counted)
-def CalculateModuleWorkloadTable(workloadscenario_id):
-    ret = []
-    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
 
-    for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
+# def CalculateModuleWorkloadTable(workloadscenario_id):
+#     ret = []
+#     department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
 
-        assignment_for_this_mod = TeachingAssignment.objects.filter(assigned_module__module_code = mod.module_code).filter(workload_scenario__id = workloadscenario_id)
-        total_hours_assigned_for_this_mod = 0
-        total_hours_assigned_for_this_mod_not_counted = 0
-        assign_counter = 0
-        formatted_string = ''
-        not_counted_formatted_string = ''
-        for assign in assignment_for_this_mod:
-            if (assign.counted_towards_workload == True):
-                formatted_string += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
-                total_hours_assigned_for_this_mod = total_hours_assigned_for_this_mod + assign.number_of_hours
-            else:
-                not_counted_formatted_string += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
-                total_hours_assigned_for_this_mod_not_counted += assign.number_of_hours
+#     for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
 
-            assign_counter = assign_counter + 1
+#         assignment_for_this_mod = TeachingAssignment.objects.filter(assigned_module__module_code = mod.module_code).filter(workload_scenario__id = workloadscenario_id)
+#         total_hours_assigned_for_this_mod = 0
+#         total_hours_assigned_for_this_mod_not_counted = 0
+#         assign_counter = 0
+#         formatted_string = ''
+#         not_counted_formatted_string = ''
+#         for assign in assignment_for_this_mod:
+#             if (assign.counted_towards_workload == True):
+#                 formatted_string += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
+#                 total_hours_assigned_for_this_mod = total_hours_assigned_for_this_mod + assign.number_of_hours
+#             else:
+#                 not_counted_formatted_string += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
+#                 total_hours_assigned_for_this_mod_not_counted += assign.number_of_hours
 
-        if (assign_counter==0): formatted_string = "No lecturer assigned  " #Note the two spaces at the end
-        if (formatted_string == ''): formatted_string = '  '
-        if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
-        student_year_of_study=0
-        if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
+#             assign_counter = assign_counter + 1
 
-        display_mod_type = DEFAULT_MODULE_TYPE_NAME
-        if (mod.module_type is not None): display_mod_type = mod.module_type.type_name
+#         if (assign_counter==0): formatted_string = "No lecturer assigned  " #Note the two spaces at the end
+#         if (formatted_string == ''): formatted_string = '  '
+#         if (not_counted_formatted_string == ''): not_counted_formatted_string = '  '
+#         student_year_of_study=0
+#         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
 
-        item = {
-            "module_code" : mod.module_code,
-            "module_title" : ShortenString(mod.module_title),
-            "module_full_title" : mod.module_title,
-            "module_lecturers" : formatted_string[:-2],
-            "module_lecturers_not_counted" : not_counted_formatted_string[:-2],
-            "module_assigned_hours" : total_hours_assigned_for_this_mod,
-            "module_assigned_hours_not_counted" : total_hours_assigned_for_this_mod_not_counted,
-            "module_type" : display_mod_type,
-            "num_tut_groups" : mod.number_of_tutorial_groups,
-            "module_hours_needed" : mod.total_hours,
-            "module_id" : mod.id,
-            "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
-                                          'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
-                                          'semester_offered' : mod.semester_offered,\
-                                          'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
-                                          'primary_programme' : mod.primary_programme,\
-                                          'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
-                                          'students_year_of_study' : student_year_of_study,\
-                                          'secondary_programme' : mod.secondary_programme,\
-                                          'sub_programme' : mod.sub_programme,\
-                                          'secondary_sub_programme' : mod.secondary_sub_programme,\
-                                          'fresh_record' : False}),
-            "edit_module_assign_form" : EditModuleAssignmentForm(module_id = mod.id),
-            "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id),
-            "num_assigns_for_module" : TeachingAssignment.objects.filter(assigned_module__id = mod.id).count()
-        }
-        ret.append(item)
-    return ret
+#         display_mod_type = DEFAULT_MODULE_TYPE_NAME
+#         if (mod.module_type is not None): display_mod_type = mod.module_type.type_name
+
+#         item = {
+#             "module_code" : mod.module_code,
+#             "module_title" : ShortenString(mod.module_title),
+#             "module_full_title" : mod.module_title,
+#             "module_lecturers" : formatted_string[:-2],
+#             "module_lecturers_not_counted" : not_counted_formatted_string[:-2],
+#             "module_assigned_hours" : total_hours_assigned_for_this_mod,
+#             "module_assigned_hours_not_counted" : total_hours_assigned_for_this_mod_not_counted,
+#             "module_type" : display_mod_type,
+#             "num_tut_groups" : mod.number_of_tutorial_groups,
+#             "module_hours_needed" : mod.total_hours,
+#             "module_id" : mod.id,
+#             "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
+#                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
+#                                           'semester_offered' : mod.semester_offered,\
+#                                           'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
+#                                           'primary_programme' : mod.primary_programme,\
+#                                           'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
+#                                           'students_year_of_study' : student_year_of_study,\
+#                                           'secondary_programme' : mod.secondary_programme,\
+#                                           'sub_programme' : mod.sub_programme,\
+#                                           'secondary_sub_programme' : mod.secondary_sub_programme,\
+#                                           'fresh_record' : False}),
+#             "edit_module_assign_form" : EditModuleAssignmentForm(module_id = mod.id),
+#             "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id),
+#             "num_assigns_for_module" : TeachingAssignment.objects.filter(assigned_module__id = mod.id).count()
+#         }
+#         ret.append(item)
+#     return ret
 
 
 #This helper method looks at the current database and produces a dictionary

@@ -26,8 +26,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
                               accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
-from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
-                            CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
+from .helper_methods import CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables
@@ -87,11 +86,10 @@ def scenario_view(request, workloadscenario_id):
                                                         'dept' : department,
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
-
-    table_by_prof = CalculateAllWorkloadTables(workloadscenario_id)["table_by_prof"]
-    workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id)
-    modules_table = CalculateModuleWorkloadTable(workloadscenario_id)
-    summary_data = CalculateSummaryData(workloadscenario_id)
+    all_tables = CalculateAllWorkloadTables(workloadscenario_id)
+    workload_table = all_tables["table_by_prof"]
+    modules_table = all_tables["table_by_mod"]
+    summary_data = all_tables["summary_data"]
     
     #Make sure the empty forms are avilable to the scenario page
     #NOTE: The edit assignments form is created within within wl_table
@@ -112,7 +110,6 @@ def scenario_view(request, workloadscenario_id):
         'workloadscenario_id' : workloadscenario_id,
         'name_of_active_scenario' : name_of_active_scenario,
         'edit_active_scenario_form' : edit_active_scenario_form,
-        'workload_table_by_prof' : table_by_prof,
         'wl_table': workload_table,
         'mod_table':modules_table,
         'summary_data' : summary_data,

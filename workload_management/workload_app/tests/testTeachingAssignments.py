@@ -140,7 +140,7 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(len(obtained_wl_table),1)
         self.assertEqual(obtained_wl_table[0]['prof_name'],"normal_lecturer")
         self.assertEqual(obtained_wl_table[0]['assignments'],"AS101 (92)")
-        self.assertEqual(obtained_wl_table[0]['prof_expected_hours'],56+36)#Number of hours is the sum of the existing plus the new one
+        self.assertAlmostEqual(obtained_wl_table[0]['prof_expected_hours'],56+36)#Number of hours is the sum of the existing plus the new one
         
 
     def test_edit_lecturer_assignments(self):
