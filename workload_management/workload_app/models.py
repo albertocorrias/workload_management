@@ -129,6 +129,12 @@ class WorkloadScenario(models.Model):
     academic_year = models.ForeignKey(Academicyear, on_delete=models.CASCADE) #The academic year this workload refers to
     status = models.CharField(max_length = 50, choices = WORKLOAD_STATUS, default=DRAFT)
 
+    #Some metrics that are calculated and stored every time the workload page is calculated
+    #For usage by other summary methods
+    total_hours_delivered = models.DecimalField(max_digits=5, decimal_places=2,default=-1)
+    total_tfte_used = models.DecimalField(max_digits=5,decimal_places=2,default=-1)
+    expected_hrs_per_tfte = models.DecimalField(max_digits=5, decimal_places=2,default=-1)
+
     def __str__(self):
         return self.label
             
