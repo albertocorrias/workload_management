@@ -474,6 +474,10 @@ class Module(models.Model):
     class Meta:
         ordering = ['module_code']
 
+class TeachingAssignmentType(models.Model):
+    description = models.CharField(max_length=3000)
+    quantum_number_of_hours = models.PositiveIntegerField()
+
 class TeachingAssignment(models.Model):
     """
     This is the key model the workload calculations are based upon. It essentially
@@ -481,10 +485,13 @@ class TeachingAssignment(models.Model):
     """
     assigned_module = models.ForeignKey(Module, on_delete=models.CASCADE)
     assigned_lecturer = models.ForeignKey(Lecturer,on_delete=models.CASCADE)
+    
     number_of_weekly_lecture_hours = models.PositiveIntegerField(default=0)
     number_of_weekly_tutorial_hours = models.PositiveIntegerField(default=0)
     number_of_tutorial_groups = models.PositiveIntegerField(default=0)
     number_of_weeks_assigned = models.PositiveIntegerField(default=13)
+
+    assignnment_type = models.ForeignKey(TeachingAssignmentType, null=True, on_delete=models.SET_NULL)
     number_of_hours = models.PositiveIntegerField()
     assigned_manually = models.BooleanField(default=True) #Whether or not the hours were assigned manually, or following weekly hours and policies
     counted_towards_workload = models.BooleanField(default=True) #Whether or not this assignment will be counted towards workload. E.g. if it is remunerated separately, you can set it to False
