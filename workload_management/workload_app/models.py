@@ -475,8 +475,12 @@ class Module(models.Model):
         ordering = ['module_code']
 
 class TeachingAssignmentType(models.Model):
+    #The type of assignment. E.g., "tutorial group", or "fyp student"
     description = models.CharField(max_length=3000)
+    #The number of hours associated with "description"
     quantum_number_of_hours = models.PositiveIntegerField()
+    #The faculty this type of assignment is valid for
+    faculty=models.ForeignKey(Faculty,null=True,on_delete=models.SET_NULL)
 
 class TeachingAssignment(models.Model):
     """
