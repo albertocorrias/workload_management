@@ -2155,7 +2155,7 @@ def remove_department(request):
 
 def manage_faculty(request):
     if request.method =='POST':
-        form = FacultyForm(request.POST);
+        form = FacultyForm(request.POST)
         if form.is_valid():  
             supplied_fac_name = form.cleaned_data['faculty_name']
             supplied_fac_acr = form.cleaned_data['faculty_acronym']
@@ -2192,7 +2192,7 @@ def remove_faculty(request):
 
 def manage_programme_offered(request, dept_id):
     if request.method =='POST':
-        form = ProgrammeOfferedForm(request.POST);
+        form = ProgrammeOfferedForm(request.POST)
         if form.is_valid():  
             supplied_prog_name = form.cleaned_data['programme_name']
             supplied_dept = form.cleaned_data['primary_dept']
