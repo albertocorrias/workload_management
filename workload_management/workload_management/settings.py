@@ -11,14 +11,16 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 from django.core.management.utils import get_random_secret_key
 from pathlib import Path
+from dotenv import load_dotenv
 from django.urls import path
 import os 
 import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['104.248.157.119','localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -41,29 +43,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://127.0.0.1']
+#SECURE_SSL_REDIRECT = True
+CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'http://127.0.0.1:8000']
 ROOT_URLCONF = 'workload_management.urls'
+
 
 INTERNAL_IPS = [
     # ...
     "127.0.0.1",
     # ...
 ]
-
-#Disable debug toolbar when running tests - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process
-TESTING = "test" in sys.argv
-if not TESTING:
-    INSTALLED_APPS = [
-        *INSTALLED_APPS,
-        "debug_toolbar",
-    ]
-    MIDDLEWARE = [
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-        *MIDDLEWARE,
-    ]
-#############################################
 
 TEMPLATES = [
     {
@@ -98,7 +89,9 @@ for line in content:
 
 
 if ('production' in str(branch_name)):
-    SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
+    #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
+    SESSION_COOKIE_HTTPONLY = True
+    SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DEBUG = False #Must be false in proiduction!
     DATABASES = {
     'default': {
@@ -111,24 +104,60 @@ if ('production' in str(branch_name)):
     }
     print('**** We are using production settings  *****')
 else: #Not the production branch
-    # SECURITY WARNING: keep the secret key used in production secret!
-    SECRET_KEY = 'django-insecure-)v@rsyf9#%jgot9b4d_f64d(q%^7ks8yhtph5^uw51celmgqw3'
-    # SECURITY WARNING: don't run with debug turned on in production!
-    DEBUG = True
-    db_to_use = 'db.sqlite3'
-    if ('devel' in str(branch_name)):
-        db_to_use = 'db_devel.sqlite3'
-    print('Using database ' + db_to_use)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': str(BASE_DIR / db_to_use),
+    SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
+    if ('devel' in str(branch_name)): 
+        DEBUG = True# Development settings have debug=true
+        TESTING = True#"test" in sys.argv
+        if TESTING:
+            #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
+            DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME' : 'workload_db',
+                'USER': 'workload_user',
+                'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+                'HOST' : 'localhost',
+                'PORT' : '5432'
+            }
+            }
+        else: #NOT testing.  
+            DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'OPTIONS': {
+                    'service': 'workload_service',
+                    'passfile': '.pgpass',
+                },
+            }
+            }
+            
+            #add the debug toolbar, disabled for testing - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process 
+            INSTALLED_APPS = [
+                *INSTALLED_APPS,
+                "debug_toolbar",
+            ]
+            MIDDLEWARE = [
+                "debug_toolbar.middleware.DebugToolbarMiddleware",
+                *MIDDLEWARE,
+            ]
+            #############################################
+
+
+        print('**** We are using devel settings  *****')
+    else:
+        db_to_use = 'db.sqlite3'
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': str(BASE_DIR / db_to_use),
+            }
         }
-    }
+        print('**** We are using main settings  *****')
 
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -162,8 +191,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

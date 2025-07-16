@@ -5,6 +5,7 @@ from . import views
 app_name = 'workload_app'
 
 urlpatterns = [
+    path('',views.home_page,name="home_page"),
     path('post_login_landing', views.post_login_landing, name='post_login_landing'),
     path('workloads_index', views.workloads_index, name='workloads_index'),
     path('school_page/<int:faculty_id>/', views.school_page, name='school_page'),

@@ -1,6 +1,6 @@
 import datetime
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, WorkloadScenario,Faculty
-from .helper_methods import CalculateSummaryData
+from .helper_methods import CalculateAllWorkloadTables
 from .forms import SelectFacultyForReport
 
 def GetLastNYears(num_years):
@@ -99,8 +99,17 @@ def CalculateProfessorChartData(lec_name):
                     workload_ids.append(wl_id)
 
     for wl in workload_ids:
-        summary = CalculateSummaryData(wl)
-        expected_per_FTE = summary["expected_hours_per_tFTE"]
+        wl_object = WorkloadScenario.objects.filter(id=wl).get()
+        if (wl_object.expected_hrs_per_tfte>-1):#already calculated, if not, it is -1
+            total_hrs_delivered = wl_object.total_hours_delivered
+            total_fte = wl_object.total_tfte_overall
+            expected_per_FTE = wl_object.expected_hrs_per_tfte
+        else:#need to reecalculate
+            summary_data = CalculateAllWorkloadTables(wl)['summary_data']
+            total_hrs_delivered = summary_data["total_hours_for_workload"]
+            total_fte = summary_data["total_department_tFTE"],
+            expected_per_FTE = summary_data["expected_hours_per_tFTE"]
+
         prof = Lecturer.objects.filter(name = lec_name).filter(workload_scenario = wl).get()
         track_adj = prof.employment_track.track_adjustment
         empl_adj = prof.service_role.role_adjustment
@@ -138,12 +147,21 @@ def CalculateFacultyReportTable(faculty, report_type):
             if (workload_query.count() < 1):
                 relevant_data = 0
             else:
-                workload_id = workload_query.get().id
-                summary_data = CalculateSummaryData(workload_scenario_id = workload_id)
+                workload_obj = workload_query.get()
+                if (workload_obj.expected_hrs_per_tfte>-1):#already calculated, if not, it is -1
+                    total_hrs_delivered = workload_obj.total_hours_delivered
+                    total_fte = workload_obj.total_tfte_overall
+                    expected_hrs = workload_obj.expected_hrs_per_tfte
+                else:#need to reecalculate
+                    summary_data = CalculateAllWorkloadTables(workload_obj.id)['summary_data']
+                    total_hrs_delivered = summary_data["total_hours_for_workload"]
+                    total_fte = summary_data["total_department_tFTE"],
+                    expected_hrs = summary_data["expected_hours_per_tFTE"]
+
                 if (report_type == SelectFacultyForReport.EXPECTATION_PER_tFTE):
-                    relevant_data = summary_data["expected_hours_per_tFTE"]
+                    relevant_data =expected_hrs
                 if (report_type == SelectFacultyForReport.TOTAL_TFTE):
-                    relevant_data = summary_data["total_tFTE_for_workload"]
+                    relevant_data = total_hrs_delivered
             table_row[idx+2] = relevant_data        
 
         ret.append(table_row)

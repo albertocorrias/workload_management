@@ -1,6 +1,4 @@
 import datetime
-import math
-import os
 from django.http import HttpResponse,HttpResponseRedirect
 from django.urls import reverse
 from django.template import loader
@@ -10,7 +8,6 @@ from django.forms import ValidationError
 from django.conf import settings
 from django.db.models import F
 from django.core.files.storage import default_storage
-
 
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
@@ -27,14 +24,12 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
                    CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,EditSurveySettingsForm
 
-from .global_constants import DEFAULT_TRACK_NAME, DEFAULT_SERVICE_ROLE_NAME, DEFAULT_FACULTY_NAME,\
-                              DEFAULT_FACULTY_ACRONYM,CalculateNumHoursBasedOnWeeklyInfo, DEFAULT_DEPARTMENT_NAME, DEFAULT_DEPT_ACRONYM,\
-                              requested_table_type,COLOUR_SCHEMES, accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
-from .helper_methods import CalculateDepartmentWorkloadTable, CalculateModuleWorkloadTable,CalculateSummaryData,\
-                            CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
+from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
+                              accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
+from .helper_methods import CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                            CalculateSingleModuleInformationTable, HandleScenarioForm
+                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
@@ -44,20 +39,26 @@ from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartm
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
 from .helper_methods_demo import populate_database
 
+def home_page(request):
+    if request.user.is_authenticated: #logged in user ->Figure out home page and send there
+        return post_login_landing(request)
+    else: #anonymous users -> send to login page
+        return HttpResponseRedirect('/accounts/login')
+    
 def post_login_landing(request):
     myerror = "error"
-    home_page  = DetermineUserHomePage(request.user.id,request.user.is_superuser,error_text = myerror)
-    if (home_page == myerror):
+    user_home_page  = DetermineUserHomePage(request.user.id,request.user.is_superuser,error_text = myerror)
+    if (user_home_page == myerror):
         user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
                 'user_menu' : user_menu,
-                'user_homepage' : home_page
+                'user_homepage' : user_home_page
         }
         return HttpResponse(template.render(context, request))
     
-    return HttpResponseRedirect('/workload_app'+home_page)
+    return HttpResponseRedirect('/workload_app'+user_home_page)
 
 ##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
@@ -85,10 +86,10 @@ def scenario_view(request, workloadscenario_id):
                                                         'dept' : department,
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
-
-    workload_table  = CalculateDepartmentWorkloadTable(workloadscenario_id)
-    modules_table = CalculateModuleWorkloadTable(workloadscenario_id)
-    summary_data = CalculateSummaryData(workloadscenario_id)
+    all_tables = CalculateAllWorkloadTables(workloadscenario_id)
+    workload_table = all_tables["table_by_prof"]
+    modules_table = all_tables["table_by_mod"]
+    summary_data = all_tables["summary_data"]
     
     #Make sure the empty forms are avilable to the scenario page
     #NOTE: The edit assignments form is created within within wl_table
@@ -185,27 +186,12 @@ def school_page(request,faculty_id):
         form = RemoveServiceRoleForm(request.POST, faculty_id = faculty_id)
         if form.is_valid():  
             selected_role = form.cleaned_data['select_service_role_to_remove']
-            if (selected_role.role_name != DEFAULT_SERVICE_ROLE_NAME):#If user wants to delete the default, we do nothing
-                default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
-                if (default_role.count() == 0): #If, for some reason, the default role is not there, create one (this should be impossible...)
-                    ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
-                    default_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)               
-                #Turn all lecturers of the removed service role to the default one
-                Lecturer.objects.filter(service_role__role_name=selected_role).update(service_role = default_role.get().id)
-                ServiceRole.objects.filter(role_name=selected_role).delete()
+            ServiceRole.objects.filter(role_name=selected_role).delete()
         
         form = RemoveEmploymentTrackForm(request.POST, faculty_id=faculty_id)
         if form.is_valid():  
             selected_track = form.cleaned_data['select_track_to_remove']
-            if (selected_track.track_name != DEFAULT_TRACK_NAME):#If user wants to delete the default, we do nothing
-                default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
-                if (default_track.count() == 0): #If, for some reason, the default track is not there, create one (this should be impossible...)
-                    EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, track_adjustment = 1.0)
-                    default_track = EmploymentTrack.objects.filter(track_name = DEFAULT_TRACK_NAME)
-
-                #Turn all lecturers of that track to the default track
-                Lecturer.objects.filter(employment_track__track_name=selected_track).update(employment_track = default_track.get().id)
-                EmploymentTrack.objects.filter(track_name=selected_track).delete()
+            EmploymentTrack.objects.filter(track_name=selected_track).delete()
         
         #trigger a GET
         return HttpResponseRedirect(reverse('workload_app:school_page',  kwargs={'faculty_id': faculty_id}))
@@ -263,21 +249,21 @@ def workloads_index(request):
         }
         return HttpResponse(template.render(context, request))
     
-    #If no Faculty, create a default one
-    if (Faculty.objects.all().count() == 0):
-        Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
+    # #If no Faculty, create a default one
+    # if (Faculty.objects.all().count() == 0):
+    #     Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
     
-    #If no Department, create a default one
-    if (Department.objects.all().count() == 0):
-        Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
+    # #If no Department, create a default one
+    # if (Department.objects.all().count() == 0):
+    #     Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
 
-    #If no track adjustment, create a default one
-    if (EmploymentTrack.objects.all().count() == 0):
-        EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, is_adjunct = False, track_adjustment = 1.0)
+    # #If no track adjustment, create a default one
+    # if (EmploymentTrack.objects.all().count() == 0):
+    #     EmploymentTrack.objects.create(track_name = DEFAULT_TRACK_NAME, is_adjunct = False, track_adjustment = 1.0)
 
-    #If no role, create a default one
-    if (ServiceRole.objects.all().count() == 0):
-        ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
+    # #If no role, create a default one
+    # if (ServiceRole.objects.all().count() == 0):
+    #     ServiceRole.objects.create(role_name = DEFAULT_SERVICE_ROLE_NAME, role_adjustment = 1.0)
 
     #If no academic year, create a few ones
     if (Academicyear.objects.all().count() == 0):
@@ -721,7 +707,7 @@ def module(request, module_code):
                     "mlo_list" : None
                 }
                 mlo_list = []#List of dictionaries
-                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code):
+                for mlo in ModuleLearningOutcome.objects.filter(module_code=module_code).order_by('mlo_short_description'):
                     mlo_edit_form = MLOForm(initial = {'fresh_rescord' : False, 'mlo_id' : mlo.id,\
                                                         'mlo_description' : mlo.mlo_description,\
                                                         'mlo_short_description' : mlo.mlo_short_description,\
@@ -1178,7 +1164,7 @@ def accreditation(request,programme_id):
         max_labels = max(len(survey_settings["slo_survey_labels"]), len(survey_settings["mlo_survey_labels"]),len(survey_settings["peo_survey_labels"]))
         peo_row = ['PEO survey labels']
         slo_row = ['SLO survey labels']
-        mlo_row = ['MLO survey labels']
+        mlo_row = ['CLO survey labels']
         for i in range(0,max_labels):
             peo_row.append(survey_settings["peo_survey_labels_object"].GetFullListOfLabels()[i])
             slo_row.append(survey_settings["slo_survey_labels_object"].GetFullListOfLabels()[i])
@@ -1966,7 +1952,7 @@ def add_professor(request, workloadscenario_id):
             return HttpResponse(template.render(context, request))   
     
     #Otherwise just go back to workload view
-    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get();
+    selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': selected_scen.id}))
 
 def remove_professor(request,workloadscenario_id):
@@ -2014,7 +2000,7 @@ def add_module(request,workloadscenario_id):
             supplied_sub_programme_belongs_to = form.cleaned_data['sub_programme']
             supplied_secondary_sub_programme_belongs_to = form.cleaned_data['secondary_sub_programme']
 
-            supplied_hours = 0;
+            supplied_hours = 0
             if (form.cleaned_data['total_hours']):
                 supplied_hours = form.cleaned_data['total_hours']
             else:
@@ -2074,11 +2060,15 @@ def add_module(request,workloadscenario_id):
             return HttpResponse(template.render(context, request))   
         
     #Otherwise just go back to workload view or department view, depending where we come from
-    if ("department" in request.META["HTTP_REFERER"]):#The edit module form appears in two pages, the workload page and the "department" page
-        dept_id = WorkloadScenario.objects.filter(id=workloadscenario_id).get().dept.id
-        return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
+    if "HTTP_REFERER" in request.META:
+        if ("department" in request.META["HTTP_REFERER"]):#The edit module form appears in two pages, the workload page and the "department" page
+            dept_id = WorkloadScenario.objects.filter(id=workloadscenario_id).get().dept.id
+            return HttpResponseRedirect(reverse('workload_app:department',  kwargs={'department_id': dept_id}))
+        else:
+            return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
     else:
         return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
+
 
 def remove_module(request,workloadscenario_id):
     if request.method =='POST':
@@ -2136,8 +2126,7 @@ def manage_department(request):
             if (request.POST['fresh_record'] == 'False'):
                 #This is an edit
                 supplied_id = form.cleaned_data['dept_id']
-                if (supplied_id != Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get().id):#No messing with default dept
-                    Department.objects.filter(id = int(supplied_id)).update(department_name = supplied_dept_name, \
+                Department.objects.filter(id = int(supplied_id)).update(department_name = supplied_dept_name, \
                                                                         department_acronym = supplied_dept_acr, \
                                                                         faculty = fac_obj)
             else:#New dept
@@ -2155,25 +2144,18 @@ def manage_department(request):
 
 def remove_department(request):
     if request.method =='POST':
-        form = RemoveDepartmentForm(request.POST);
+        form = RemoveDepartmentForm(request.POST)
         if form.is_valid():  
             selected_department = form.cleaned_data['select_department_to_remove']
-            if (selected_department.department_name != DEFAULT_DEPARTMENT_NAME):#If user wants to delete the default, we do nothing
-                default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
-                if (default_dept.count() == 0): #If, for some reason, the default dept is not there, create one (this should be impossible...)
-                    Department.objects.create(department_name = DEFAULT_DEPARTMENT_NAME, department_acronym = DEFAULT_DEPT_ACRONYM)
-                    default_dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME)
-
-                #Turn all workload scenarios of that department to the default department    
-                WorkloadScenario.objects.filter(dept__department_name=selected_department).update(dept = default_dept.get().id)
-                Department.objects.filter(department_name=selected_department).delete()
+            #The cascade policy will delete all the workloads under this department
+            Department.objects.filter(department_name=selected_department).delete()
             
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:workloads_index'));   
 
 def manage_faculty(request):
     if request.method =='POST':
-        form = FacultyForm(request.POST);
+        form = FacultyForm(request.POST)
         if form.is_valid():  
             supplied_fac_name = form.cleaned_data['faculty_name']
             supplied_fac_acr = form.cleaned_data['faculty_acronym']
@@ -2181,8 +2163,7 @@ def manage_faculty(request):
             if (request.POST['fresh_record'] == 'False'):
                 #This is an edit
                 supplied_id = form.cleaned_data['fac_id']
-                if (supplied_id != Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME).get().id):#No messing with default faculty
-                    Faculty.objects.filter(id = int(supplied_id)).update(faculty_name = supplied_fac_name, \
+                Faculty.objects.filter(id = int(supplied_id)).update(faculty_name = supplied_fac_name, \
                                                                          faculty_acronym = supplied_fac_acr)
             else:#New faculty
                 new_fac = Faculty.objects.create(faculty_name = supplied_fac_name, faculty_acronym = supplied_fac_acr)
@@ -2202,16 +2183,8 @@ def remove_faculty(request):
         form = RemoveFacultyForm(request.POST)
         if form.is_valid():  
             selected_faculty = form.cleaned_data['select_faculty_to_remove']
-            if (selected_faculty.faculty_name != DEFAULT_FACULTY_NAME):#If user wants to delete the default, we do nothing
-                default_fac = Faculty.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
-                if (default_fac.count() == 0): #If, for some reason, the default faculty is not there, create one (this should be impossible...)
-                    Faculty.objects.create(faculty_name = DEFAULT_FACULTY_NAME, faculty_acronym = DEFAULT_FACULTY_ACRONYM)
-                    default_fac = Department.objects.filter(faculty_name = DEFAULT_FACULTY_NAME)
-
-                #Turn all department of that faculy to the default faculty
-                Department.objects.filter(faculty__faculty_name=selected_faculty).update(faculty = default_fac.get().id)
-                #Then delete the faculty
-                Faculty.objects.filter(faculty_name=selected_faculty).delete()
+            #Then delete the faculty - underlying departments will have NULL as per policy
+            Faculty.objects.filter(faculty_name=selected_faculty).delete()
 
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:workloads_index'))
@@ -2219,7 +2192,7 @@ def remove_faculty(request):
 
 def manage_programme_offered(request, dept_id):
     if request.method =='POST':
-        form = ProgrammeOfferedForm(request.POST);
+        form = ProgrammeOfferedForm(request.POST)
         if form.is_valid():  
             supplied_prog_name = form.cleaned_data['programme_name']
             supplied_dept = form.cleaned_data['primary_dept']

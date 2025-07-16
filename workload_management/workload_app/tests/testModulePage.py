@@ -28,7 +28,7 @@ class TestModulePage(TestCase):
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        mod_type_1 = ModuleType.objects.create(type_name = "one type",department=test_dept)
         programme_1 = ProgrammeOffered.objects.create(programme_name = "B. Eng", primary_dept = test_dept)
         programme_2 = ProgrammeOffered.objects.create(programme_name = "M. Sc", primary_dept = test_dept)
         sub_programme_1 = SubProgrammeOffered.objects.create(sub_programme_name = "specialization", main_programme = programme_1)
@@ -71,9 +71,9 @@ class TestModulePage(TestCase):
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         acad_year_2 = Academicyear.objects.create(start_year=2025)
         dept_name = 'test_dept'
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type",department=test_dept)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
         mod_code = "BN101"
         test_prog = ProgrammeOffered.objects.create(programme_name='test_prog', primary_dept=test_dept)
@@ -172,7 +172,7 @@ class TestModulePage(TestCase):
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
 
         #Add another MLO
-        new_MLO_descr = "NEW MLO fulld escription"
+        new_MLO_descr = "NEW MLO full description"
         new_MLO_short_desc = "NEW MLo short"
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
             {"mlo_description" : new_MLO_descr,\
@@ -195,34 +195,34 @@ class TestModulePage(TestCase):
         self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"]), 2) #
         self.assertEqual(MLOSLOMapping.objects.all().count(),4)#2 mlo mapped to two SLO
         #CHECK FIRST MLO
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_desc"], new_MLO_descr)
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_short_desc"], new_MLO_short_desc)
-        self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping_form"], None)
-        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"]), 2) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
-        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
-        #CHECK SECOND MLO (USED TO BE FIRST)
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_desc"], new_description)
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_short_desc"], short_desc)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_desc"], new_MLO_descr)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["mlo_short_desc"], new_MLO_short_desc)
         self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping_form"], None)
         self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"]), 2) #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["slo_description"], "slo_1") #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["slo_description"], "slo_2") #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["slo_short_description"], "short_1") #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["slo_short_description"], "short_2") #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 3) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 0) #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["mapping_strength"], 0) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_icon"], "circle.svg") #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
+        #CHECK SECOND MLO (USED TO BE FIRST)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_desc"], new_description)
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["mlo_short_desc"], short_desc)
+        self.assertNotEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping_form"], None)
+        self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"]), 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_description"], "slo_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_description"], "slo_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["slo_short_description"], "short_1") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["slo_short_description"], "short_2") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 3) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_icon"], "circle-fill.svg") #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_icon"], "circle.svg") #
         self.assertEqual(len(response.context["all_mlo_slo_tables"][0]["slo_list"]), 2) #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][0]["slo_description"], "slo_1") #
         self.assertEqual(response.context["all_mlo_slo_tables"][0]["slo_list"][1]["slo_description"], "slo_2") #
@@ -253,11 +253,11 @@ class TestModulePage(TestCase):
         response = self.client.get(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}))
         self.assertEqual(response.status_code, 200) #No issues
         # MLO mapped to first programme untouched
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][0]["slo_mapping"][1]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][0]["mlo_list"][1]["slo_mapping"][1]["mapping_strength"], 0) #
         #MLO mapped to second programme with new strength
-        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 2) #
-        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 0) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][1]["slo_mapping"][0]["mapping_strength"], 2) #
+        self.assertEqual(response.context["all_mlo_slo_tables"][1]["mlo_list"][0]["slo_mapping"][0]["mapping_strength"], 0) #
 
         #Now remove both MLOs
         response = self.client.post(reverse('workload_app:module', kwargs={'module_code': module_1.module_code}), \
@@ -282,10 +282,11 @@ class TestModulePage(TestCase):
 
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         dept_name = 'test_dept'
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type",department=test_dept)
         mod_code = "BN101"
         module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, \
                                         total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
@@ -409,9 +410,9 @@ class TestModulePage(TestCase):
 
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         dept_name = 'test_dept'
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
         test_dept = Department.objects.create(department_name = dept_name, department_acronym = "ACR", faculty = first_fac)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type",department=test_dept)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = test_dept, status = WorkloadScenario.OFFICIAL)
         mod_code = "BN101"
         module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, \

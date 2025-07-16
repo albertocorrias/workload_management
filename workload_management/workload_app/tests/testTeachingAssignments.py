@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
+from workload_app.models import Faculty,Lecturer, Module, TeachingAssignment,WorkloadScenario,ModuleType,Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
 from workload_app.global_constants import DEFAULT_WORKLOAD_NAME,CalculateNumHoursBasedOnWeeklyInfo
 
 class TestTeachingAssignments(TestCase):
@@ -19,18 +19,22 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
         
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen',dept  =first_dept)
+        new_scen = WorkloadScenario.objects.create(label='test_scen',dept  =first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, workload_scenario=new_scen);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, workload_scenario=new_scen);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, workload_scenario=new_scen);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role, workload_scenario=new_scen)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role, workload_scenario=new_scen)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role, workload_scenario=new_scen)
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE",department=first_dept)
@@ -77,8 +81,9 @@ class TestTeachingAssignments(TestCase):
         teaching_assignments = TeachingAssignment.objects.all()
         self.assertEqual(teaching_assignments.count(),2)
 
+        ta = TeachingAssignment.objects.all().first()
         #Remove the first one we added
-        self.client.post(reverse('workload_app:remove_assignment',  kwargs={'workloadscenario_id': new_scen.id}), {'select_teaching_assignment_to_remove': '1'})
+        self.client.post(reverse('workload_app:remove_assignment',  kwargs={'workloadscenario_id': new_scen.id}), {'select_teaching_assignment_to_remove': ta.id})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         #The list of assignments must have gone down to 1
         teaching_assignments = TeachingAssignment.objects.all()
@@ -88,11 +93,15 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen', dept=first_dept)
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept=first_dept, academic_year=acad_year)
 
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -100,7 +109,7 @@ class TestTeachingAssignments(TestCase):
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
-        normal_lecturer = normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, workload_scenario=new_scen);        
+        normal_lecturer = normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role, workload_scenario=new_scen);        
         mod_code_1 = 'AS101'
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
 
@@ -131,7 +140,7 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(len(obtained_wl_table),1)
         self.assertEqual(obtained_wl_table[0]['prof_name'],"normal_lecturer")
         self.assertEqual(obtained_wl_table[0]['assignments'],"AS101 (92)")
-        self.assertEqual(obtained_wl_table[0]['prof_expected_hours'],56+36)#Number of hours is the sum of the existing plus the new one
+        self.assertAlmostEqual(obtained_wl_table[0]['prof_expected_hours'],56+36)#Number of hours is the sum of the existing plus the new one
         
 
     def test_edit_lecturer_assignments(self):
@@ -140,20 +149,25 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept)
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept)
+        acad_year_2=Academicyear.objects.create(start_year=1233)
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept, academic_year=acad_year_2)
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1)
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1)
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1)
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,   workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role,    workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role,    workload_scenario=scenario_1)
 
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
@@ -231,17 +245,21 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,    workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role,    workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,  employment_track=track_def,service_role=srvc_role,   workload_scenario=scenario_1)
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
@@ -320,26 +338,31 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept);
+        acad_year_2=Academicyear.objects.create(start_year=2343)
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept, academic_year=acad_year_2)
         
         #create 3 lecturers in scenario 1
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,  employment_track=track_def,service_role=srvc_role, workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
         
         #create 3 lecturers in scenario 2
-        normal_lecturer_2 = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_2);
-        educator_track_2 = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_2);
-        vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_2);
+        normal_lecturer_2 = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_2)
+        educator_track_2 = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_2)
+        vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_2)
 
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
@@ -401,18 +424,23 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
         
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty=new_fac)
 
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1);
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,  employment_track=track_def,service_role=srvc_role, workload_scenario=scenario_1);
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1);
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
@@ -500,20 +528,26 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
       
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty=new_fac)
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept);
+        acad_year_2 = Academicyear.objects.create(start_year=1234)
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept, academic_year=acad_year_2)
         
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,  employment_track=track_def,service_role=srvc_role, workload_scenario=scenario_1)
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
@@ -577,27 +611,33 @@ class TestTeachingAssignments(TestCase):
 
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        
+
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN", faculty=new_fac)
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept);
+        acad_year_2 = Academicyear.objects.create(start_year=1233)
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, dept = first_dept, academic_year=acad_year_2)
         
         #create 3 lecturers in scenario 1
-        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_1);
-        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_1);
-        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_1);
+        normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
+        educator_track = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,  employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_1)
+        vice_dean = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5, employment_track=track_def,service_role=srvc_role,   workload_scenario=scenario_1)
         
         #create 3 lecturers in scenario 2 - THIS IS IMPORTANT. The bug was discovered because there were lecturers with the same names in inactive scenarios
-        normal_lecturer_2 = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7,   workload_scenario=scenario_2);
-        educator_track_2 = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0,   workload_scenario=scenario_2);
-        vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,   workload_scenario=scenario_2);
+        normal_lecturer_2 = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_2)
+        educator_track_2 = Lecturer.objects.create(name="educator_track",fraction_appointment=1.0, employment_track=track_def,service_role=srvc_role,  workload_scenario=scenario_2)
+        vice_dean_2 = Lecturer.objects.create(name="vice_dean",fraction_appointment=0.5,  employment_track=track_def,service_role=srvc_role, workload_scenario=scenario_2)
         
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
@@ -664,14 +704,17 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
 
         #create one scenario
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
         
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
@@ -793,13 +836,17 @@ class TestTeachingAssignments(TestCase):
         self.client.login(username='test_user', password='test_user_password')
        
         #check all good at the start        
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept)
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -881,19 +928,21 @@ class TestTeachingAssignments(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
        
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-
-        #check all good at the start        
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept)
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
-        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8, faculty=new_fac)
 
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
@@ -973,19 +1022,22 @@ class TestTeachingAssignments(TestCase):
         self.client.login(username='test_user', password='test_user_password')
        
         #check all good at the start        
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
 
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
-        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8)
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.8, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8, faculty=new_fac)
 
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
@@ -1075,17 +1127,22 @@ class TestTeachingAssignments(TestCase):
         self.client.login(username='test_user', password='test_user_password')
        
         #check all good at the start        
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         #Create a new scenario
         first_label = 'test_scen'
-        first_scen = WorkloadScenario.objects.create(label=first_label);
+        first_scen = WorkloadScenario.objects.create(label=first_label, dept=first_dept, academic_year=acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
-        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.0)#Note the 0 there
-        new_role_2 = ServiceRole.objects.create(role_name='test_role_2', role_adjustment = 0.5)#Note not zero here
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_role = ServiceRole.objects.create(role_name='test_role', role_adjustment = 0.0, faculty=new_fac)#Note the 0 there
+        new_role_2 = ServiceRole.objects.create(role_name='test_role_2', role_adjustment = 0.5, faculty=new_fac)#Note not zero here
+        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8, faculty=new_fac)
 
         self.assertEqual(WorkloadScenario.objects.all().count(), 1)
         
@@ -1095,7 +1152,7 @@ class TestTeachingAssignments(TestCase):
         #Add a new module
         mod_code = 'XXX1'
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '1',  'fresh_record' : True})
         

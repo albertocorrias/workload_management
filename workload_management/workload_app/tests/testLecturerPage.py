@@ -47,10 +47,10 @@ class TestLecturerPage(TestCase):
 
         track_adjust = 2.0
         service_role_adjust = 3.0
-        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = track_adjust, is_adjunct = False)
-        service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = service_role_adjust)
-        service_role_2 = ServiceRole.objects.create(role_name = "role_2", role_adjustment = service_role_adjust+0.5)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = track_adjust, is_adjunct = False, faculty=first_fac)
+        service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = service_role_adjust, faculty=first_fac)
+        service_role_2 = ServiceRole.objects.create(role_name = "role_2", role_adjustment = service_role_adjust+0.5, faculty=first_fac)
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=test_dept)
         programme_1 = ProgrammeOffered.objects.create(programme_name = "B. Eng", primary_dept = test_dept)
         programme_2 = ProgrammeOffered.objects.create(programme_name = "M. Sc", primary_dept = test_dept)
         sub_programme_1 = SubProgrammeOffered.objects.create(sub_programme_name = "specialization", main_programme = programme_1)
@@ -224,26 +224,26 @@ class TestLecturerPage(TestCase):
         self.assertEqual(len(chart_data["hrs_expected_upper_boundary"]),5)
         self.assertEqual(len(chart_data["hrs_expected_lower_boundary"]),5)
 
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][0],25)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][1],35)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][2],45)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][3],95)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][0],25,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][1],35,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][2],45,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][3],95,0)#
         self.assertAlmostEqual(chart_data["hrs_temp_individual_expected"][4],0)# No assigments in last year
 
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][0],25)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][1],35)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][2],45)#
-        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][3],95)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][0],25,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][1],35,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][2],45,0)#
+        self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][3],95,0)#
         self.assertAlmostEqual(chart_data["hrs_temp_individual_delivered"][4],0)# No assigments in last year
 
-        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][0],25+15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][1],35+15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][2],45+15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][3],95+15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][4],0+15)# No assigments in last year
+        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][0],25+15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][1],35+15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][2],45+15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][3],95+15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_upper_boundary"][4],0+15,0)# No assigments in last year
 
-        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][0],25-15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][1],35-15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][2],45-15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][3],95-15)#
-        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][4],0-15)# No assigments in last year    
+        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][0],25-15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][1],35-15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][2],45-15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][3],95-15,0)#
+        self.assertAlmostEqual(chart_data["hrs_expected_lower_boundary"][4],0-15,0)# No assigments in last year    

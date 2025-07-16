@@ -14,19 +14,26 @@
       <h1>Accreditation report for {{ programme_name }}</h1>
       <h4>Cohorts evaluated: matriculated between {{ start_year }} and {{ end_year }}</h3>
       <hr>
+      <h4>Overall Picture for the period</h4>
+      <p>The table below shows all the courses involved and, for each, how they map to each SLO. The mapping shown is the highest mapping of all the CLO of each course across the given period. 
+            The total number of CLO is reported in the second last row and plotted in the bar chart. The total overall strength (summation of the mapping strength of each CLO from 0 to 3) 
+            is reported in the last row and plotted in the bar chart. 
+      </p>
       <div class="accr_report_overall_summary">
+
+
         <div class="accr_report_overall_summary_item"> <!--Table container-->
           <table id="OverallMLOSLOMAPPINGS" class="workload_tables table table-striped">
             <thead class="table-dark">
             <tr>
-              <th colspan= "{{ number_of_slo_plus_one }}" class="overall_header">Overall Modules-SLO mappings for period</th>
+              <th colspan= "{{ number_of_slo_plus_one }}" class="overall_header">Overall Courses-SLO mappings for period</th>
             </tr>
             <tr>
               <th class="secondary_header"> </th>
               <th colspan= "{{ number_of_slo }}" class="secondary_header">SLO</th>
             </tr>
             <tr>
-              <th class="secondary_header"> Modules </th>
+              <th class="secondary_header"> Courses </th>
               {% for item in big_mlo_slo_table.0.slo_identifiers %}
               <th> {{ item }}</th>
               {% endfor %}
@@ -66,6 +73,12 @@
             <script src="{% static   'workload_app/mlo_slo_mapping_summary.js' %}"></script>
           </div>
       </div><!--end of flex container for overall summary part-->
+      <hr>
+      <h4>How much attention each SLO received in the period</h4>
+      <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each MLO are added up for each year. If the mapping strength is 3 (maximum), then 
+        the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (CLO survey measures). 
+        Attention from SLO surveys is computed by adding up the number of questions every year.  
+      </p>
       <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
         <table id="AttentionScores" class="workload_tables table">
           <thead class="table-dark">
@@ -101,7 +114,7 @@
               {% endfor %}
             </tr>
             <tr>
-              <td>MLO survey measures</td>
+              <td>CLO survey measures</td>
               {% for mlo_att_score,mlo_att_color in slo_item.zipped_attn_scores_mlo_survey %}
               <td style="background-color: {{ mlo_att_color }};">
                 {{ mlo_att_score|floatformat }}
@@ -195,7 +208,7 @@
                           <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                             <thead class="table-dark">
                             <tr>
-                              <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO direct measures</th>
+                              <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO direct measures</th>
                             </tr>
                               <tr>
                                 <th>  </th> 
@@ -223,7 +236,7 @@
                             </tbody>
                           </table>
                           {% else %} <!-- no MLO direct measures were found -->
-                              <p> No direct measures of mapped MLO were reported for this SLO </p>
+                              <p> No direct measures of mapped CLO were reported for this SLO </p>
                     
                           {% endif %}
                         </div><!--end of slo measures item-->
@@ -232,7 +245,7 @@
                             <table id="SLO_MLOSurveyMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                                 <thead class="table-dark">
                                 <tr>
-                                  <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO survey measures</th>
+                                  <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO survey measures</th>
                                 </tr>
                                 <tr>
                                     <th>  </th> 
@@ -261,7 +274,7 @@
                               </table>
         
                           {% else %}
-                            <p> No MLO survey measures for a mapped MLO were reported for this SLO </p>
+                            <p> No CLO survey measures for a mapped CLO were reported for this SLO </p>
                           {% endif %}
                         </div><!-- end of slo emausre item-->
               </div><!--End of slo emasures container-->

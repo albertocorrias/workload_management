@@ -68,6 +68,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
         if (slo.IsValidForYear(year_of_cohort_targeted)):
             single_slo_survey_measure = {
                 'date' : survey.opening_date,
+                'target_cohort' : year_of_cohort_targeted,
                 'survey' : survey.survey_title,
                 'question' : '',
                 'percent_positive' : 0,
@@ -77,7 +78,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
             perc_positive = 0
             questions = ''
             #Look, within this survey for all responses associated with this SLO. We will condense them in one line of the table
-            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id):
+            for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey.id).filter(associated_slo__id = slo.id).order_by('-question_text'):
                 props = response.CalculateRepsonsesProprties()
                 perc_positive += props['percentage_positive']
                 questions += response.question_text + ', '
@@ -90,7 +91,7 @@ def CalculateTableForSLOSurveys(slo_id, start_year,end_year,compulsory_only):
     year_index = 0
     for year in range(start_year, end_year+1):
         for meas in slo_survey_measures:
-            if meas['date'].year == year:
+            if meas['target_cohort'] == year:
                 slo_attention_scores[year_index] += meas['n_questions'] 
         year_index += 1
     return slo_survey_measures, slo_attention_scores
@@ -153,7 +154,7 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
                     
                     mlo_survey_measures.append(single_survey_mlo_measure)
 
-    #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey mesures
+    #After we are done with all the surveys for this SLO, we assemble the table for the MLO survey measures
     mlo_slo_survey_table_rows = []
 
     #Before starting, we allocate memory for the grand total (weigthed average) of the table. One number per year
@@ -395,7 +396,7 @@ def CalculateAllInforAboutOneSLO(slo_id, start_year,end_year,compulsory_only):
     for srv in all_slo_surveys:
         for i in range (0,len(years)):
             n_for_year = 0
-            if (srv["date"].year == years[i]):
+            if (srv["target_cohort"] == years[i]):
                 slo_survey_plot[i] += srv["percent_positive"]
                 n_for_year +=1
             #calculate average for year

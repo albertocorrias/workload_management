@@ -39,7 +39,7 @@
                     <td>{{ entry.dept_acronym }}</td>
                     <td>{{ entry.acad_year }}</td>
                     <td>{{ entry.status }}</td>
-                    <td>{{ entry.total_hours_delivered }}</td>
+                    <td>{{ entry.total_hours_delivered|floatformat }}</td>
                     <td>{{ entry.total_fte|floatformat }}</td>
                     <td>{{ entry.expected_hrs|floatformat }}</td>
                 </tr> 

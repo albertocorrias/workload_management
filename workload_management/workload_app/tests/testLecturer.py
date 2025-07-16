@@ -3,8 +3,8 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.global_constants import DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
+
+from workload_app.models import Faculty,Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
 
 
 class TestLecturer(TestCase):
@@ -20,20 +20,22 @@ class TestLecturer(TestCase):
         self.client.login(username='test_user', password='test_user_password')
 
         #Test the GET
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertContains(response, "Workload")
-        
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
 
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
-        new_scen = WorkloadScenario.objects.create(label='test_scen')
+        new_scen = WorkloadScenario.objects.create(label='test_scen', academic_year=acad_year, dept = new_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
         #Test the POST now
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False, 'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False, 'fresh_record' : True})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -46,20 +48,23 @@ class TestLecturer(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
+        self.assertContains(response, "Workload")
 
         #Create a new scenario
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
+        new_scen = WorkloadScenario.objects.create(label='test_scen', academic_year=acad_year, dept = new_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
         #Add a professor via the form in the modal        
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.25',    \
-                                                                'service_role' : def_role.get().id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+                                                                'service_role' : def_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         
@@ -80,21 +85,23 @@ class TestLecturer(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
+        self.assertContains(response, "Workload")
 
         #Create a new scenario
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
-        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept);
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_scen = WorkloadScenario.objects.create(label='test_scen', dept = first_dept, academic_year = acad_year)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
         #Test the POST now
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5', \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False,   'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False,   'fresh_record' : True})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -105,7 +112,7 @@ class TestLecturer(TestCase):
         
         #Now add Bob again
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.5',    \
-                                                                            'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})        
+                                                                            'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})        
         self.assertEqual(response.status_code, 200) 
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
@@ -119,7 +126,7 @@ class TestLecturer(TestCase):
         acad_year = Academicyear.objects.create(start_year=2200)
         self.client.post(reverse('workload_app:manage_scenario'), {'label': scen_name_2, 'dept' : first_dept.id, 'copy_from': '', 'status': WorkloadScenario.DRAFT, 'fresh_record' : True, 'academic_year' : acad_year.id});
         obtained_profs_list = Lecturer.objects.all()
-        new_scen.refresh_from_db();
+        new_scen.refresh_from_db()
         
         self.assertEqual(obtained_profs_list.count(),1)
         self.assertEqual(obtained_profs_list.filter(name='bob').exists(),True)
@@ -134,7 +141,7 @@ class TestLecturer(TestCase):
         
         #add now
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scen_2.get().id}),{'name':'bob','fraction_appointment' : '0.5',   \
-                                                                            'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})        
+                                                                            'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})        
         
         #check after addition
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scen_2.get().id}))
@@ -149,7 +156,7 @@ class TestLecturer(TestCase):
 
         #add a prof who ise xternal
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scen_2.get().id}),{'name':'bob_external','fraction_appointment' : '0.5',   \
-                                                                            'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': True, 'fresh_record' : True})        
+                                                                            'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': True, 'fresh_record' : True})        
         
         #check after addition
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scen_2.get().id}))
@@ -167,22 +174,25 @@ class TestLecturer(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
+        self.assertContains(response, "Workload")
 
         #Create a new scenario
-        new_scen = WorkloadScenario.objects.create(label='test_scen');
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        new_scen = WorkloadScenario.objects.create(label='test_scen', academic_year = acad_year, dept=first_dept)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
         #Test the POST for two profs
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'fred','fraction_appointment' : '0.5',    \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -195,7 +205,7 @@ class TestLecturer(TestCase):
         #Give bob a mod to teach
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE",department=first_dept)
         mod_code_1 = 'AS101'
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
 
@@ -209,7 +219,7 @@ class TestLecturer(TestCase):
         
         #Now edit Bob - KEY CHANGE: appointment adjustment from 2 to 1
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '0.7',    \
-                                                                        'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : False})        
+                                                                        'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False,'fresh_record' : False})        
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -224,7 +234,7 @@ class TestLecturer(TestCase):
         
         #Edit again with out-of-range appointment (0.7 to 1.5)
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scen.id}),{'name':'bob','fraction_appointment' : '1.5',    \
-                                                                            'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False, 'fresh_record' : False})
+                                                                            'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False, 'fresh_record' : False})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         #The change should not take efefct because the fraction appointment is out of range
@@ -235,25 +245,27 @@ class TestLecturer(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
     
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        first_dept = Department.objects.create(department_name = "noname", department_acronym="ACRN")
+        self.assertContains(response, "Workload")
 
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept);
-
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, dept = first_dept, academic_year=acad_year)
 
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
 
         #Test the POST
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'bob','fraction_appointment' : '0.7',    \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'fred','fraction_appointment' : '0.5',    \
-                                                                'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
+                                                                'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -288,7 +300,7 @@ class TestLecturer(TestCase):
         
         #Now edit bob in scenario 2 (the active one) - KEY CHANNGE: appointment adjustment from 2 to 1
         response = self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'bob','fraction_appointment' : '0.7',    \
-                                                                            'service_role' : def_role.get().id,'employment_track': new_track.id, 'is_external': False, 'fresh_record' : False})
+                                                                            'service_role' : def_role.id,'employment_track': new_track.id, 'is_external': False, 'fresh_record' : False})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
         self.assertEqual(response.status_code, 200) #No issues
         obtained_profs_list = Lecturer.objects.all()
@@ -305,24 +317,29 @@ class TestLecturer(TestCase):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
 
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
-        def_role = ServiceRole.objects.filter(role_name = DEFAULT_SERVICE_ROLE_NAME)
+        self.assertContains(response, "Workload")
+
+        acad_year_2 = Academicyear.objects.create(start_year=2345)        
         #create two scenarios
         scen_name_1 = 'scen_1'
-        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1);
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, academic_year=acad_year, dept=first_dept)
         
         scen_name_2 = 'scen_2'
-        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2);
+        scenario_2 = WorkloadScenario.objects.create(label=scen_name_2, academic_year=acad_year_2, dept=first_dept)
         
-        new_track = EmploymentTrack.objects.create(track_name='test_track', track_adjustment = 0.8)
-
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',    'service_role' : def_role.get().id, 'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',    'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',    'service_role' : def_role.get().id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'normal_lecturer','fraction_appointment' : '0.7',    'service_role' : def_role.id, 'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'educator_track','fraction_appointment' : '1.0',    'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_2.id}),{'name':'vice_dean','fraction_appointment' : '0.5',    'service_role' : def_role.id,'employment_track': new_track.id,'is_external': False,'fresh_record' : True})
         
         #Create a module type
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
@@ -367,12 +384,12 @@ class TestLecturer(TestCase):
         
         #Switch to senario 1
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
-        scenario_1.refresh_from_db();
-        scenario_2.refresh_from_db();
+        scenario_1.refresh_from_db()
+        scenario_2.refresh_from_db()
         
         #add the same guy to scenario 1
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': scenario_1.id}),{'name':'educator_track',\
-                                'fraction_appointment' : '1.0',    'service_role' : def_role.get().id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
+                                'fraction_appointment' : '1.0',    'service_role' : def_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
         educator_track_scen_1 = Lecturer.objects.filter(name = 'educator_track').filter(workload_scenario__label=scen_name_1).get()
         #and add two same modules to scen 1 as well
         self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
@@ -407,8 +424,8 @@ class TestLecturer(TestCase):
 
         #Switch to senario 2
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
-        scenario_1.refresh_from_db();
-        scenario_2.refresh_from_db();
+        scenario_1.refresh_from_db()
+        scenario_2.refresh_from_db()
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
         self.assertEqual(response.status_code, 200) #No issues

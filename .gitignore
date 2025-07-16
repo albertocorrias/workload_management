@@ -1,3 +1,10 @@
 *.pyc
 .pgpass
-
+.env
+.coverage
+.pg_service.conf
+workload_env
+workload_management/media/surveys/*
+!workload_management/media/surveys/README
+workload_management/media/mlo_performance_measures/*
+!workload_management/media/mlo_performance_measures/README

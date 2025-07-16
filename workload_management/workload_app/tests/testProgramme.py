@@ -3,8 +3,7 @@ from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
-from workload_app.global_constants import  DEFAULT_PROGRAMME_OFFERED_NAME,DEFAULT_DEPARTMENT_NAME
-from workload_app.models import ProgrammeOffered, Department, Module, ModuleType, WorkloadScenario,SubProgrammeOffered,UniversityStaff
+from workload_app.models import Faculty, ProgrammeOffered, Department, Module, ModuleType, WorkloadScenario,SubProgrammeOffered,UniversityStaff, Academicyear,ServiceRole,EmploymentTrack 
 
 class TestProgramme(TestCase):
     def setup_user(self):
@@ -25,10 +24,9 @@ class TestProgramme(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
 
         self.assertEqual(ProgrammeOffered.objects.all().count(),0) 
-
-        self.assertEqual(Department.objects.all().count(),1) #One is created by default
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(),1) 
-        dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get()
+        self.assertEqual(Department.objects.all().count(),0) #
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        dept = Department.objects.create(department_name = "test dept", faculty=new_fac)
         
         #Test the POST now
         new_programme_name = 'Masters'
@@ -93,10 +91,9 @@ class TestProgramme(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
 
         self.assertEqual(ProgrammeOffered.objects.all().count(),0) 
-
-        self.assertEqual(Department.objects.all().count(),1) #One is created by default
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(),1) 
-        dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get()
+        self.assertEqual(Department.objects.all().count(),0) #One is created by default
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        dept = Department.objects.create(department_name = "test dept", faculty=new_fac)
         
         #Test the POST now
         new_programme_name = 'Masters'
@@ -171,9 +168,10 @@ class TestProgramme(TestCase):
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(ProgrammeOffered.objects.all().count(),0) 
-        self.assertEqual(Department.objects.all().count(),1) #One is created by default
-        self.assertEqual(Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).count(),1) 
-        dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get()
+        self.assertEqual(Department.objects.all().count(),0) #One is created by default
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        dept = Department.objects.create(department_name = "test dept", faculty=new_fac)
+        
         
         #Test the POST now. Add one programme
         new_programme_name = 'Masters'
@@ -221,13 +219,22 @@ class TestProgramme(TestCase):
     def test_add_remove_programme_with_modules(self):
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        response = self.client.get(reverse('workload_app:workloads_index')) #Create default dept, faculty, etc
-        dept = Department.objects.filter(department_name = DEFAULT_DEPARTMENT_NAME).get()
-        first_scenario = WorkloadScenario.objects.create(label="test scen", dept=dept)
+
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        new_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        srvc_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        track_def = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 1.0, faculty=new_fac)
+        response = self.client.get(reverse('workload_app:workloads_index'))
+        self.assertEqual(response.status_code, 200) #No issues
+        #Create a new scenario
+        first_label = 'test_scen'
+        first_scen = WorkloadScenario.objects.create(label=first_label,dept=new_dept, academic_year=acad_year)
+        
 
         #Add one programme
         new_programme_name = 'Masters'
-        self.client.post(reverse('workload_app:manage_programme_offered', kwargs={'dept_id': dept.id}),{'programme_name':new_programme_name, 'primary_dept': dept.id,'fresh_record':True})
+        self.client.post(reverse('workload_app:manage_programme_offered', kwargs={'dept_id': new_dept.id}),{'programme_name':new_programme_name, 'primary_dept': new_dept.id,'fresh_record':True})
         new_prog = ProgrammeOffered.objects.filter(programme_name=new_programme_name).get()
 
         self.assertEqual(ProgrammeOffered.objects.all().count(),1) #One offered
@@ -236,15 +243,15 @@ class TestProgramme(TestCase):
 
         #Now add a sub-programme to it
         new_subprogramme_name = "special_sub"
-        self.client.post(reverse('workload_app:manage_subprogramme_offered', kwargs={'dept_id': dept.id}),{'sub_programme_name':new_subprogramme_name, 'main_programme': new_prog.id,'fresh_record':True})
+        self.client.post(reverse('workload_app:manage_subprogramme_offered', kwargs={'dept_id': new_dept.id}),{'sub_programme_name':new_subprogramme_name, 'main_programme': new_prog.id,'fresh_record':True})
         self.assertEqual(SubProgrammeOffered.objects.all().count(),1)
         self.assertEqual(SubProgrammeOffered.objects.filter(sub_programme_name = new_subprogramme_name).count(),1)
         self.assertEqual(SubProgrammeOffered.objects.filter(main_programme__id = new_prog.id).count(),1)
         new_sub_prog = SubProgrammeOffered.objects.filter(sub_programme_name = new_subprogramme_name).get()
         #now create a module
         mod_code='AX2211'
-        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE")
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), \
+        mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=new_dept)
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scen.id}), \
                                {'module_code': mod_code, \
                                 'module_title' : 'testing', 
                                 'total_hours' : '234', 
@@ -264,14 +271,14 @@ class TestProgramme(TestCase):
 
         #Edit the module and add a secondary subprogramme
         secondary_subprogramme_name = "sec_sub"
-        self.client.post(reverse('workload_app:manage_subprogramme_offered', kwargs={'dept_id': dept.id}),{'sub_programme_name':secondary_subprogramme_name, 'main_programme': new_prog.id,'fresh_record':True})
+        self.client.post(reverse('workload_app:manage_subprogramme_offered', kwargs={'dept_id': new_dept.id}),{'sub_programme_name':secondary_subprogramme_name, 'main_programme': new_prog.id,'fresh_record':True})
         self.assertEqual(SubProgrammeOffered.objects.all().count(),2)
         self.assertEqual(SubProgrammeOffered.objects.filter(main_programme__programme_name =new_programme_name).count(),2)
         self.assertEqual(SubProgrammeOffered.objects.filter(sub_programme_name=secondary_subprogramme_name).count(),1)
 
         secondary_subprogramme_obj = SubProgrammeOffered.objects.filter(sub_programme_name=secondary_subprogramme_name).get()
         #EDit to add a secondary sub programme
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), \
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scen.id}), \
                                {'module_code': mod_code, \
                                 'module_title' : 'testing', 
                                 'total_hours' : '234', 

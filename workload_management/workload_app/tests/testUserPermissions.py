@@ -37,7 +37,7 @@ class TestUserPermissions(TestCase):
         mod_code = "BN2102"
         acad_year_1 = Academicyear.objects.create(start_year=2021)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=new_dept)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0)
         module_1 = Module.objects.create(module_code = mod_code, module_title="First module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
@@ -110,7 +110,7 @@ class TestUserPermissions(TestCase):
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
-        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer/"+str(lecturer_1.id))
+        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours=39, workload_scenario=scenario_1)
         self.assertEqual(TeachingAssignment.objects.all().count(),1)
@@ -136,8 +136,8 @@ class TestUserPermissions(TestCase):
         
         #test faculty and department mismatch
         #Create one more faculty and one more dpet      
-        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac_2', faculty_acronym = 'CDE_2')
-        new_dept_2 = Department.objects.create(department_name = 'test_dept_2', department_acronym = 'BME_2', faculty = new_fac_2)
+        new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac_2', faculty_acronym = 'CDE2')
+        new_dept_2 = Department.objects.create(department_name = 'test_dept_2', department_acronym = 'BME2', faculty = new_fac_2)
         uni_dept_admin.faculty = new_fac_2
         uni_dept_admin.save()
         uni_dept_admin.department = new_dept_2
@@ -230,6 +230,26 @@ class TestUserPermissions(TestCase):
         self.assertEqual(lect_user_menu["courses"][0]["label"],mod_code)
         self.assertEqual(lect_user_menu["courses"][0]["url"],"/module/"+str(mod_code))
 
+    def testHomePage(self):
+        response = self.client.get(reverse('workload_app:home_page'))
+        self.assertEqual(response.status_code, 302) #Re-direct to login (anonymous user)
+        self.assertEqual(response.url,'/accounts/login')
+
+        #Now create a user. Say, a faculty admin
+        fac_admins =  Group.objects.create(name="FacultyAdminStaff")
+        new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
+        new_dept = Department.objects.create(department_name = 'test_dept', department_acronym = 'BME', faculty = new_fac)
+        fac_admin = User.objects.create_user('new_fac_admin', 'test@fac_user.com', 'fac_super_user_password')
+        fac_admin.is_superuser = False
+        fac_admin.groups.add(fac_admins)
+        fac_admin.save()
+        uni_fac_admin = UniversityStaff.objects.create(user = fac_admin, department=new_dept,faculty=new_fac)
+        self.client.login(username='new_fac_admin', password='fac_super_user_password') #login the fauclty admin
+        response = self.client.get(reverse('workload_app:home_page'))
+        self.assertEqual(response.status_code, 302) #Re-direct to user's home page
+        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = "hello") in response.url, True)
+        
+
     def testSuperUserPageAccess(self):
         #Create fauclty, dept, programmes and modules
         new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
@@ -246,7 +266,7 @@ class TestUserPermissions(TestCase):
         acad_year_2 = Academicyear.objects.create(start_year=2022)
         scenario_1 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept, status = WorkloadScenario.OFFICIAL)
         scenario_2 = WorkloadScenario.objects.create(label="scenario_1", academic_year = acad_year_1, dept = new_dept_2, status = WorkloadScenario.OFFICIAL)
-        mod_type_1 = ModuleType.objects.create(type_name = "one type")
+        mod_type_1 = ModuleType.objects.create(type_name = "one type", department=new_dept)
         track_1 = EmploymentTrack.objects.create(track_name = "track_1", track_adjustment = 2.0, is_adjunct = False,faculty=new_fac)
         track_2 = EmploymentTrack.objects.create(track_name = "track_2", track_adjustment = 2.0, is_adjunct = False,faculty=new_fac_2)
         service_role_1 = ServiceRole.objects.create(role_name = "role_1", role_adjustment = 2.0, faculty=new_fac)
@@ -320,13 +340,16 @@ class TestUserPermissions(TestCase):
         #Workloads index page access
         response = self.client.get(reverse('workload_app:workloads_index'))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         #Workload sceanrio page access
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["name_of_active_scenario"],"scenario_1")
         #module pages  access
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
         self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_title"], "First module")
         self.assertEqual(response.context["module_code"], mod_code)
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code+"_2"}))
@@ -336,30 +359,37 @@ class TestUserPermissions(TestCase):
         #Department page  access
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["dept_name"], "test_dept")
         #Accreditation page  access
         response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #accreditation report page access
         response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Lecturer page access 
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["lec_name"], "lecturer_1")
         #Survey results page access
         response = self.client.get(reverse('workload_app:survey_results', kwargs={'survey_id': slo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(('survey_details' in response.context), True)
         #Programme survey input page access
         response = self.client.get(reverse('workload_app:input_programme_survey_results', kwargs={'programme_id': new_prog.id, 'survey_id': slo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_id"], new_prog.id)
         #Module survey input page access
         response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code, 'survey_id': mlo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_code"], mod_code)
 
         self.client.logout()
@@ -391,6 +421,7 @@ class TestUserPermissions(TestCase):
         #Faculty  page access
         response = self.client.get(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["school_name"],new_fac.faculty_name)
         #Try with another faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:school_page',  kwargs={'faculty_id': new_fac_2.id}))
@@ -399,6 +430,7 @@ class TestUserPermissions(TestCase):
         #Workload scenario page access
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["name_of_active_scenario"],"scenario_1")
         #Try with another workload scenario of another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
@@ -407,6 +439,7 @@ class TestUserPermissions(TestCase):
         #module pages  access
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
         self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_title"], "First module")
         self.assertEqual(response.context["module_code"], mod_code)
         #Try with the module of another dept of another faculty - SHOULD BE NO ACCESS
@@ -417,6 +450,7 @@ class TestUserPermissions(TestCase):
         #Department page  access
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["dept_name"], "test_dept")
         #Try with another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept_2.id}))
@@ -426,6 +460,7 @@ class TestUserPermissions(TestCase):
         #Accreditation page  access
         response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation of programme of ANOTHE dept of ANOTHER faculty - NO access
         response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog_2.id}))
@@ -435,6 +470,7 @@ class TestUserPermissions(TestCase):
         #accreditation report page access
         response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
         response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
@@ -443,6 +479,7 @@ class TestUserPermissions(TestCase):
         #Lecturer page access 
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["lec_name"], "lecturer_1")
         #Lecturer page of another lecturer from another department of another faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_2.id}))
@@ -461,6 +498,7 @@ class TestUserPermissions(TestCase):
         #Programme survey input page access
         response = self.client.get(reverse('workload_app:input_programme_survey_results', kwargs={'programme_id': new_prog.id, 'survey_id': slo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_id"], new_prog.id)
         #Programme survey input of ANOTHER programme of ANOTHER FACULTY - NO ACCESS
         response = self.client.get(reverse('workload_app:input_programme_survey_results', kwargs={'programme_id': new_prog_2.id, 'survey_id': slo_survey_2.id}))
@@ -470,6 +508,7 @@ class TestUserPermissions(TestCase):
         #Module survey input page access
         response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code, 'survey_id': mlo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_code"], mod_code)
         #Now input into a survey of a module of ANOTHER faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code+"_2", 'survey_id': mlo_survey_2.id}))
@@ -504,6 +543,7 @@ class TestUserPermissions(TestCase):
         #Workload scenario page access
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["name_of_active_scenario"],"scenario_1")
         #Try with another workload scenario of another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.id}))
@@ -512,6 +552,7 @@ class TestUserPermissions(TestCase):
         #module pages  access
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
         self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_title"], "First module")
         self.assertEqual(response.context["module_code"], mod_code)
         #Try with the module of another dept of another faculty - SHOULD BE NO ACCESS
@@ -522,6 +563,7 @@ class TestUserPermissions(TestCase):
         #Department page  access
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["dept_name"], "test_dept")
         #Try with another department of ANOTHER FACULTY. SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:department', kwargs={'department_id': new_dept_2.id}))
@@ -531,6 +573,7 @@ class TestUserPermissions(TestCase):
         #Accreditation page  access
         response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation of programme of ANOTHE dept of ANOTHER faculty - NO access
         response = self.client.get(reverse('workload_app:accreditation', kwargs={'programme_id': new_prog_2.id}))
@@ -540,6 +583,7 @@ class TestUserPermissions(TestCase):
         #accreditation report page access
         response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["programme_name"], "new_prog")
         #Accreditation report of programme of ANOTHE dept of ANOTHER faculty - NO access
         response = self.client.get(reverse('workload_app:accreditation_report', kwargs={'programme_id': new_prog_2.id, 'start_year' : 2020, 'end_year':2021,'compulsory_only':1}))
@@ -618,6 +662,7 @@ class TestUserPermissions(TestCase):
         #module pages  access
         response = self.client.get(reverse('workload_app:module',  kwargs={'module_code': mod_code}))
         self.assertEqual(response.status_code, 200) #no issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_title"], "First module")
         self.assertEqual(response.context["module_code"], mod_code)
         #Try with the module of another dept of another faculty - SHOULD BE NO ACCESS
@@ -655,6 +700,7 @@ class TestUserPermissions(TestCase):
         #Lecturer page access 
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["lec_name"], "lecturer_1")
         #Lecturer page of another lecturer from another department of another faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_2.id}))
@@ -687,6 +733,7 @@ class TestUserPermissions(TestCase):
         #Module survey input page access
         response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code, 'survey_id': mlo_survey_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
+        self.assertEqual(('error_message' in response.context), False)
         self.assertEqual(response.context["module_code"], mod_code)
         #Now input into a survey of a module of ANOTHER faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:input_module_survey_results', kwargs={'module_code': mod_code+"_2", 'survey_id': mlo_survey_2.id}))
