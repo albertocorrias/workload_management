@@ -341,7 +341,6 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             if (assign.counted_towards_workload == True and prof.is_external==False):
                 lec_item['assignments'] += assign.assigned_module.module_code + ' (' + str(num_hours) + '), '
                 hours_to_assign = num_hours
-                if (assign.assigned_module.semester_offered == Module.BOTH_SEMESTERS) : hours_to_assign = 2*hours_to_assign
                 lec_item['total_hours_for_prof'] += hours_to_assign
             else:
                 lec_item["not_counted_assignments"] += assign.assigned_module.module_code + ' (' + str(num_hours) + '), '

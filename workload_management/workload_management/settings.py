@@ -105,8 +105,8 @@ if ('production' in str(branch_name)):
     print('**** We are using production settings  *****')
 else: #Not the production branch
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
+    DEBUG = True# Development settings have debug=true
     if ('devel' in str(branch_name)): 
-        DEBUG = True# Development settings have debug=true
         TESTING = True#"test" in sys.argv
         if TESTING:
             #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
