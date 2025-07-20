@@ -1546,7 +1546,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(slo_survey_attn_scores[1],0) #no measures in second year
 
         #Add another response linked to slo 1 in the same survey (test concatenation and averaging of two questions with same target)
-        alternate_question = "blah blah"
+        alternate_question = "Xlah blah" #This will follow the first one that starts with 'T'
         slo_response_1_alternate = SurveyQuestionResponse.objects.create(question_text = alternate_question,\
                                                            n_highest_score = 5,\
                                                            n_second_highest_score = 28,\
