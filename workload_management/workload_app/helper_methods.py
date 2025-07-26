@@ -23,7 +23,7 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
             total_hrs_delivered = wl_scen.total_hours_delivered
             total_fte = wl_scen.total_tfte_overall
             expected_hrs = wl_scen.expected_hrs_per_tfte
-        else:#need to reecalculate
+        else:#need to recalculate
             summary_data = CalculateAllWorkloadTables(wl_scen.id)['summary_data']
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
@@ -254,6 +254,8 @@ def CalculateAllWorkloadTables(workloadscenario_id):
         'total_department_tFTE' : 0,
         'total_module_hours_for_dept' : 0, #these are the hours stored within the module object
         'total_adjunct_tFTE' : 0,
+        'total_regular_staff_tFTE' : 0,
+        'total_unused_tFTE' : 0,
         'total_number_of_adjuncts' : 0,
         'total_number_of_external' : 0,
         'total_hours_not_counted' : 0,
@@ -280,17 +282,21 @@ def CalculateAllWorkloadTables(workloadscenario_id):
                                                         'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
             "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
             "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
-            "num_assigns_for_prof" : 0 #placeholder, will update later
+            "num_assigns_for_prof" : 0, #placeholder, will update later
+            'is_external' : False
         }
         all_lecturer_items.append(lecturer_item)
         
-        if (prof.employment_track.is_adjunct == True):
-            summary_data["total_adjunct_tFTE"] += prof_tfte
-            summary_data["total_number_of_adjuncts"] += 1
-        if (prof.is_external == True):
+        if (prof.is_external == False):
+            if (prof.employment_track.is_adjunct == True):
+                summary_data["total_adjunct_tFTE"] += prof_tfte
+                summary_data["total_number_of_adjuncts"] += 1
+            else:
+                summary_data["total_regular_staff_tFTE"] += prof_tfte
+        else: #prof.is_external == True
             summary_data["total_number_of_external"] += 1
-        else:
-            summary_data["total_department_tFTE"] += prof_tfte
+            lecturer_item['is_external'] = True
+
 
         
     for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
@@ -338,13 +344,15 @@ def CalculateAllWorkloadTables(workloadscenario_id):
         #Find the item with the prof_id, (None if not found)
         lec_item = next((lec_item for lec_item in all_lecturer_items if lec_item["prof_id"] == lec_id), None)
         if (lec_item is not None):
-            if (assign.counted_towards_workload == True and prof.is_external==False):
+            if (assign.counted_towards_workload == True and lec_item['is_external']==False): #hours by external staff will be shown as "not counted"
                 lec_item['assignments'] += assign.assigned_module.module_code + ' (' + str(num_hours) + '), '
                 hours_to_assign = num_hours
                 lec_item['total_hours_for_prof'] += hours_to_assign
+                summary_data["total_hours_for_workload"] += num_hours
             else:
                 lec_item["not_counted_assignments"] += assign.assigned_module.module_code + ' (' + str(num_hours) + '), '
                 lec_item["not_counted_total_hours"] += num_hours
+                summary_data["total_hours_not_counted"] += num_hours
             lec_item["num_assigns_for_prof"] += 1
             
         #Find the module item for this module_id (None if not found)
@@ -353,10 +361,13 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             if (assign.counted_towards_workload == True):
                 mod_item["module_lecturers"] += assign.assigned_lecturer.name + ' (' + str(num_hours) + '), '
                 mod_item["module_assigned_hours"] += num_hours
-                summary_data["total_hours_for_workload"] += num_hours
-                if (mod_item["semester_offered"] == Module.SEM_1 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
+                
+                if (mod_item["semester_offered"] == Module.BOTH_SEMESTERS): #Here we assume equal split of the assignments (this and all others) between two sems
+                    summary_data["hours_sem_1"] += num_hours/2
+                    summary_data["hours_sem_2"] += num_hours/2
+                if (mod_item["semester_offered"] == Module.SEM_1):
                     summary_data["hours_sem_1"] += num_hours
-                if (mod_item["semester_offered"] == Module.SEM_2 or mod_item["semester_offered"] == Module.BOTH_SEMESTERS):
+                if (mod_item["semester_offered"] == Module.SEM_2):
                     summary_data["hours_sem_2"] += num_hours
                 if (mod_item["semester_offered"] == Module.SPECIAL_TERM_1 \
                     or mod_item["semester_offered"] == Module.SPECIAL_TERM_2\
@@ -365,7 +376,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             else:
                 mod_item["module_lecturers_not_counted"] += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
                 mod_item["module_assigned_hours_not_counted"] += num_hours
-                summary_data["total_hours_not_counted"] += num_hours
+
 
             mod_item["num_assigns_for_module"] += 1
             
@@ -386,14 +397,18 @@ def CalculateAllWorkloadTables(workloadscenario_id):
 
 
     #Other key summary metrics
-    if (summary_data["total_hours_for_workload"] > 0):
+    summary_data["total_department_tFTE"] = summary_data["total_regular_staff_tFTE"] + summary_data["total_adjunct_tFTE"]
+    if (summary_data["total_department_tFTE"] > 0):
         summary_data["expected_hours_per_tFTE"] = summary_data["total_hours_for_workload"]/summary_data["total_department_tFTE"]
     summary_data["total_hours_delivered"] = summary_data["total_hours_for_workload"] + summary_data["total_hours_not_counted"]
 
-    #Calculate the tFTE actually used in this workload -loop over data structure, leave DB alone here
+    #Calculate the tFTE actually used in this workload and other useful metrics -loop over data structure, leave DB alone here
     for prof_item in all_lecturer_items:
-        if (prof_item["num_assigns_for_prof"]>0):
-            summary_data["total_tFTE_for_workload"] += prof_item["prof_tfte"]
+        if (prof_item["is_external"]==False):
+            if (prof_item["num_assigns_for_prof"]>0):
+                summary_data["total_tFTE_for_workload"] += prof_item["prof_tfte"] #these are counted...
+            else:
+                summary_data["total_unused_tFTE"] += prof_item["prof_tfte"]
         if (prof_item["assignments"] == ''):
             prof_item["assignments"] = 'No teaching assignments  ' #Note the two spaces at the end, chopped off later
         if (prof_item["not_counted_assignments"] == ''):
@@ -417,7 +432,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
     #Store some quantities into DB for usage
     WorkloadScenario.objects.filter(id=workloadscenario_id).update(\
     total_hours_delivered = summary_data["total_hours_for_workload"],
-    total_tfte_overall = summary_data["total_tFTE_for_workload"],
+    total_tfte_overall = summary_data["total_department_tFTE"],
     expected_hrs_per_tfte = summary_data["expected_hours_per_tFTE"])
     return {
         'table_by_prof' : all_lecturer_items,

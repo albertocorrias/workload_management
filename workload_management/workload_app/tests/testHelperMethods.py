@@ -555,7 +555,7 @@ class testHelperMethods(TestCase):
 
          #The method shoul caluclate appropriate values for the stored parameters
         self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_hours_delivered,obtained_summary_data["total_hours_for_workload"],2)
-        self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_tfte_overall,obtained_summary_data["total_tFTE_for_workload"],2)
+        self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().total_tfte_overall,obtained_summary_data["total_department_tFTE"],2)
         self.assertAlmostEqual(WorkloadScenario.objects.filter(id=first_scen.id).get().expected_hrs_per_tfte,obtained_summary_data["expected_hours_per_tFTE"],2)
 
         #Create another scenario

@@ -62,7 +62,7 @@ def post_login_landing(request):
 
 ##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
-
+    
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
 
