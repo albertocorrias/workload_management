@@ -477,10 +477,19 @@ class Module(models.Model):
 class TeachingAssignmentType(models.Model):
     #The type of assignment. E.g., "tutorial group", or "fyp student"
     description = models.CharField(max_length=3000)
-    #The number of hours associated with "description"
+    #The number of hours associated with one item of "description"
     quantum_number_of_hours = models.PositiveIntegerField()
+    #Workload validity from
+    workload_valid_from = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name="workload_valid_from")
+    #Workload validity until
+    workload_valid_until = models.ForeignKey(Academicyear,on_delete=models.SET_NULL, null=True, related_name = "workload_valid_until")
     #The faculty this type of assignment is valid for
     faculty=models.ForeignKey(Faculty,null=True,on_delete=models.SET_NULL)
+    def __str__(self):
+        return "%s (%s hours)" % (self.description, str(self.quantum_number_of_hours))
+    
+    class Meta:
+        ordering = ['quantum_number_of_hours']
 
 class TeachingAssignment(models.Model):
     """
