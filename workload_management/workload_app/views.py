@@ -12,7 +12,7 @@ from django.core.files.storage import default_storage
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
                     ProgrammeEducationalObjective,PEOSLOMapping, ModuleLearningOutcome, MLOSLOMapping,Survey,\
-                    SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction,UniversityStaff
+                    SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction,UniversityStaff, TeachingAssignmentType
 from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleForm,AddTeachingAssignmentForm,\
                    RemoveTeachingAssignmentForm,ScenarioForm,RemoveScenarioForm,EditTeachingAssignmentForm,\
                    EditModuleAssignmentForm, RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
@@ -22,7 +22,8 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    SelectAcademicYearForm,PEOForm,RemovePEOForm,PEOSLOMappingForm,MLOForm,RemoveMLOForm,MLOSLOMappingForm,\
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
-                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,EditSurveySettingsForm
+                   CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,\
+                   EditSurveySettingsForm,TeachingAssignmentTypeForm,RemoveTeachingAssignmentTypeForm
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
                               accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
@@ -192,6 +193,34 @@ def school_page(request,faculty_id):
         if form.is_valid():  
             selected_track = form.cleaned_data['select_track_to_remove']
             EmploymentTrack.objects.filter(track_name=selected_track).delete()
+        
+        form = TeachingAssignmentTypeForm(request.POST)
+        if form.is_valid():
+            supplied_descritpion = form.cleaned_data['description']
+            supplied_quantum_hours = form.cleaned_data['quantum_number_of_hours']
+            supplied_assignment_valid_from = form.cleaned_data['workload_valid_from']
+            supplied_assignment_valid_to = form.cleaned_data['workload_valid_until']
+            if (request.POST['fresh_record'] == 'False'):
+                supplied_id = form.cleaned_data['teaching_ass_id']
+                #This is an edit
+                TeachingAssignmentType.objects.filter(id = int(supplied_id)).update(description = supplied_descritpion,\
+                                                                         quantum_number_of_hours = int(supplied_quantum_hours),\
+                                                                         workload_valid_from = supplied_assignment_valid_from,\
+                                                                         workload_valid_until = supplied_assignment_valid_to,\
+                                                                         faculty = fac_obj)               
+            else:
+                #This is a new new type
+                new_type = TeachingAssignmentType.objects.create(description = supplied_descritpion,\
+                                                    quantum_number_of_hours = int(supplied_quantum_hours),\
+                                                    workload_valid_from = supplied_assignment_valid_from,\
+                                                    workload_valid_until = supplied_assignment_valid_to,
+                                                    faculty = fac_obj)  
+                new_type.save()
+
+        form = RemoveTeachingAssignmentTypeForm(request.POST)#, faculty_id=faculty_id)
+        if form.is_valid():  
+            selected_type = form.cleaned_data['select_assignment_type_to_remove']
+            TeachingAssignmentType.objects.filter(id=selected_type.id).delete()
         
         #trigger a GET
         return HttpResponseRedirect(reverse('workload_app:school_page',  kwargs={'faculty_id': faculty_id}))

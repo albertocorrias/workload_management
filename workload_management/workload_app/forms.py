@@ -8,7 +8,7 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
                     Department, EmploymentTrack,ServiceRole,Faculty, ProgrammeOffered, \
                     StudentLearningOutcome,SubProgrammeOffered,Academicyear,ProgrammeEducationalObjective,\
                     ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure,\
-                    CorrectiveAction
+                    CorrectiveAction,TeachingAssignmentType
 
 class ProfessorForm(ModelForm):
     """
@@ -361,6 +361,42 @@ class RemoveEmploymentTrackForm(forms.Form):
         #Make user select employment tracks only for this faculty
         self.fields['select_track_to_remove'] = forms.ModelChoiceField(label = 'Select the track to remove',\
              queryset=EmploymentTrack.objects.filter(faculty__id = faculty_id))
+
+
+class TeachingAssignmentTypeForm(forms.ModelForm):
+    # A flag to establish whether it's a new record or editing an existing one
+    fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
+    # The ID of the dpeartment being edited (for editing purposes only)
+    teaching_ass_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+    
+    class Meta:
+        model = TeachingAssignmentType
+        fields = ['description', 'quantum_number_of_hours', 'workload_valid_from', 'workload_valid_until']
+        labels = {'description' : _('Type of assignment'),
+                  'quantum_number_of_hours' : _('How many hours for each?'),
+                  'workload_valid_from' : _('Applied to workloads from'),
+                  'workload_valid_until' : _('Applied to workloads until')}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['workload_valid_from'].required = False
+        self.fields['workload_valid_until'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        assignment_type_name  = cleaned_data.get("description")
+        #if it is a fesh record, we must make sure no duplicate names 
+        if (cleaned_data.get("fresh_record") == True):
+            if (TeachingAssignmentType.objects.filter(description = assignment_type_name).exists()):
+                raise ValidationError(_('Invalid teaching assignment type name: it alreday exists'), code='invalid')
+        else: #This is an edit, we prevent editing into an existing name
+            current_id = cleaned_data.get("teaching_ass_id")
+            if (TeachingAssignmentType.objects.filter(description = assignment_type_name).exclude(id = current_id).exists()):
+                raise ValidationError(_('Invalid teaching assignment type name: it alreday exists'), code='invalid')
+
+class RemoveTeachingAssignmentTypeForm(forms.Form):
+    select_assignment_type_to_remove = forms.ModelChoiceField(label = 'Select the assignment type to remove', queryset=TeachingAssignmentType.objects.all())
+
+
 
 class SLOForm(forms.ModelForm):
 
