@@ -1,9 +1,9 @@
 import csv
 from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
-                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear
+                   WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear, TeachingAssignmentType
 from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModuleAssignmentForm,AddTeachingAssignmentForm,\
-                    EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
+                    EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm, TeachingAssignmentTypeForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
                               csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
                                 DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME
@@ -60,6 +60,29 @@ def CalculateEmploymentTracksTable(faculty_id = -1):
                                                                     'fresh_record' : False,
                                                                     'employment_track_id' : empl_track.id})}
             ret.append(item)
+    return ret
+
+#Helper method to calculate the table of assignment types
+#It returns a list of items, where each item is a dictionary.
+#There are as many items as teaching assignment types in the database
+#Each item contains descrption, number of hours and validity
+def CalculateTeachingAssignmentTypesTable(faculty_id = -1):    
+    ret = []
+    queryset = TeachingAssignmentType.objects.all()
+    if (faculty_id>0):
+        queryset = TeachingAssignmentType.objects.filter(faculty__id = faculty_id)
+    for ass_type in queryset.order_by('description'):
+        item = {"type_description" : ass_type.description,
+                "no_space_type_description" : RegularizeName(ass_type.description),
+                "hours_per_quantum" : ass_type.quantum_number_of_hours,
+                "validity" : ass_type.DisplayAssignmentTypeValidity(),
+                "edit_assignment_type_form" : TeachingAssignmentTypeForm(initial= {'description' : ass_type.description, \
+                                                                'quantum_number_of_hours' : ass_type.quantum_number_of_hours, \
+                                                                'workload_valid_from' : ass_type.workload_valid_from,\
+                                                                'workload_valid_until' : ass_type.workload_valid_until,\
+                                                                'fresh_record' : False,\
+                                                                'teaching_ass_id' : ass_type.id})}
+        ret.append(item)
     return ret
 
 #Helper method to calculate the table of service roles

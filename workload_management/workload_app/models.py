@@ -490,6 +490,18 @@ class TeachingAssignmentType(models.Model):
     
     class Meta:
         ordering = ['quantum_number_of_hours']
+    
+    def DisplayAssignmentTypeValidity(self):
+        ret = ""
+        if (self.workload_valid_from == None) and (self.workload_valid_until ==None):
+            ret =  "Applies to all workloads"
+        if (self.workload_valid_from == None) and (self.workload_valid_until is not None):
+            ret = "Applies to workloads until " + self.workload_valid_until.__str__()
+        if (self.workload_valid_from is not None) and (self.workload_valid_until is None):
+            ret =  "Apples to workloads since " + self.workload_valid_from.__str__()
+        if (self.workload_valid_from is not None) and (self.workload_valid_until is not None):
+            ret = "Applies to workloads from " + self.workload_valid_from.__str__() + " until " + self.workload_valid_until.__str__()
+        return ret
 
 class TeachingAssignment(models.Model):
     """

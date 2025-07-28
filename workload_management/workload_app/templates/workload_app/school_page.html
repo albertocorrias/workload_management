@@ -150,7 +150,45 @@
                 </tbody>
                 </table>
             
-        </div>
+          </div>
+
+          <div class = "settings_table_item">
+            <!-- teaching assignment types table-->
+            <table class="settings_tables table table-striped table-sm">
+            <thead class="table-dark table-sm">
+            <tr> 
+                <th colspan=4>Teaching assignment types</th>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <th>Hours per item</th>
+                <th>Validity</th>
+                <th>Edit</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            {% for entry in assignment_types_table %}
+            <tr>
+                <td>{{ entry.type_description }}</td>       
+                <td>{{ entry.hours_per_quantum }}</td>
+                <td>{{ entry.validity }}</td>
+                <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_type_description }}DetailsModal">
+                    <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
+            </tr>
+            {% endfor %}
+            <tr> 
+                <td colspan=4>  <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageTeachingAssignmentTypeModal">
+                Add/Remove Teaching Assignment Types...
+                </button>
+                </td>
+            </tr>
+            </tbody>
+            </table>
+        
+      </div>
+
+
         </div>  
     </div>
            <!-- Manage scenario modal -->
@@ -363,7 +401,74 @@
       </div><!-- Modal dialogue-->
     </div><!--whole modal--> 
 
+    <!-- Manage teaching assignment type  modal -->
+    <div class="modal fade" id="ManageTeachingAssignmentTypeModal" tabindex="-1" role="dialog" aria-labelledby="ManageTeachingAssignmentTypeModal" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="ManageTeachingAssignmentTypeModalLabel">Add a new teaching assignment type</h5>
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                  <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                </button>
+              </div>
+             <form action="{% url 'workload_app:school_page' faculty_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ teaching_assignment_type_form }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>
+            
+            <div class="modal-header">
+                <h5 class="modal-title" id="ManageTeachingAssignmentTypeModal">Remove existing teaching assignment type</h5>
+            </div>
+             <form action="{% url 'workload_app:school_page' faculty_id %}" method="post">
+             {% csrf_token %}
+                  <div class="modal-body">
+                            {{ remove_teaching_assignment_type_form }}
+                            <br>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-danger">Remove Selected</button>
+                  </div>
+            </form>        
+        </div><!-- Modal content -->
+      </div><!-- Modal dialogue-->
+    </div><!--whole modal--> 
 
+    
+    <!-- Modals to edit teaching assignment types-->
+    {% for entry in assignment_types_table %}
+          <!-- Edit track teaching assignment type  modal -->
+          <div class="modal fade" id="{{ entry.no_space_type_description }}DetailsModal" tabindex="-1" role="dialog" aria-labelledby="{{ entry.no_space_type_description }}DetailsModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="{{ entry.no_space_type_description }}DetailsModalLabel">Edit details for {{ entry.type_description }}</h5>
+                  <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+                    <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+                  </button>
+                </div>
+              <form action="{% url 'workload_app:school_page' faculty_id%}" method="post">
+              {% csrf_token %}
+                      <div class="modal-body">                
+                          {{ entry.edit_assignment_type_form.as_p }}
+                      </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                          <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                  
+              </form>
+              </div>
+            </div>
+        </div>
+
+    {%endfor%}
 
     {% for entry in tracks_table %}
 

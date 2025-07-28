@@ -30,7 +30,7 @@ from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table
 from .helper_methods import CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables
+                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables, CalculateTeachingAssignmentTypesTable
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
@@ -240,11 +240,13 @@ def school_page(request,faculty_id):
         service_role_form = ServiceRoleForm(initial = {'fresh_record' : True})
         remove_service_role_form = RemoveServiceRoleForm(faculty_id = faculty_id)
 
+        teaching_assignment_type_form = TeachingAssignmentTypeForm(initial = {'fresh_record' : True})
+        remove_teaching_assignment_type_form = RemoveTeachingAssignmentTypeForm()
         tracks_table = CalculateEmploymentTracksTable(faculty_id = faculty_id)
         roles_table = CalculateServiceRolesTable(faculty_id = faculty_id)
     
         department_table = CalculateDepartmentTable(faculty_id=faculty_id)
-
+        assignment_types_table = CalculateTeachingAssignmentTypesTable(faculty_id=faculty_id)
         template = loader.get_template('workload_app/school_page.html')
         context = { 'faculty_id' : faculty_id,
                     'school_name' : fac_obj.faculty_name,
@@ -252,12 +254,15 @@ def school_page(request,faculty_id):
                     'tracks_table' : tracks_table,
                     'roles_table' : roles_table,
                     'department_table' : department_table,
+                    'assignment_types_table' : assignment_types_table,
                     'dept_form': dept_form.as_p(),
                     'remove_dept_form':remove_dept_form.as_p(),
                     'employment_track_form': employment_track_form.as_p(),
                     'remove_employment_track_form' : remove_employment_track_form.as_p(),
                     'service_role_form' : service_role_form.as_p(),
                     'remove_service_role_form' : remove_service_role_form.as_p(),
+                    'teaching_assignment_type_form' : teaching_assignment_type_form.as_p(),
+                    'remove_teaching_assignment_type_form' : remove_teaching_assignment_type_form.as_p(),
                     'scenario_form':scenario_form.as_p(),
                     'remove_scenario_form':remove_scenario_form.as_p(),
                     'user_menu' : user_menu,

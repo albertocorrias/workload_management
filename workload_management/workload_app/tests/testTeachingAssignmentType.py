@@ -35,6 +35,8 @@ class TestTeachingAssignmentType(TestCase):
         self.assertEqual(TeachingAssignmentType.objects.filter(workload_valid_until__isnull = True).count(),1)
         self.assertEqual(TeachingAssignmentType.objects.filter(faculty__isnull = True).count(),0) #the view will always assign its faculty
         ass_type_obj = TeachingAssignmentType.objects.filter(description = new_type_name).get()
+        #Test the helper method inside the model class
+        self.assertEqual(ass_type_obj.DisplayAssignmentTypeValidity(),"Applies to all workloads")
         #Now try an edit
         modified_type_name = 'modified'
         num_hrs_2 = 369
@@ -54,6 +56,9 @@ class TestTeachingAssignmentType(TestCase):
         self.assertEqual(TeachingAssignmentType.objects.filter(workload_valid_from__start_year = 2018).count(),1)
         self.assertEqual(TeachingAssignmentType.objects.filter(workload_valid_until__start_year = 2022).count(),1)
         self.assertEqual(TeachingAssignmentType.objects.filter(faculty__isnull = True).count(),0) #the view will always assign its faculty
+        
+        ass_type_obj = TeachingAssignmentType.objects.filter(description = modified_type_name).get()
+        self.assertEqual(ass_type_obj.DisplayAssignmentTypeValidity(),"Applies to workloads from 2018-2019 until 2022-2023")
 
         #Try adding another one with the same name - PREVENT DUPLICATE NAMES
         self.client.post(reverse('workload_app:school_page' ,  kwargs={'faculty_id': new_fac.id}),\

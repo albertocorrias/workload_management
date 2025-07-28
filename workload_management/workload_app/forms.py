@@ -372,7 +372,7 @@ class TeachingAssignmentTypeForm(forms.ModelForm):
     class Meta:
         model = TeachingAssignmentType
         fields = ['description', 'quantum_number_of_hours', 'workload_valid_from', 'workload_valid_until']
-        labels = {'description' : _('Type of assignment'),
+        labels = {'description' : _('Type of assignment (e.g., tutorial group, laboratory session, etc)'),
                   'quantum_number_of_hours' : _('How many hours for each?'),
                   'workload_valid_from' : _('Applied to workloads from'),
                   'workload_valid_until' : _('Applied to workloads until')}
