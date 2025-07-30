@@ -4,7 +4,8 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 
-from workload_app.models import Faculty,Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff
+from workload_app.models import Faculty,Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType,\
+      Department,EmploymentTrack,ServiceRole,Academicyear, UniversityStaff,TeachingAssignmentType
 
 
 class TestLecturer(TestCase):
@@ -211,7 +212,10 @@ class TestLecturer(TestCase):
 
         module_1 = Module.objects.filter(module_code = mod_code_1).get() 
         
-        self.client.post(reverse('workload_app:add_assignment',kwargs={'workloadscenario_id': new_scen.id}), data = {'select_lecturer': obtained_profs_list.filter(name='bob').get().id, 'select_module': module_1.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'36'})
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
+        self.client.post(reverse('workload_app:add_assignment',  kwargs={'workloadscenario_id': new_scen.id}), data = {'select_lecturer': obtained_profs_list.filter(name='bob').get().id, \
+                 'select_module': module_1.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'36'})
+        
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': new_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
         teaching_assignments = TeachingAssignment.objects.all()
@@ -361,7 +365,9 @@ class TestLecturer(TestCase):
         self.assertEqual(all_profs.filter(workload_scenario__label = scen_name_2).count(),3)
         
         #Add an assignment
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': scenario_2.id}), {'select_lecturer': educator_track.id, 'select_module': module_2.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'56'});
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
+        self.client.post(reverse('workload_app:add_assignment',  kwargs={'workloadscenario_id': scenario_2.id}), data = {'select_lecturer': educator_track.id, \
+                 'select_module': module_2.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'56'})
                 
         all_mods  = Module.objects.all();
         self.assertEqual(all_mods.count(),3)#3 mods in total (unchanged)
@@ -380,7 +386,8 @@ class TestLecturer(TestCase):
         self.assertEqual(teaching_assignments.count(),0)#Should be zero by now
         
         #Add an assignment again - This is in scenario 2
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': scenario_2.id}), {'select_lecturer': educator_track.id, 'select_module': module_2.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'56'});
+        self.client.post(reverse('workload_app:add_assignment',  kwargs={'workloadscenario_id': scenario_2.id}), data = {'select_lecturer': educator_track.id, \
+                 'select_module': module_2.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'56'})
         
         #Switch to senario 1
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
@@ -403,8 +410,12 @@ class TestLecturer(TestCase):
         module_3_scen_1 = Module.objects.filter(module_code = mod_code_3).filter(scenario_ref__label=scen_name_1).get()
         
         #Add 2 assignments to the same guy, but in scenario 1
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': scenario_1.id}), {'select_lecturer': educator_track_scen_1.id, 'select_module': module_3_scen_1.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'96'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': scenario_1.id}), {'select_lecturer': educator_track_scen_1.id, 'select_module': module_1_scen_1.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'196'});
+
+        self.client.post(reverse('workload_app:add_assignment',  kwargs={'workloadscenario_id': scenario_1.id}), data = {'select_lecturer': educator_track_scen_1.id, \
+                 'select_module': module_3_scen_1.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'96'})
+        self.client.post(reverse('workload_app:add_assignment',  kwargs={'workloadscenario_id': scenario_1.id}), data = {'select_lecturer': educator_track_scen_1.id, \
+                 'select_module': module_1_scen_1.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'196'})
+        
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
         teaching_assignments = TeachingAssignment.objects.all()

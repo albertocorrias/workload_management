@@ -211,6 +211,7 @@ def HandleScenarioForm(form,department_id):
                                                 assigned_lecturer=prof_involved,\
                                                 number_of_hours=int(to_be_copied.number_of_hours),\
                                                 counted_towards_workload = to_be_copied.counted_towards_workload,\
+                                                assignnment_type = to_be_copied.assignnment_type,\
                                                 workload_scenario=new_scen)
     else: #This is an edit
         id_involved = form.cleaned_data['scenario_id'] #for edits, the form has the info on which scenario to be edited

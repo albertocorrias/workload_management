@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from decimal import *
 from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,\
                                 ModuleType,Department, EmploymentTrack, ServiceRole, Faculty,Academicyear, \
-                                ProgrammeOffered, SubProgrammeOffered, UniversityStaff, Faculty
+                                ProgrammeOffered, SubProgrammeOffered, UniversityStaff, Faculty, TeachingAssignmentType
 from workload_app.global_constants import MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL, ShortenString,\
     CalculateNumHoursBasedOnWeeklyInfo,csv_file_type,requested_table_type
 from workload_app.helper_methods import CalculateTotalModuleHours, RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
@@ -110,15 +110,16 @@ class testHelperMethods(TestCase):
         ########################
         
         #Module one is assigned to 3 lecturers
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=normal_lecturer,number_of_hours=30, counted_towards_workload = True, workload_scenario=first_scen)
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=educator_track,number_of_hours=10, counted_towards_workload = True, workload_scenario=first_scen)
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=vice_dean,number_of_hours=12, workload_scenario=first_scen) #Counted towards workload is not mentioned to cover the default "true" value
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=30, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=educator_track,assignnment_type = assignment_type,number_of_hours=10, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=vice_dean,assignnment_type = assignment_type,number_of_hours=12, workload_scenario=first_scen) #Counted towards workload is not mentioned to cover the default "true" value
         
         #Module two is assigned to one only
-        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=educator_track,number_of_hours=52, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=educator_track,assignnment_type = assignment_type,number_of_hours=52, counted_towards_workload = True, workload_scenario=first_scen)
         
         #Module 3 is assigned to the vice dean, partially
-        TeachingAssignment.objects.create(assigned_module=module_3,assigned_lecturer=vice_dean,number_of_hours=20, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_3,assigned_lecturer=vice_dean,assignnment_type = assignment_type,number_of_hours=20, counted_towards_workload = True, workload_scenario=first_scen)
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -166,7 +167,7 @@ class testHelperMethods(TestCase):
         ######################################################################
         #Now add another assignment, not to be counted in the workload hours
         ######################################################################
-        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=normal_lecturer,number_of_hours=752, counted_towards_workload = False, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=752, counted_towards_workload = False, workload_scenario=first_scen)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         #RE-check everything
         self.assertEqual(response.status_code, 200) #No issues
@@ -358,7 +359,8 @@ class testHelperMethods(TestCase):
         self.assertEqual(TeachingAssignment.objects.all().count(),0)
         
         #Module one is assigned to 3 lecturers
-        TeachingAssignment.objects.create(assigned_module=long_module_1,assigned_lecturer=normal_lecturer,number_of_hours=30, workload_scenario=first_scen)
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
+        TeachingAssignment.objects.create(assigned_module=long_module_1,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=30, workload_scenario=first_scen)
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -456,11 +458,12 @@ class testHelperMethods(TestCase):
         self.assertEqual(response.status_code, 200) #No issues
         
         #Do some assignment
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_1.id,'counted_towards_workload' : 'yes', 'manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'36'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_1.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'6'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_2.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'56'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': educator_track.id, 'select_module': module_3.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'156'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_4.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'356'});
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=first_fac)
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_1.id,'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'36'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_1.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'6'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_2.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'56'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': educator_track.id, 'select_module': module_3.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'156'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_4.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'356'})
         
         #Refresh and call the method to be tested
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
@@ -507,11 +510,11 @@ class testHelperMethods(TestCase):
         module_5 = Module.objects.filter(module_code = mod_code_5).get()
         module_7 = Module.objects.filter(module_code = mod_code_7).get()
         module_8 = Module.objects.filter(module_code = mod_code_8).get()
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_5.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'36'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_5.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'6'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_7.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'56'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': educator_track.id, 'select_module': module_8.id,'counted_towards_workload' : 'yes', 'manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'10'});
-        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_8.id, 'counted_towards_workload' : 'yes','manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'20'});
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_5.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'36'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_5.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'6'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': normal_lecturer.id, 'select_module': module_7.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'56'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': educator_track.id, 'select_module': module_8.id,'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'10'})
+        self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, 'select_module': module_8.id, 'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'yes','how_many_units':'20'})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -524,8 +527,8 @@ class testHelperMethods(TestCase):
 
         #Add an assignment NOT counted towards the workload
         self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': vice_dean.id, \
-                                                      'select_module': module_7.id, 'counted_towards_workload' : 'no',\
-                                                      'manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'1320'})
+                                                      'select_module': module_7.id,\
+                                                      'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'no','how_many_units':'1320'})
         #Check everything UNCHANGED
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -539,8 +542,8 @@ class testHelperMethods(TestCase):
 
         #Make an assignment to the external person
         self.client.post(reverse('workload_app:add_assignment', kwargs={'workloadscenario_id': first_scen.id}), {'select_lecturer': external_lecturer.id, \
-                                                      'select_module': module_7.id, 'counted_towards_workload' : 'no',\
-                                                      'manual_hours_yes_no': 'yes', 'enter_number_of_total_hours_assigned':'2340'})
+                                                      'select_module': module_7.id,\
+                                                      'teaching_assignment_type' : assignment_type.id, 'counted_towards_workload' : 'no','how_many_units':'2340'})
 
         #Check everything UNCHANGED
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))

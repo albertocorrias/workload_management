@@ -5,7 +5,7 @@ from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
                    WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome,\
                    ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse, ProgrammeEducationalObjective,\
-                   PEOSLOMapping
+                   PEOSLOMapping, TeachingAssignmentType
 from .forms import ProfessorForm, ModuleForm,AddTeachingAssignmentForm,\
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
@@ -34,6 +34,7 @@ def clear_database():
     Survey.objects.all().delete()
     ProgrammeEducationalObjective.objects.all().delete()
     PEOSLOMapping.objects.all().delete()
+    TeachingAssignmentType.objects.all().delete()
 
 #This helper method helps creating a databse for the demo
 def populate_database():
@@ -57,6 +58,9 @@ def populate_database():
     me_dept, created = Department.objects.get_or_create(department_name="Mechanical Engineering", department_acronym="ME", faculty = cde_fac)
     ece_dept, created = Department.objects.get_or_create(department_name="Electrical and Computer Engineering", department_acronym="ECE", faculty = cde_fac)
     bme_dept, created = Department.objects.get_or_create(department_name="Biomedical Engineering", department_acronym="BME", faculty = cde_fac)
+
+    #teaching assignment type
+    assignment_type = TeachingAssignmentType.objects.create(description="contact hours", quantum_number_of_hours=1,faculty=cde_fac)
 
     #Module types
     fluids, created = ModuleType.objects.get_or_create(type_name="Fluids",department=me_dept)
@@ -705,7 +709,7 @@ def populate_database():
             for i in range(0,num_lecs):
                 assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
                                                                     assigned_lecturer=ece_profs[random_lec_index+i], \
-                                                                    assigned_manually=True,\
+                                                                    assignnment_type=assignment_type,\
                                                                     number_of_hours=int(mod.total_hours/num_lecs),\
                                                                     workload_scenario=wlscen)
     for wlscen in all_me_wls:
@@ -717,7 +721,7 @@ def populate_database():
             for i in range(0,num_lecs):
                 assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
                                                                     assigned_lecturer=me_profs[random_lec_index+i], \
-                                                                    assigned_manually=True,\
+                                                                    assignnment_type=assignment_type,\
                                                                     number_of_hours=int(mod.total_hours/num_lecs),\
                                                                     workload_scenario=wlscen)
     for wlscen in all_bme_wls:
@@ -729,7 +733,7 @@ def populate_database():
             for i in range(0,num_lecs):
                 assign, created = TeachingAssignment.objects.get_or_create(assigned_module = mod, \
                                                                     assigned_lecturer=bme_profs[random_lec_index+i], \
-                                                                    assigned_manually=True,\
+                                                                    assignnment_type=assignment_type,\
                                                                     number_of_hours=int(mod.total_hours/num_lecs),\
                                                                     workload_scenario=wlscen)
     ############################

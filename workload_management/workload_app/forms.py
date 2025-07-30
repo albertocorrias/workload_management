@@ -799,7 +799,7 @@ class EditModuleAssignmentForm(forms.Form):
         
         for assign in TeachingAssignment.objects.filter(assigned_module__id = module_id):
                 prof_assigned = assign.assigned_lecturer
-                #Keep the prof name in the keys (vuew will look for it).
+                #Keep the prof name in the keys (view will look for it).
                 self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
 
                 self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ModelChoiceField(label = "Type of teahcing assignment", \

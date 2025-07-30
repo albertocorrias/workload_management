@@ -4,7 +4,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROLE_NAME
-from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, Academicyear,WorkloadScenario,EmploymentTrack,ServiceRole,\
+from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, Academicyear,WorkloadScenario,EmploymentTrack,ServiceRole,TeachingAssignmentType,\
     ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure, CorrectiveAction, UniversityStaff
 
 from workload_app.report_methods import GetLastNYears,CalculateProfessorIndividualWorkload,CalculateProfessorChartData
@@ -77,11 +77,12 @@ class TestLecturerPage(TestCase):
         module_6 = Module.objects.create(module_code = mode_code_2, module_title=mod_title_2, scenario_ref=scenario_5, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
 
         #Do some assignmentsto "lecturer_1" for the first four years, to another_elct for the last year
-        TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, number_of_hours = 25, workload_scenario=scenario_1)
-        TeachingAssignment.objects.create(assigned_module = module_2, assigned_lecturer = lecturer_2, number_of_hours = 35, workload_scenario=scenario_2)
-        TeachingAssignment.objects.create(assigned_module = module_3, assigned_lecturer = lecturer_3, number_of_hours = 45, workload_scenario=scenario_3)
-        TeachingAssignment.objects.create(assigned_module = module_4, assigned_lecturer = lecturer_4, number_of_hours = 95, workload_scenario=scenario_4)
-        TeachingAssignment.objects.create(assigned_module = module_5, assigned_lecturer = anot_lect, number_of_hours = 25, workload_scenario=scenario_5)
+        assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=first_fac)
+        TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_1)
+        TeachingAssignment.objects.create(assigned_module = module_2, assigned_lecturer = lecturer_2, assignnment_type=assignment_type, number_of_hours = 35, workload_scenario=scenario_2)
+        TeachingAssignment.objects.create(assigned_module = module_3, assigned_lecturer = lecturer_3, assignnment_type=assignment_type, number_of_hours = 45, workload_scenario=scenario_3)
+        TeachingAssignment.objects.create(assigned_module = module_4, assigned_lecturer = lecturer_4, assignnment_type=assignment_type, number_of_hours = 95, workload_scenario=scenario_4)
+        TeachingAssignment.objects.create(assigned_module = module_5, assigned_lecturer = anot_lect, assignnment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_5)
 
         #Now call lecturer page
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': lecturer_1.id}))

@@ -1733,7 +1733,6 @@ def survey_results(request,survey_id):
 ###################
 # Below here only handler methods that handle some of the POST requests
 ###################
-
 def add_assignment(request,workloadscenario_id):
     if request.method =='POST':
         id_of_prof_involved = request.POST['select_lecturer']
@@ -1750,14 +1749,21 @@ def add_assignment(request,workloadscenario_id):
             #calculate number of hours - NOTE: we assume the type of assignment is valid for this workload
             assignment_type_obj= TeachingAssignmentType.objects.filter(id=id_of_assignment_type).get()
             num_hrs = assignment_type_obj.quantum_number_of_hours * num_instances
-
-            #Create the object
-            TeachingAssignment.objects.create(assigned_module=Module.objects.filter(id = id_of_mod_involved).get(),\
-                                            assigned_lecturer=Lecturer.objects.filter(id = id_of_prof_involved).get(),\
-                                            assignnment_type = assignment_type_obj,\
-                                            number_of_hours=int(num_hrs),\
-                                            counted_towards_workload = count_in_wl,\
-                                            workload_scenario= WorkloadScenario.objects.filter(id=workloadscenario_id).get())
+            
+            #check if an assignment for same prof, same mod, same type exists. If so, we simply update the hours, otherwise, create a new one
+            qs = TeachingAssignment.objects.filter(assigned_module__id = id_of_mod_involved).\
+                                            filter(assigned_lecturer__id=id_of_prof_involved).\
+                                            filter(assignnment_type__id = assignment_type_obj.id) 
+            if (qs.count()==1):
+                qs.update(number_of_hours=int(qs.get().number_of_hours + num_hrs))
+            else:
+                #Create the object
+                TeachingAssignment.objects.create(assigned_module=Module.objects.filter(id = id_of_mod_involved).get(),\
+                                                assigned_lecturer=Lecturer.objects.filter(id = id_of_prof_involved).get(),\
+                                                assignnment_type = assignment_type_obj,\
+                                                number_of_hours=int(num_hrs),\
+                                                counted_towards_workload = count_in_wl,\
+                                                workload_scenario= WorkloadScenario.objects.filter(id=workloadscenario_id).get())
 
         else:
             template = loader.get_template('workload_app/errors_page.html')
