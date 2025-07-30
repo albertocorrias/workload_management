@@ -65,12 +65,16 @@
         <div class="modal-header">
            <h5 class="modal-title" id="EditProf{{ entry.prof_id }}ManageAssignmentModalLabel">Edit assignments for {{ entry.prof_name }}</h5>
         </div>
-        <form action="{% url 'workload_app:edit_lecturer_assignments' entry.prof_id%}" method="post">
+        <form action="{% url 'workload_app:edit_lecturer_assignments' entry.prof_id %}" method="post">
          {% csrf_token %}
                 <div class="modal-body">
                   {% for field in entry.edit_assign_form %}
                     {% if field.is_hidden %}
-                      <p class="header_of_edit_form">{{ field.label }}</p>
+                      {% if "never_display" in field.label %}
+                        <p></p>
+                      {% else %}
+                        <p class="header_of_edit_form">{{ field.label }}</p>
+                      {% endif %}
                     {% else %}
                        <p><div style="display:inline;">{{ field.label }} {{ field }}</div></p>
                     {% endif %}

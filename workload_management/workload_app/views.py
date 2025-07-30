@@ -14,8 +14,8 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
                     ProgrammeEducationalObjective,PEOSLOMapping, ModuleLearningOutcome, MLOSLOMapping,Survey,\
                     SurveyQuestionResponse,MLOPerformanceMeasure,CorrectiveAction,UniversityStaff, TeachingAssignmentType
 from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleForm,AddTeachingAssignmentForm,\
-                   RemoveTeachingAssignmentForm,ScenarioForm,RemoveScenarioForm,EditTeachingAssignmentForm,\
-                   EditModuleAssignmentForm, RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
+                   RemoveTeachingAssignmentForm,EditLecturerTeachingAssignmentForm, EditModuleAssignmentForm, ScenarioForm,RemoveScenarioForm,\
+                   RemoveModuleTypeForm, ModuleTypeForm, DepartmentForm, RemoveDepartmentForm,\
                    EmplymentTrackForm, RemoveEmploymentTrackForm,ServiceRoleForm, RemoveServiceRoleForm,\
                    FacultyForm, RemoveFacultyForm, SelectFacultyForReport,ProgrammeOfferedForm,\
                    RemoveProgrammeForm,SLOForm,RemoveSLOForm,SubProgrammeOfferedForm,RemoveSubProgrammeForm,\
@@ -87,6 +87,7 @@ def scenario_view(request, workloadscenario_id):
                                                         'dept' : department,
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
+        
     all_tables = CalculateAllWorkloadTables(workloadscenario_id)
     workload_table = all_tables["table_by_prof"]
     modules_table = all_tables["table_by_mod"]
@@ -103,7 +104,7 @@ def scenario_view(request, workloadscenario_id):
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
     #Teaching Assignment forms
-    add_teaching_assignment_form = AddTeachingAssignmentForm(auto_id=False, prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id)
+    add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id)
     remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id)
     
     template = loader.get_template('workload_app/workload.html')
@@ -1730,63 +1731,34 @@ def survey_results(request,survey_id):
     
 
 ###################
-# BElow here only handler methods that handle some of the POST requests
+# Below here only handler methods that handle some of the POST requests
 ###################
 
 def add_assignment(request,workloadscenario_id):
     if request.method =='POST':
         id_of_prof_involved = request.POST['select_lecturer']
         id_of_mod_involved = request.POST['select_module']
-        manual_radio_button_status = request.POST['manual_hours_yes_no']
+        id_of_assignment_type = request.POST['teaching_assignment_type']
         counted_or_not_radio_button_status = request.POST['counted_towards_workload']
-        selected_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
-        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = selected_scen.id)
+        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = workloadscenario_id)
         if form.is_valid():
-            selected_prof_name = form.cleaned_data['select_lecturer']
-            selected_module = form.cleaned_data['select_module']
+            num_instances = form.cleaned_data['how_many_units']
 
-            selected_module = Module.objects.filter(id = id_of_mod_involved).filter(scenario_ref__id = workloadscenario_id).get()
-            selected_prof =  Lecturer.objects.filter(name = selected_prof_name).filter(workload_scenario__id = workloadscenario_id).get()
             count_in_wl = True
             if (counted_or_not_radio_button_status == 'no'): count_in_wl = False
-            #Check if an assignment for the same module and same prof alreday exists (if so, we just add the hours)
-            possible_existing_objects = TeachingAssignment.objects.filter(assigned_module = selected_module)\
-                                                                  .filter(assigned_lecturer = selected_prof)\
-                                                                  .filter(workload_scenario__id=workloadscenario_id)\
-                                                                  .filter(counted_towards_workload = count_in_wl)
-            if (possible_existing_objects.count() > 0):
-                num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];#TODO This is bad here, must chack if manual hours were given or not
-                existing_hrs = possible_existing_objects.values().get()
-                total_number_of_hours = num_hrs + existing_hrs['number_of_hours'] #Just add the hours
-                possible_existing_objects.update(number_of_hours=int(total_number_of_hours))
-            else:#Here the count is zero: an assignment to the same prof, same mod does not exist, finally create the assignment object
-                
-                if manual_radio_button_status == 'no' :
-                    supplied_weekly_lecture_hours = form.cleaned_data["enter_number_of_weekly_lecture_hours"]
-                    supplied_weekly_tutorial_hours = form.cleaned_data["enter_number_of_weekly_tutorial_hours"]
-                    supplied_num_tutorial_groups = form.cleaned_data["enter_number_of_tutorial_groups"]
-                    supplied_weeks_assigned = form.cleaned_data["enter_number_of_weeks_assigned"]
-                    #Calculation of hours based on weekly info
-                    num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                    TeachingAssignment.objects.create(assigned_module=selected_module,\
-                                                      assigned_lecturer=selected_prof,\
-                                                      number_of_hours=int(num_hrs),\
-                                                      number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                                      number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                                      number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                                      number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                                      assigned_manually = False,\
-                                                      counted_towards_workload = count_in_wl,\
-                                                      workload_scenario= selected_scen)
-                else:
-                    num_hrs = form.cleaned_data['enter_number_of_total_hours_assigned'];
-                    TeachingAssignment.objects.create(assigned_module=selected_module,\
-                                                      assigned_lecturer=selected_prof,\
-                                                      number_of_hours=int(num_hrs),\
-                                                      assigned_manually = True,\
-                                                      counted_towards_workload = count_in_wl,\
-                                                      workload_scenario= selected_scen)
+            
+            #calculate number of hours - NOTE: we assume the type of assignment is valid for this workload
+            assignment_type_obj= TeachingAssignmentType.objects.filter(id=id_of_assignment_type).get()
+            num_hrs = assignment_type_obj.quantum_number_of_hours * num_instances
+
+            #Create the object
+            TeachingAssignment.objects.create(assigned_module=Module.objects.filter(id = id_of_mod_involved).get(),\
+                                            assigned_lecturer=Lecturer.objects.filter(id = id_of_prof_involved).get(),\
+                                            assignnment_type = assignment_type_obj,\
+                                            number_of_hours=int(num_hrs),\
+                                            counted_towards_workload = count_in_wl,\
+                                            workload_scenario= WorkloadScenario.objects.filter(id=workloadscenario_id).get())
+
         else:
             template = loader.get_template('workload_app/errors_page.html')
             context = {
@@ -1809,107 +1781,63 @@ def remove_assignment(request, workloadscenario_id):
 
 def edit_lecturer_assignments(request, prof_id):
     prof_involved = Lecturer.objects.filter(id = prof_id).get()
-    scenario_id = prof_involved.workload_scenario.id
+    workloadscenario_id = prof_involved.workload_scenario.id
 
     if request.method =='POST':    
-        form = EditTeachingAssignmentForm(request.POST,prof_id = prof_id)
+        form = EditLecturerTeachingAssignmentForm(request.POST,prof_id = prof_id)
         if form.is_valid():
-            for mod in Module.objects.filter(scenario_ref__id = scenario_id):
+            for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
                 mod_code = mod.module_code
                 if mod_code in form.cleaned_data.keys():
-                    if Module.objects.filter(module_code = mod_code).exists():
-                        assign = TeachingAssignment.objects.filter(assigned_module__module_code=mod_code)\
+                    if Module.objects.filter(module_code = mod_code).filter(scenario_ref__id = workloadscenario_id).exists():
+                        num_instances = form.cleaned_data['how_many_units'+str(mod.id)]
+                        id_of_assignment_type = request.POST['teaching_assignment_type'+str(mod.id)]
+
+                        assign = TeachingAssignment.objects.filter(assigned_module__id=mod.id)\
                                             .filter(assigned_lecturer__id=prof_id)
-                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+mod_code]
+                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+str(mod.id)]
                         counted_in_wl = True
                         if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
 
-                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
-                            supplied_number_of_hours = form.cleaned_data['total_hours'+mod_code]
-                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
-                                supplied_number_of_hours = 0;
-                            if (int(supplied_number_of_hours) > 0):
-                                assign.update(number_of_hours=int(supplied_number_of_hours),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:#If zero or negative, remove the assignment
-                                assign.delete();
-                        else:#Assigned by week. We need to do the calculation
-                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+mod_code]
-                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
-                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+mod_code]
-                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
-                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+mod_code]
-                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
-                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+mod_code]
-                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
-                            
-                            #Calculation of hours based on weekly info
-                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                         int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                                
-                            if num_hrs > 0:
-                                assign.update( number_of_hours=int(num_hrs),\
-                                               number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                               number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                               number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                               number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:
-                                assign.delete()
+                        assignment_type_obj= TeachingAssignmentType.objects.filter(id=id_of_assignment_type).get()
+                        num_hrs = assignment_type_obj.quantum_number_of_hours * num_instances
+
+                        if (int(num_hrs) > 0):
+                            assign.update(number_of_hours=int(num_hrs),\
+                                          counted_towards_workload = counted_in_wl, assignnment_type = assignment_type_obj)
+                        else:#If zero or negative, remove the assignment
+                            assign.delete()
     #Otherwise do nothing
-    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
 
 def edit_module_assignments(request, module_id):
     module_involved = Module.objects.filter(id=module_id).get()
     scenario_id = module_involved.scenario_ref.id
     if request.method =='POST':
-        
         form = EditModuleAssignmentForm(request.POST,module_id = module_id)
         if form.is_valid():
             for prof in Lecturer.objects.filter(workload_scenario__id = scenario_id):
                 prof_name = prof.name
                 if prof_name in form.cleaned_data.keys():
-                    
-                    if Lecturer.objects.filter(name = prof_name).exists():
-                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+prof_name]
+                    if Lecturer.objects.filter(name = prof_name).filter(workload_scenario__id=scenario_id).exists():
+                        num_instances = form.cleaned_data['how_many_units'+str(prof.id)]
+                        id_of_assignment_type = request.POST['teaching_assignment_type'+str(prof.id)]
+
+                        assign = TeachingAssignment.objects.filter(assigned_module__id=module_id)\
+                                            .filter(assigned_lecturer__id=prof.id)
+                        supplied_flag_for_counting_in_wl = form.cleaned_data['counted_in_workload'+str(prof.id)]
                         counted_in_wl = True
                         if (supplied_flag_for_counting_in_wl == 'no') : counted_in_wl = False
 
-                        assign = TeachingAssignment.objects.filter(assigned_module__id=module_id)\
-                                                .filter(assigned_lecturer__name=prof_name)\
-                                                .filter(workload_scenario__id=scenario_id)
-                        if (assign.get().assigned_manually == True):#Manually assigned, we only care about toal hours
-                            supplied_number_of_hours = form.cleaned_data['total_hours'+prof_name]
-                            if supplied_number_of_hours is None: #If field is empty, we put to zero otherwise the following cast to integer will crash
-                                supplied_number_of_hours = 0;
-                            if (int(supplied_number_of_hours) > 0):
-                                assign.update(number_of_hours=int(supplied_number_of_hours),\
-                                               counted_towards_workload = counted_in_wl)
-                            else:
-                                assign.delete();
-                        else:#Assigned by week. We need to do the calculation
-                            
-                            supplied_weekly_lecture_hours = form.cleaned_data["weekly_lecture_hrs"+prof_name]
-                            if supplied_weekly_lecture_hours is None: supplied_weekly_lecture_hours = 0
-                            supplied_weekly_tutorial_hours = form.cleaned_data["weekly_tutorial_hrs"+prof_name]
-                            if supplied_weekly_tutorial_hours is None: supplied_weekly_tutorial_hours = 0
-                            supplied_num_tutorial_groups = form.cleaned_data["num_tut"+prof_name]
-                            if supplied_num_tutorial_groups is None: supplied_num_tutorial_groups = 0
-                            supplied_weeks_assigned = form.cleaned_data["num_weeks"+prof_name]
-                            if supplied_weeks_assigned is None: supplied_weeks_assigned = 0
-                            #Calculation of hours based on weekly info
-                            num_hrs = CalculateNumHoursBasedOnWeeklyInfo(int(supplied_weekly_lecture_hours), int(supplied_weekly_tutorial_hours),
-                                                                            int(supplied_weeks_assigned), int(supplied_num_tutorial_groups))
-                                
-                            if num_hrs > 0:
-                                assign.update( number_of_hours=int(num_hrs),\
-                                                number_of_weekly_lecture_hours = int(supplied_weekly_lecture_hours),\
-                                                number_of_weekly_tutorial_hours = int(supplied_weekly_tutorial_hours),\
-                                                number_of_tutorial_groups = int(supplied_num_tutorial_groups),\
-                                                number_of_weeks_assigned = int(supplied_weeks_assigned),\
-                                                counted_towards_workload = counted_in_wl)
-                            else:#0 hours, delete the assignment
-                                assign.delete()         
+                        assignment_type_obj= TeachingAssignmentType.objects.filter(id=id_of_assignment_type).get()
+                        num_hrs = assignment_type_obj.quantum_number_of_hours * num_instances
+
+                        if (int(num_hrs) > 0):
+                            assign.update(number_of_hours=int(num_hrs),\
+                                          counted_towards_workload = counted_in_wl, assignnment_type = assignment_type_obj)
+                        else:#If zero or negative, remove the assignment
+                            assign.delete()
+      
     #Otherwise do nothing
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_id}))
 

@@ -107,7 +107,7 @@
               <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
             </button>
           </div>
-          <form action="{% url 'workload_app:add_assignment' workloadscenario_id %}" method="post">
+          <form action="{% url 'workload_app:add_assignment' workloadscenario_id=workloadscenario_id  %}" method="post">
           {% csrf_token %}
               <div class="modal-body">
                     {{ add_teaching_assignment_form.as_p }}

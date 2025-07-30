@@ -510,18 +510,12 @@ class TeachingAssignment(models.Model):
     """
     assigned_module = models.ForeignKey(Module, on_delete=models.CASCADE)
     assigned_lecturer = models.ForeignKey(Lecturer,on_delete=models.CASCADE)
-    
-    number_of_weekly_lecture_hours = models.PositiveIntegerField(default=0)
-    number_of_weekly_tutorial_hours = models.PositiveIntegerField(default=0)
-    number_of_tutorial_groups = models.PositiveIntegerField(default=0)
-    number_of_weeks_assigned = models.PositiveIntegerField(default=13)
+    #The workload scenario this assignment belongs to
+    workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)  
 
     assignnment_type = models.ForeignKey(TeachingAssignmentType, null=True, on_delete=models.SET_NULL)
-    number_of_hours = models.PositiveIntegerField()
-    assigned_manually = models.BooleanField(default=True) #Whether or not the hours were assigned manually, or following weekly hours and policies
+    number_of_hours = models.PositiveIntegerField() #total number of hours 
     counted_towards_workload = models.BooleanField(default=True) #Whether or not this assignment will be counted towards workload. E.g. if it is remunerated separately, you can set it to False
-    #The workload scenario this assignment belongs to
-    workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)    
     
     def __str__(self):
         return "Module %s assigned to %s for %s hours in workload %s" % (\

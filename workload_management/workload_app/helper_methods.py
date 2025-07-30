@@ -2,11 +2,11 @@ import csv
 from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
                    WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear, TeachingAssignmentType
-from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModuleAssignmentForm,AddTeachingAssignmentForm,\
+from .forms import ProfessorForm, ModuleForm,AddTeachingAssignmentForm,EditLecturerTeachingAssignmentForm,EditModuleAssignmentForm,\
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm, TeachingAssignmentTypeForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
-                              csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
-                                DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME
+                        csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
+                        DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME
 
 
 #Helper method to calculate the table of workloads
@@ -303,7 +303,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
                                                        'employment_track' : prof.employment_track.id, \
                                                         'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
-            "edit_assign_form" : EditTeachingAssignmentForm(prof_id = prof.id),
+            "edit_assign_form" : EditLecturerTeachingAssignmentForm(prof_id = prof.id),
             "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
             "num_assigns_for_prof" : 0, #placeholder, will update later
             'is_external' : False
@@ -355,7 +355,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
                                           'sub_programme' : mod.sub_programme,\
                                           'secondary_sub_programme' : mod.secondary_sub_programme,\
                                           'fresh_record' : False}),
-            "edit_module_assign_form" : EditModuleAssignmentForm(module_id = mod.id),
+            "edit_module_assign_form" :  EditModuleAssignmentForm(module_id=mod.id),
             "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id),
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }

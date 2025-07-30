@@ -6,7 +6,7 @@ from .models import Lecturer, Module, TeachingAssignment, ModuleType, Employment
                    WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome,\
                    ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse, ProgrammeEducationalObjective,\
                    PEOSLOMapping
-from .forms import ProfessorForm, ModuleForm,EditTeachingAssignmentForm,EditModuleAssignmentForm,AddTeachingAssignmentForm,\
+from .forms import ProfessorForm, ModuleForm,AddTeachingAssignmentForm,\
                     EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
                               csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \

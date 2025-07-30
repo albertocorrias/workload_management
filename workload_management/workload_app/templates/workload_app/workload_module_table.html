@@ -64,8 +64,12 @@
 		     {% csrf_token %}
 		            <div class="modal-body">
                   {% for field in entry.edit_module_assign_form %}
-                    {% if field.is_hidden %}
-                      <p class="header_of_edit_form">{{ field.label }}</p>
+					{% if field.is_hidden %}
+				  		{% if "never_display" in field.label %}
+				  			<p></p>
+						{% else %}
+				  			<p class="header_of_edit_form">{{ field.label }}</p>
+						{% endif %}
                     {% else %}
 					<p><div style="display:inline;">{{ field.label }} {{ field }}</div></p>
                     {% endif %}

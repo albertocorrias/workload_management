@@ -10,6 +10,7 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
                     ModuleLearningOutcome, Survey,SurveyQuestionResponse, MLOPerformanceMeasure,\
                     CorrectiveAction,TeachingAssignmentType
 
+
 class ProfessorForm(ModelForm):
     """
     Form to add new lecturer (professor). Modelled after the Lecturer model.
@@ -706,36 +707,20 @@ class EditSurveySettingsForm(forms.Form):
 
 class AddTeachingAssignmentForm(forms.Form):
 
-    YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
+    #Note the never_display label checked by the template (it may display other hidden feilds...)
+    #type_of_assignment_form  = forms.ChoiceField(widget = forms.HiddenInput(), label = "never_display", choices=teaching_assignment_form_type, required=False)
 
-    manual_hours_yes_no = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_radio_buttons_style'}), \
-                                            choices=YES_NO_CHOICES, \
-                                            label = "Enter total hours manually?",
-                                            initial='no')
-    enter_number_of_weekly_lecture_hours = forms.IntegerField(min_value=0, max_value=1000, \
-                                           widget = forms.NumberInput(attrs={'class' : 'teaching_assignment_weekly_hours'}), required=False)
-    enter_number_of_weekly_tutorial_hours = forms.IntegerField(min_value=0, max_value=1000,\
-                                           widget = forms.NumberInput(attrs={'class' : 'teaching_assignment_weekly_hours'}), required=False)
-    enter_number_of_tutorial_groups = forms.IntegerField(min_value=0, max_value=1000,\
-                                           widget = forms.NumberInput(attrs={'class' : 'teaching_assignment_weekly_hours'}), required=False)
-    enter_number_of_weeks_assigned = forms.IntegerField(min_value=0, max_value=1000, \
-                                           widget = forms.NumberInput(attrs={'class' : 'teaching_assignment_weekly_hours'}), required=False)
-    
-    enter_number_of_total_hours_assigned = forms.IntegerField(min_value=0, max_value=100000, \
-                                            widget = forms.NumberInput(attrs={'class' : 'teaching_assignment_manual_hours'}), required=False)
-    
-    counted_towards_workload = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
-                                            choices=YES_NO_CHOICES, \
-                                            label = "Counted towards workload?",
-                                            initial='yes')
+    YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
 
     def __init__(self, *args, **kwargs):
         id_of_prof_involved = kwargs.pop('prof_id')
         id_of_mod_involved = kwargs.pop('module_id')
         workload_scenario_id = kwargs.pop('workloadscenario_id')
+
         super(AddTeachingAssignmentForm, self).__init__(*args, **kwargs)
-        self.fields['select_lecturer'] = forms.ModelChoiceField(queryset=Lecturer.objects.filter(workload_scenario__id = int(workload_scenario_id)).order_by('name'));
-        self.fields['select_module'] = forms.ModelChoiceField(label = "Select course",queryset=Module.objects.filter(scenario_ref__id = int(workload_scenario_id)));
+
+        self.fields['select_lecturer'] = forms.ModelChoiceField(queryset=Lecturer.objects.filter(workload_scenario__id = int(workload_scenario_id)).order_by('name'))
+        self.fields['select_module'] = forms.ModelChoiceField(label = "Select course",queryset=Module.objects.filter(scenario_ref__id = int(workload_scenario_id)))
 
         if str(id_of_prof_involved) != str(-1): # a bit dodgy, but comparing against -1 works to check if name is found
             self.fields['select_lecturer'].widget = forms.HiddenInput()#Hides the name alltogether
@@ -744,41 +729,21 @@ class AddTeachingAssignmentForm(forms.Form):
             self.fields['select_module'].widget = forms.HiddenInput()#Hides the module alltogether
             self.fields['select_module'].initial = Module.objects.get(id = id_of_mod_involved)
 
+        self.fields['teaching_assignment_type'] = forms.ModelChoiceField(label = "Select the type of teahcing assignment", queryset = TeachingAssignmentType.objects.all())
+        self.fields['how_many_units'] = forms.IntegerField(label="How many?", min_value=0, max_value=100000)
+        self.fields['counted_towards_workload'] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
+                                    choices=self.YES_NO_CHOICES, \
+                                    label = "Counted towards workload?",
+                                    initial='yes')
         field_order = [
             'select_lecturer',
             'select_module',
             'counted_towards_workload',
-            'manual_hours_yes_no',
-            'enter_number_of_weekly_lecture_hours',
-            'enter_number_of_weekly_tutorial_hours',
-            'enter_number_of_tutorial_groups',
-            'enter_number_of_weeks_assigned',
-            'enter_number_of_total_hours_assigned']
+            'teaching_assignment_type',
+            'how_many_units']
         self.order_fields(field_order=field_order)
 
-    #Override validation depending on radio button
-    def clean(self):
-        cleaned_data = super().clean()
-        manual_hours_wanted = cleaned_data.get("manual_hours_yes_no")
-        if (manual_hours_wanted == 'yes'):
-            num_tot_hrs = cleaned_data.get("enter_number_of_total_hours_assigned")
-            if  num_tot_hrs in EMPTY_VALUES:
-                raise ValidationError(_('Must supply number of hours'), code='missing_total_hrs')
-        if (manual_hours_wanted == 'no'):
-            num_lect_hrs = cleaned_data.get("enter_number_of_weekly_lecture_hours")
-            num_tut_hrs = cleaned_data.get("enter_number_of_weekly_tutorial_hours")
-            num_tut_grps = cleaned_data.get("enter_number_of_tutorial_groups")
-            num_weeks = cleaned_data.get("enter_number_of_weeks_assigned")
-            
-            if  num_lect_hrs in EMPTY_VALUES:
-                raise ValidationError(_('Must supply number of lecture hours'), code='missing_lect_hrs') 
-            if  num_tut_hrs in EMPTY_VALUES:
-                raise ValidationError(_('Must supply number of tutroial hours'), code='missing_tut_hrs')
-            if  num_tut_grps in EMPTY_VALUES:
-                raise ValidationError(_('Must supply number of tutorial groups'), code='missing_num_groups')
-            if  num_weeks in EMPTY_VALUES:
-                raise ValidationError(_('Must supply number of weeks'), code='missing_num_weeks')
-    
+
     class Media:
         """ 
         Media subclaas to associate the relevant JS. The JS hides/shwos the rlevant hours input field
@@ -794,44 +759,31 @@ class RemoveTeachingAssignmentForm(forms.Form):
         #Make user select teaching assignmemnts only in the current scenario
         self.fields['select_teaching_assignment_to_remove'] = forms.ModelChoiceField(queryset=TeachingAssignment.objects.filter(workload_scenario__id = workload_scenario_id))
 
-class EditTeachingAssignmentForm(forms.Form):
+class EditLecturerTeachingAssignmentForm(forms.Form):
     """
     This form is the one that changes a teaching assignment for a specific prof.
     The fields are all the assignments for that particular prof.
     """
+    YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
     def __init__(self, *args, **kwargs):
-        YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
-        prof_id = kwargs.pop('prof_id')
-        super(EditTeachingAssignmentForm, self).__init__(*args, **kwargs)
-        all_assignments_for_prof = TeachingAssignment.objects.filter(assigned_lecturer__id = prof_id)
         
-        for assign in all_assignments_for_prof:
-            module_assigned = assign.assigned_module.module_code
-            module_label = ' (' + module_assigned + ')'
-            full_label = "Assignments for " + module_assigned
-            self.fields[module_assigned] = forms.CharField(initial=module_assigned,widget=forms.HiddenInput(), label = full_label, required=False)
-            if (assign.assigned_manually == True):
-                num_hrs = assign.number_of_hours
-                self.fields['total_hours'+module_assigned] = forms.IntegerField(label='Total hours ' + module_label,initial=num_hrs, min_value=0, max_value=100000,\
-                                                                help_text=' hours', required=False)
-            else:#this assignment had been done through weekly assignments               
-                weekly_lect = assign.number_of_weekly_lecture_hours
-                weekly_tut = assign.number_of_weekly_tutorial_hours
-                num_tut = assign.number_of_tutorial_groups
-                num_weeks = assign.number_of_weeks_assigned
-                
-                self.fields['weekly_lecture_hrs'+module_assigned] = forms.IntegerField(label = 'Weekly lecture hrs' + module_label,min_value=0, max_value=1000, \
-                                                                      initial = weekly_lect, required=False)
-                self.fields['weekly_tutorial_hrs'+module_assigned] = forms.IntegerField(label = 'Weekly tutorial hrs' + module_label,min_value=0, max_value=1000, \
-                                                                      initial = weekly_tut, required=False)
-                self.fields['num_tut'+module_assigned] = forms.IntegerField(label = 'Number of tutorial grps' + module_label,min_value=0, max_value=1000, \
-                                                                      initial = num_tut, required=False)
-                self.fields['num_weeks'+module_assigned] = forms.IntegerField(label = 'Number of weeks' + module_label,min_value=0, max_value=1000, \
-                                                                      initial = num_weeks, required=False)
+        prof_id = kwargs.pop('prof_id')
+        super(EditLecturerTeachingAssignmentForm, self).__init__(*args, **kwargs)
+        
+        for assign in TeachingAssignment.objects.filter(assigned_lecturer__id = prof_id):
+            module_assigned = assign.assigned_module
+            #NOTE: the viw will check if the module code is within the keys
+            self.fields[module_assigned.module_code] = forms.CharField(initial=module_assigned.module_code,widget=forms.HiddenInput(), label = "Assignments for " + module_assigned.module_code, required=False)
+            self.fields['teaching_assignment_type'+str(module_assigned.id)] = forms.ModelChoiceField(label = "Type of teahcing assignment", \
+                                            queryset = TeachingAssignmentType.objects.all(), initial=assign.assignnment_type)
+            self.fields['how_many_units'+str(module_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
+                                                                                initial=int(assign.number_of_hours/assign.assignnment_type.quantum_number_of_hours))
+
+
             counted_flag = 'yes'
             if (assign.counted_towards_workload == False): counted_flag = 'no'                                       
-            self.fields['counted_in_workload'+module_assigned] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
-                                            choices=YES_NO_CHOICES, \
+            self.fields['counted_in_workload'+str(module_assigned.id)] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
+                                            choices=self.YES_NO_CHOICES, \
                                             label = "Counted towards workload?",
                                             initial=counted_flag)
 
@@ -840,41 +792,27 @@ class EditModuleAssignmentForm(forms.Form):
     This form is the one that chnages a teaching assignment for a specific module
     The fields are all the assignments for that particular module.
     """
+    YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
     def __init__(self, *args, **kwargs):
-        YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
         module_id = kwargs.pop('module_id')
         super(EditModuleAssignmentForm, self).__init__(*args, **kwargs)
-        all_assignments_for_module = TeachingAssignment.objects.filter(assigned_module__id = module_id)
+        
+        for assign in TeachingAssignment.objects.filter(assigned_module__id = module_id):
+                prof_assigned = assign.assigned_lecturer
+                #Keep the prof name in the keys (vuew will look for it).
+                self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
 
-        for assign in all_assignments_for_module: 
-            prof_assigned = assign.assigned_lecturer.name
-            prof_label = ' (' + prof_assigned + ')'
-            full_label = "Assignments for " + prof_assigned
-            self.fields[prof_assigned] = forms.CharField(initial=prof_assigned,widget=forms.HiddenInput(), label = full_label, required=False);
-
-            if (assign.assigned_manually == True):           
-                num_hrs = assign.number_of_hours
-                self.fields['total_hours'+prof_assigned] = forms.IntegerField(label='Total hours ' + prof_label,initial=num_hrs, min_value=0, max_value=100000,\
-                        help_text=' hours', required=False)
-            else:
-                weekly_lect = assign.number_of_weekly_lecture_hours
-                weekly_tut = assign.number_of_weekly_tutorial_hours
-                num_tut = assign.number_of_tutorial_groups
-                num_weeks = assign.number_of_weeks_assigned
-                self.fields['weekly_lecture_hrs'+prof_assigned] = forms.IntegerField(label = 'Weekly lecture hrs' + prof_label,min_value=0, max_value=1000, \
-                                                                      initial = weekly_lect, required=False)
-                self.fields['weekly_tutorial_hrs'+prof_assigned] = forms.IntegerField(label = 'Weekly tutorial hrs' + prof_label,min_value=0, max_value=1000, \
-                                                                      initial = weekly_tut, required=False)
-                self.fields['num_tut'+prof_assigned] = forms.IntegerField(label = 'Number of tutorial grps' + prof_label,min_value=0, max_value=1000, \
-                                                                      initial = num_tut, required=False)
-                self.fields['num_weeks'+prof_assigned] = forms.IntegerField(label = 'Number of weeks' + prof_label,min_value=0, max_value=1000, \
-                                                                      initial = num_weeks, required=False)
-            counted_flag = 'yes'
-            if (assign.counted_towards_workload == False): counted_flag = 'no' 
-            self.fields['counted_in_workload'+prof_assigned] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
-                                            choices=YES_NO_CHOICES, \
-                                            label = "Counted towards workload?",
-                                            initial=counted_flag)
+                self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ModelChoiceField(label = "Type of teahcing assignment", \
+                                                queryset = TeachingAssignmentType.objects.all(), initial=assign.assignnment_type)
+                self.fields['how_many_units'+str(prof_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
+                                                                                    initial=int(assign.number_of_hours/assign.assignnment_type.quantum_number_of_hours))
+                
+                counted_flag = 'yes'
+                if (assign.counted_towards_workload == False): counted_flag = 'no' 
+                self.fields['counted_in_workload'+str(prof_assigned.id)] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
+                                                choices=self.YES_NO_CHOICES, \
+                                                label = "Counted towards workload?",
+                                                initial=counted_flag)
     
 class ScenarioForm(ModelForm):
     #A flag to establish whether it's a new record or editing an existing one
@@ -900,7 +838,7 @@ class ScenarioForm(ModelForm):
                 self.fields['copy_from'].widget = forms.HiddenInput()#Hides the widget alltogether
 
     def clean(self):
-        cleaned_data = super().clean();
+        cleaned_data = super().clean()
         scen_name  = cleaned_data.get("label")
         #if it is a fesh record, we must make sure no duplicate names 
         if (cleaned_data.get("fresh_record") == True):
