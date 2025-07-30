@@ -10,16 +10,16 @@ div.workload_index_table {
 
 div.settings_table_container{
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: auto;
     grid-auto-rows: minmax(min-content, max-content);
-    width: 80%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding-top: 3vmin;
 }
 
 div.settings_table_item{
-    width: 75%;
+    width: 95%;
     margin-left: auto;
     margin-right: auto;
 }
