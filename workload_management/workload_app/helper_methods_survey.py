@@ -49,7 +49,12 @@ def DeteremineSurveyInitialValues(survey_id, module_code):
     surv_obj =  Survey.objects.filter(id = survey_id).get()
     labels = surv_obj.likert_labels.GetListOfLabels()
     question_index = 0
-    for resp in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
+    order_by_text = 'associated_slo__letter_associated'
+    if (surv_obj.survey_type == Survey.SurveyType.MLO):
+        order_by_text = 'associated_mlo__mlo_description'
+    if (surv_obj.survey_type == Survey.SurveyType.PEO):
+        order_by_text = 'associated_peo__letter_associated'
+    for resp in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).order_by(order_by_text):
         lo_id_involved = 0
         question_text = ''
         if (resp.associated_slo is not None):

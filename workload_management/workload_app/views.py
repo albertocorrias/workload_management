@@ -1190,8 +1190,8 @@ def accreditation(request,programme_id):
 
         #Table of slo and peo surveys
         slo_peo_survey_table = []
-        for srv in Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.SLO) | \
-                   Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.PEO):
+        for srv in Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.SLO).order_by('opening_date') | \
+                   Survey.objects.filter(programme_associated__id = programme_id).filter(survey_type = Survey.SurveyType.PEO).order_by('opening_date'):
             slo_peo_survey_table.append(CalculateSurveyDetails(srv.id))
         
         #Table for current programme settings
@@ -1690,7 +1690,13 @@ def survey_results(request,survey_id):
         questions_nps_messages = []
         questions_perc_positive = []
         questions_perc_non_negative = []
-        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id):
+
+        order_by_text = 'associated_slo__letter_associated'
+        if (survey_obj.survey_type == Survey.SurveyType.MLO):
+            order_by_text = 'associated_mlo__mlo_description'
+        if (survey_obj.survey_type == Survey.SurveyType.PEO):
+            order_by_text = 'associated_peo__letter_associated'
+        for response in SurveyQuestionResponse.objects.filter(parent_survey__id = survey_id).order_by(order_by_text):
             question_texts.append(response.question_text)
             shorter_question_texts.append(ShortenString(response.question_text,25))
 

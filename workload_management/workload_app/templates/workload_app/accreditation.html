@@ -23,7 +23,7 @@
           <form action="{% url 'workload_app:accreditation' programme_id %}" method="post">
             {% csrf_token %}
                   {{ select_report_years_form.as_p }}
-                  <button type="submit" class="btn btn-success">Genearte report</button>
+                  <button type="submit" class="btn btn-success">Generate report</button>
           </form> 
         </div>
         <hr>
