@@ -1963,7 +1963,6 @@ def add_module(request,workloadscenario_id):
             supplied_module_title = form.cleaned_data['module_title']
             supplied_type = form.cleaned_data['module_type']
             supplied_sem_offered = form.cleaned_data['semester_offered']
-            supplied_n_tutorial_groups = form.cleaned_data['number_of_tutorial_groups']
             supplied_programme_belongs_to = form.cleaned_data['primary_programme']
             supplied_compulsory_in_primary_programme = form.cleaned_data['compulsory_in_primary_programme']
             supplied_students_year_of_study = form.cleaned_data['students_year_of_study']
@@ -1978,7 +1977,7 @@ def add_module(request,workloadscenario_id):
             if (form.cleaned_data['total_hours']):
                 supplied_hours = form.cleaned_data['total_hours']
             else:
-                supplied_hours = CalculateTotalModuleHours(supplied_n_tutorial_groups, supplied_type)
+                supplied_hours = 39
             
             if (request.POST['fresh_record'] == 'False'):
                 #This is an update
@@ -1987,7 +1986,6 @@ def add_module(request,workloadscenario_id):
                                          total_hours=supplied_hours, \
                                          module_type =  supplied_type,\
                                          semester_offered = supplied_sem_offered,\
-                                         number_of_tutorial_groups = supplied_n_tutorial_groups,\
                                          primary_programme = supplied_programme_belongs_to,\
                                          compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                          students_year_of_study = supplied_students_year_of_study,\
@@ -2015,7 +2013,6 @@ def add_module(request,workloadscenario_id):
                                                 total_hours = supplied_hours,\
                                                 module_type = supplied_type,\
                                                 semester_offered = supplied_sem_offered,\
-                                                number_of_tutorial_groups = supplied_n_tutorial_groups,\
                                                 primary_programme = supplied_programme_belongs_to,\
                                                 compulsory_in_primary_programme = supplied_compulsory_in_primary_programme,\
                                                 students_year_of_study = supplied_students_year_of_study,\

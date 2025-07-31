@@ -83,7 +83,7 @@ class TestWorkloadScenarios(TestCase):
 
         #Add alecturer and a module to the default scenario
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': first_scenario.id}),{'name':'bob','fraction_appointment' : '0.5',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False,'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': "unused_module_code", 'module_title' : 'testing_unused', 'total_hours' : '234', 'module_type' : mod_type_1.id , 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': "unused_module_code", 'module_title' : 'testing_unused', 'total_hours' : '234', 'module_type' : mod_type_1.id , 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),1)
         self.assertEqual(Lecturer.objects.all().count(),1)
         self.assertEqual(TeachingAssignment.objects.all().count(),0)
@@ -110,7 +110,7 @@ class TestWorkloadScenarios(TestCase):
         #Add the same lecturer and module to the new scenario
         mod_code = 'AA111'
         self.client.post(reverse('workload_app:add_professor',  kwargs={'workloadscenario_id': new_scenario.get().id}),{'name':'bob','fraction_appointment' : '0.5',    'service_role' : new_role.id, 'employment_track': new_track.id, 'is_external': False, 'fresh_record' : True})
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': new_scenario.get().id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': new_scenario.get().id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         normal_lecturer = Lecturer.objects.filter(name = 'bob').filter(workload_scenario__label = new_label).get()
         module_1 = Module.objects.filter(module_code = mod_code).filter(scenario_ref__label = new_label).get()
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
@@ -186,9 +186,9 @@ class TestWorkloadScenarios(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301' #This thrid one is associated with "test_prog"
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_1, 'module_title' : 'testing', 'total_hours' : '2340', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_2, 'module_title' : 'testing2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_3, 'module_title' : 'testing3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'primary_programme' : first_prog.id, 'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_1, 'module_title' : 'testing', 'total_hours' : '2340', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_2, 'module_title' : 'testing2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': first_scenario.id}), {'module_code': mod_code_3, 'module_title' : 'testing3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'primary_programme' : first_prog.id, 'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         self.assertEqual(Module.objects.filter(primary_programme__isnull=True).count(),2)
         self.assertEqual(Module.objects.filter(primary_programme__isnull=False).count(),1)
@@ -431,9 +431,9 @@ class TestWorkloadScenarios(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id , 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id , 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         
         module_1 = Module.objects.filter(module_code = mod_code_1).get()
@@ -491,9 +491,9 @@ class TestWorkloadScenarios(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'number_of_tutorial_groups' : '2',  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module', kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         
         module_1_scen_1 = Module.objects.filter(module_code = mod_code_1).filter(scenario_ref__id=scenario_1.id).get()
         module_2_scen_1 = Module.objects.filter(module_code = mod_code_2).filter(scenario_ref__id=scenario_1.id).get()

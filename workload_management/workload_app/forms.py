@@ -84,7 +84,7 @@ class ModuleForm(ModelForm):
         This is a flag that differentiate when the form is for adding a 
         fresh record or when it is for editing an existing one
     """    
-    manual_hours_checked = forms.BooleanField(initial=False, required=False, label="Specify custom number of hours? (if left unticked, number of hours will be assigned automatically based on course type and number of tutorial groups)")    
+    #manual_hours_checked = forms.BooleanField(initial=False, required=False, label="Specify custom number of hours? (if left unticked, number of hours will be assigned automatically based on course type and number of tutorial groups)")    
 
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     
@@ -93,7 +93,7 @@ class ModuleForm(ModelForm):
         fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'students_year_of_study', 'primary_programme',
                   'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
                   'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
-                  'secondary_sub_programme','number_of_tutorial_groups', 'total_hours', ]
+                  'secondary_sub_programme', 'total_hours', ]
         labels = {'module_code' : _('Course code'),
                   'module_title' : _('Course title'),
                   'module_type' : _('Type of course'),
@@ -107,8 +107,7 @@ class ModuleForm(ModelForm):
                   'compulsory_in_tertiary_programme' : _('Compulsory in this third programme?'),
                   'sub_programme' : _('Sub-programme this course may be part of'),
                   'secondary_sub_programme' : _('Another sub-programme this course is also part of'),
-                  'number_of_tutorial_groups' : _('Number of tutorial groups'),
-                  'total_hours' : _('Total hours')
+                  'total_hours' : _('Total expected hours needed')
                   }
 
         widgets = {
@@ -141,15 +140,14 @@ class ModuleForm(ModelForm):
         if 'fresh_record' in self.initial: #Must check, otherwise a KeyError occurs (I suspect this is run a couple of times upon post)
             if (self.initial["fresh_record"] == False):
                 self.fields['module_code'].widget = forms.HiddenInput()#Hides the module code alltogether
-                self.fields['manual_hours_checked'].widget = forms.HiddenInput()#Hides the checkbox
             
-    class Media:
-        """ 
-        Media subclaas to associate the relevant JS. The JS hides/shwos the total hours field
-        according to the tickbox status
-        """
+    # class Media:
+    #     """ 
+    #     Media subclaas to associate the relevant JS. The JS hides/shwos the total hours field
+    #     according to the tickbox status
+    #     """
         
-        js = ('workload_app/module_form.js',)           
+    #     js = ('workload_app/module_form.js',)           
                 
 class RemoveModuleForm(forms.Form):
     """

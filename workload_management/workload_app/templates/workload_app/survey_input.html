@@ -14,7 +14,7 @@
 
     <div class="overall_container" id="overall_container_dept_page">
         <h4>Responses for survey: {{ parent_survey }}</h4>
-        Fill in, for the number of respondents choosing each choice.
+        Fill in the number of respondents choosing each choice.
         <hr>
         <form action="{% url 'workload_app:input_programme_survey_results' programme_id survey_id %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
@@ -29,15 +29,11 @@
               <hr>
               {% else %}
                 {% if 'Question text' in field.label %}
-                <br>
-                <br>
-                <br>
+                  <hr>
                 {% endif %}
                 {{ field.label }}: {{ field }}
-                {% if 'Targeted' in field.label %}
-                <br>
-                <br>
-                {% endif %}
+                  <br>
+                  <br>
               {% endif %}
               
             {% endfor %}

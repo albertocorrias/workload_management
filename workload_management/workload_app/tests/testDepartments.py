@@ -222,19 +222,19 @@ class TestDepartments(TestCase):
         core_mod = ModuleType.objects.create(type_name = "core", department=test_dept)
         elective_mod = ModuleType.objects.create(type_name = "elective", department=test_dept)
         mod_1_ug_sem_1 = Module.objects.create(module_code = "M1-UG-SEM1", module_title = "module 1 ug sem 1", scenario_ref = wl_scen,\
-                                               total_hours = 200, module_type = core_mod, semester_offered= Module.SEM_1, number_of_tutorial_groups=1,\
+                                               total_hours = 200, module_type = core_mod, semester_offered= Module.SEM_1, \
                                                primary_programme=ug_prog)
         mod_2_ug_sem_1 = Module.objects.create(module_code = "M2-UG-SEM1", module_title = "module 2 ug sem 1", scenario_ref = wl_scen,\
-                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_1, number_of_tutorial_groups=1,\
+                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_1, \
                                                primary_programme=ug_prog)
         mod_3_ug_sem_2 = Module.objects.create(module_code = "M3-UG-SEM2", module_title = "module 3 ug sem 2", scenario_ref = wl_scen,\
-                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_2, number_of_tutorial_groups=1,\
+                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_2, \
                                                primary_programme=ug_prog)
         mod_4_pg_sem_1 = Module.objects.create(module_code = "M4-PG-SEM1", module_title = "module 4 pg sem 1", scenario_ref = wl_scen,\
-                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_1, number_of_tutorial_groups=1,\
+                                               total_hours = 150, module_type = core_mod, semester_offered= Module.SEM_1, \
                                                primary_programme=pg_prog)
         mod_5_pg_sem_2 = Module.objects.create(module_code = "M5-PG-SEM2", module_title = "module 5 pg sem 2", scenario_ref = wl_scen,\
-                                               total_hours = 150, module_type = elective_mod, semester_offered= Module.SEM_2, number_of_tutorial_groups=1,\
+                                               total_hours = 150, module_type = elective_mod, semester_offered= Module.SEM_2, \
                                                primary_programme=pg_prog)
         #Assign modules to lecturers
         TeachingAssignment.objects.create(assigned_module = mod_1_ug_sem_1, assigned_lecturer = normal_lecturer, number_of_hours = 25, workload_scenario=wl_scen)

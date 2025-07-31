@@ -112,8 +112,7 @@ class TestProgramme(TestCase):
                                 'module_title' : 'testing', 
                                 'total_hours' : '234', 
                                 'module_type' : mod_type_1.id, 
-                                'semester_offered' : Module.UNASSIGNED, 
-                                'number_of_tutorial_groups' : '2',  
+                                'semester_offered' : Module.UNASSIGNED,  
                                 'primary_programme' : new_prog.id,
                                 'fresh_record' : True})
         self.assertEqual(Module.objects.all().count(),1)
@@ -130,8 +129,7 @@ class TestProgramme(TestCase):
                                 'module_title' : 'testing', 
                                 'total_hours' : '234', 
                                 'module_type' : mod_type_1.id, 
-                                'semester_offered' : Module.UNASSIGNED, 
-                                'number_of_tutorial_groups' : '2',  
+                                'semester_offered' : Module.UNASSIGNED,
                                 'primary_programme' : new_prog.id,
                                 'secondary_programme' : secondary_prog_obj.id,
                                 'fresh_record' : False})
@@ -257,7 +255,6 @@ class TestProgramme(TestCase):
                                 'total_hours' : '234', 
                                 'module_type' : mod_type_1.id, 
                                 'semester_offered' : Module.UNASSIGNED, 
-                                'number_of_tutorial_groups' : '2',  
                                 'primary_programme' : new_prog.id,
                                 'sub_programme' : new_sub_prog.id,
                                 'fresh_record' : True})
@@ -283,8 +280,7 @@ class TestProgramme(TestCase):
                                 'module_title' : 'testing', 
                                 'total_hours' : '234', 
                                 'module_type' : mod_type_1.id, 
-                                'semester_offered' : Module.UNASSIGNED, 
-                                'number_of_tutorial_groups' : '2',  
+                                'semester_offered' : Module.UNASSIGNED,
                                 'primary_programme' : new_prog.id,
                                 'sub_programme' : new_sub_prog.id,
                                 'secondary_sub_programme' : secondary_subprogramme_obj.id,

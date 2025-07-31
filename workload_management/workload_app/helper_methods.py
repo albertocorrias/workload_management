@@ -251,7 +251,6 @@ def HandleScenarioForm(form,department_id):
 # "module_lecturers" : a formatted string with the list of lecturers and, for each, the hours
 # "module_assigned_hours" : the total hours assigned forr this module
 # "module_type" : the module type
-# "num_tut_groups" : Number of tutroial groups
 # "module_hours_needed" :The hours needed as stored in the module object
 # "module_id" : the Id of the module
 # "mod_form" : a form to edit module details. initialised to the current module data
@@ -341,14 +340,12 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "module_assigned_hours_not_counted" : 0,   #Placeholder, will update later
             "module_type" : display_mod_type,
             "primary_programme" : display_prg_name,
-            "num_tut_groups" : mod.number_of_tutorial_groups,
             "module_hours_needed" : mod.total_hours,
             "module_id" : mod.id,
             "semester_offered" : mod.semester_offered,
             "mod_form" : ModuleForm(dept_id = mod.scenario_ref.dept.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
                                           'semester_offered' : mod.semester_offered,\
-                                          'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
                                           'primary_programme' : mod.primary_programme,\
                                           'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
                                           'students_year_of_study' : student_year_of_study,\
@@ -559,7 +556,6 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
             "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
                                           'semester_offered' : mod.semester_offered,\
-                                          'number_of_tutorial_groups' : mod.number_of_tutorial_groups, \
                                           'primary_programme' : mod.primary_programme,\
                                           'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
                                           'students_year_of_study' : student_year_of_study,\

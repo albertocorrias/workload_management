@@ -447,8 +447,6 @@ class Module(models.Model):
 
     #The semester in which it is offered
     semester_offered = models.CharField(max_length=300, choices=SEMESTER_OFFERED,default=UNASSIGNED)
-    #The number of student groups
-    number_of_tutorial_groups = models.PositiveIntegerField(default=1)
     
     #The primary programme this module belongs to
     primary_programme = models.ForeignKey(ProgrammeOffered, on_delete=models.SET_NULL, null=True, related_name="primary_programme")
