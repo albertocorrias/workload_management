@@ -141,24 +141,31 @@ else: #Not the production branch
                 *MIDDLEWARE,
             ]
             #############################################
-
-
         print('**** We are using devel settings  *****')
-    else:
-        db_to_use = 'db.sqlite3'
+    else: #Main branch - BME database
         DATABASES = {
             'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': str(BASE_DIR / db_to_use),
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME' : 'bme_db',
+                'USER': 'workload_user',
+                'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+                'HOST' : 'localhost',
+                'PORT' : '5432'
             }
-        }
-        print('**** We are using main settings  *****')
+            }
+        print('**** We are using main settings (BME) *****')
 
+#Old settings here - no need to use any longer
+# db_to_use = 'db.sqlite3'
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': str(BASE_DIR / db_to_use),
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
