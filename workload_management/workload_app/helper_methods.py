@@ -781,6 +781,8 @@ def RegularizeName(name):
     ret = ret.replace("/", "")
     return ret
 
+
+
 def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FILE):
     '''
     Method that reads in a file in csv format.

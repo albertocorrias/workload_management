@@ -66,6 +66,11 @@ def scenario_view(request, workloadscenario_id):
     
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
+    
+    for assign in TeachingAssignment.objects.all():
+        assign.assignnment_type = TeachingAssignmentType.objects.all().get()
+        assign.save()
+        
 
     dept_id = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept.id
     if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,dept_id, is_super_user = request.user.is_superuser)==False:

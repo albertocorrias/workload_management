@@ -500,6 +500,23 @@ class TeachingAssignmentType(models.Model):
         if (self.workload_valid_from is not None) and (self.workload_valid_until is not None):
             ret = "Applies to workloads from " + self.workload_valid_from.__str__() + " until " + self.workload_valid_until.__str__()
         return ret
+    
+    #Little convenience method to figure out whether the type is valid for that year.
+    # year is a number of the start year of the academic year under consideration
+    def IsValidForYear(self,year):
+        if (self.workload_valid_from is None):
+            if (self.workload_valid_until is None):
+                return True
+            if (self.workload_valid_until.start_year >= year):
+                return True
+            return False
+        if (self.workload_valid_until is None):#Note None-None case is above...no need here
+            if (self.workload_valid_from.start_year <= year):
+                return True
+            return False
+        if (self.workload_valid_from.start_year <= year and self.workload_valid_until.start_year >= year):
+            return True
+        return False
 
 class TeachingAssignment(models.Model):
     """
