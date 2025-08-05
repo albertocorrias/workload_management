@@ -27,7 +27,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
                               accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
-from .helper_methods import CalculateTotalModuleHours,CalculateWorkloadsIndexTable,\
+from .helper_methods import CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables, CalculateTeachingAssignmentTypesTable
@@ -67,11 +67,6 @@ def scenario_view(request, workloadscenario_id):
     user_menu  = DetermineUserMenu(request.user.id,request.user.is_superuser)
     user_homepage = DetermineUserHomePage(request.user.id,request.user.is_superuser)
     
-    for assign in TeachingAssignment.objects.all():
-        assign.assignnment_type = TeachingAssignmentType.objects.all().get()
-        assign.save()
-        
-
     dept_id = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept.id
     if request.user.is_authenticated == False or CanUserAdminThisDepartment(request.user.id,dept_id, is_super_user = request.user.is_superuser)==False:
         template = loader.get_template('workload_app/errors_page.html')

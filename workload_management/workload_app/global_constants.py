@@ -74,8 +74,7 @@ def CalculateNumHoursBasedOnWeeklyInfo(weekly_lect_hrs, weekly_tut_hrs, weeks_as
 #This is a quick method to retrun a string with a HEX color code for the
 # color of the "balance" column in the HTML table.
 #If more color-grading is needed, simply modify this method.
-def DetermineColorBasedOnBalance(bal):
-    ok_threshold = 15;#within +/-15 hours it is OK
+def DetermineColorBasedOnBalance(bal,ok_threshold=15):
     if (bal > -ok_threshold and bal < ok_threshold):
         return '#FFFFFF' #White as OK
     if (bal > ok_threshold):

@@ -10,6 +10,7 @@
             <th>Lecturers Assigned</th>
             <th>Total assigned hours</th>
             <th>Needed hours</th>
+			<th>Balance</th>
         </tr>
         </thead>
         <tbody>
@@ -26,6 +27,7 @@
                 <td>{{ entry.module_lecturers }} <div class="not_counted_assignments">{{ entry.module_lecturers_not_counted }}</div><!--teaching assignments for this module--></td>
                 <td>{{ entry.module_assigned_hours|floatformat }}</td><!-- Total hours assigned-->
                 <td>{{ entry.module_hours_needed|floatformat }}</td><!-- Hours needed as per module characteristics-->
+				<td style="background-color: {{ entry.module_hex_code }};">{{ entry.module_balance_hours|floatformat }}</td>
             </tr>
             {% endfor %}
         </tbody>

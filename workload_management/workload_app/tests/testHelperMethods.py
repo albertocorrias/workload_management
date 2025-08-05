@@ -9,7 +9,7 @@ from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadSce
                                 ProgrammeOffered, SubProgrammeOffered, UniversityStaff, Faculty, TeachingAssignmentType
 from workload_app.global_constants import MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL, ShortenString,\
     CalculateNumHoursBasedOnWeeklyInfo,csv_file_type,requested_table_type
-from workload_app.helper_methods import CalculateTotalModuleHours, RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
+from workload_app.helper_methods import RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
                                          CalculateDepartmentTable, CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                                          CalculateSingleModuleInformationTable, ReadInCsvFile
 
@@ -1305,9 +1305,6 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][1], 'No title') #Turned to a default because absent in file
         self.assertEqual(data_read[1][2], 'No title') #Turned to a default because absent in file
 
-    # #def test_module_hours_calculation_method(self):
-        
-    #     #self.assertAlmostEqual(CalculateTotalModuleHours(1,"not yet"),Decimal(39))
 
         
         

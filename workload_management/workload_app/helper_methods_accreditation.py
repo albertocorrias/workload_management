@@ -226,6 +226,7 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
                         MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo = mlo_mapping.mlo)):
             year_of_measurement = measure.academic_year.start_year #This is when the module was delivered and measureds
             
+            #We loop over all the modules with the correct code, offered the year of measurement AND checking for compulsory if needed
             module_qs = None
             if (compulsory_only==1):
                 module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(compulsory_in_primary_programme = True).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
@@ -235,7 +236,7 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
                 module_qs = Module.objects.filter(primary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL) |\
                             Module.objects.filter(secondary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)|\
                             Module.objects.filter(tertiary_programme__id=prog_involved.id).filter(module_code = mod_code).filter(scenario_ref__academic_year__start_year=year_of_measurement).filter(scenario_ref__status = WorkloadScenario.OFFICIAL)
-            #We loo over all the modules with the correct code, offered the year of measurement AND compulsory
+            
             for mod in module_qs:
                 year_of_study = mod.students_year_of_study
                 target_cohort = year_of_measurement - year_of_study + 1#Figure out targeted cohort

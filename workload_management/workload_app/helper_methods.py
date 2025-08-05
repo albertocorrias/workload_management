@@ -341,6 +341,8 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "module_type" : display_mod_type,
             "primary_programme" : display_prg_name,
             "module_hours_needed" : mod.total_hours,
+            "module_balance_hours" : 0,#placeholder, will update later
+            "module_hex_code" : '#FFFFFF', #White as default. May be updated later
             "module_id" : mod.id,
             "semester_offered" : mod.semester_offered,
             "mod_form" : ModuleForm(dept_id = mod.scenario_ref.dept.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
@@ -446,11 +448,15 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             mod_item["module_lecturers"] = 'No lecturer assigned  ' #Note the two spaces at the end, chopped off later
         if (mod_item["module_lecturers_not_counted"] == ''):
             mod_item["module_lecturers_not_counted"] = '  ' #Two spaces, chopped later
+        #Calculate balance
+        mod_item["module_balance_hours"] = mod_item["module_assigned_hours"] + mod_item["module_assigned_hours_not_counted"] - mod_item["module_hours_needed"]
+        mod_item["module_hex_code"] = DetermineColorBasedOnBalance(mod_item["module_balance_hours"],0.5)
+        
         #Chop off last two characters
         mod_item["module_lecturers"] = mod_item["module_lecturers"][:-2]
         mod_item["module_lecturers_not_counted"] = mod_item["module_lecturers_not_counted"][:-2]
 
-    #Store some quantities into DB for usage
+    #Store some quantities into DB for usage by other pages
     WorkloadScenario.objects.filter(id=workloadscenario_id).update(\
     total_hours_delivered = summary_data["total_hours_for_workload"],
     total_tfte_overall = summary_data["total_department_tFTE"],
@@ -840,7 +846,7 @@ def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FI
                     if len(row) > 1 : #Handle the appointment or module title
                         if (row[1] != '' and row[1].isspace() == False): #If not empty and not only spaces
                             if file_type == csv_file_type.PROFESSOR_FILE:
-                                if float(row[1]) > 1:
+                                if float(row[1]) > 1:#force to be 1 if the file has some strange number greater than 1
                                     second_info.append('1')
                                 else:
                                     second_info.append(row[1])
@@ -861,17 +867,4 @@ def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FI
     except:
         ret["errors"] = True
     
-    return ret
-
-def CalculateTotalModuleHours(num_tut_groups, mod_type):
-    ret = NUMBER_OF_WEEKS_PER_SEM*3
-    
-    if (mod_type.type_name=="Core"):
-        ret = NUMBER_OF_WEEKS_PER_SEM*2 + num_tut_groups*2*NUMBER_OF_WEEKS_PER_SEM
-    if (mod_type.type_name=="Faculty module"):
-        ret = num_tut_groups*NUMBER_OF_WEEKS_PER_SEM*2
-    if (mod_type.type_name == "EPP module"):    
-        ret = num_tut_groups*3*13+2*13
-    if (mod_type.type_name =="Design module"):    
-        ret = num_tut_groups*1*13+2*13
     return ret
