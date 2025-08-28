@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dbbackup',  # django-dbbackup <- requires pip install django-dbbackup
 ]
 
 MIDDLEWARE = [
@@ -164,6 +165,20 @@ else: #Not the production branch
 #     }
 # }
 
+STORAGES = {
+    'dbbackup': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'OPTIONS': {
+            'location': os.environ["LOCAL_DB_BACKUP_DIR"],
+        },
+    },
+    'default': {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    'staticfiles': {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
