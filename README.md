@@ -13,6 +13,7 @@ This Django app is intended to ehlp with management of workload within a departm
     * `pip install django`
     * `pip install psycopg2-binary`
     * `pip install django-dbbackup`
+    * `pip install django-crontab`
     * `pip install python-dotenv`
     * `pip install django-debug-toolbar` (for devel settings only)
 - Append, at the end of `my_virtual_environment/bin/activate` the definition of the follwoing variables
