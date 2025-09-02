@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dbbackup',  # django-dbbackup <- requires pip install django-dbbackup
+    'django_crontab'
 ]
 
 MIDDLEWARE = [
@@ -156,15 +157,8 @@ else: #Not the production branch
             }
         print('**** We are using main settings (BME) *****')
 
-#Old settings here - no need to use any longer
-# db_to_use = 'db.sqlite3'
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': str(BASE_DIR / db_to_use),
-#     }
-# }
-
+#############################
+# Backup-related settings
 STORAGES = {
     'dbbackup': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -179,6 +173,13 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+CRONTAB_COMMAND_SUFFIX = '2>&1'
+CRONJOBS = [
+    ('0 5 * * *', 'core.backup.backup_job', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
+]
+##############################
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
