@@ -176,7 +176,7 @@ STORAGES = {
 
 CRONTAB_COMMAND_SUFFIX = '2>&1'
 CRONJOBS = [
-    ('0 5 * * *', 'core.backup.backup_job', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
+    ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
 ]
 ##############################
 
