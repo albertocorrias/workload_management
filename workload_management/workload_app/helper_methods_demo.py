@@ -1,6 +1,7 @@
-import csv
+import os
 import random
 import datetime
+from pathlib import Path
 from curses.ascii import isspace
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, \
                    WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome,\
@@ -38,8 +39,9 @@ def clear_database():
 
 #This helper method helps creating a databse for the demo
 def populate_database():
-    clear_database()    
-    f = open("workload_app/others/random_names.txt", "r")
+    clear_database()
+    BASE_DIR = Path(__file__).resolve().parent.parent    
+    f = open(os.path.join(BASE_DIR, 'workload_app/others/random_names.txt'), "r")
     names = []
     for x in f:
         names.append(x.strip())

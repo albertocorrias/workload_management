@@ -18,6 +18,7 @@ import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 load_dotenv()
 
 ALLOWED_HOSTS = ['104.248.157.119','localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
@@ -155,30 +156,31 @@ else: #Not the production branch
                 'PORT' : '5432'
             }
             }
+        #############################
+        # Backup-related settings (for now, "main" is BME, which is the only one we want to backupo actually)
+        STORAGES = {
+            'dbbackup': {
+                'BACKEND': 'django.core.files.storage.FileSystemStorage',
+                'OPTIONS': {
+                    'location': os.environ["LOCAL_DB_BACKUP_DIR"],
+                },
+            },
+            'default': {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            'staticfiles': {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
+
+        CRONTAB_COMMAND_SUFFIX = '2>&1'
+        CRONJOBS = [
+            ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
+        ]
+        ##############################
         print('**** We are using main settings (BME) *****')
 
-#############################
-# Backup-related settings
-STORAGES = {
-    'dbbackup': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-        'OPTIONS': {
-            'location': os.environ["LOCAL_DB_BACKUP_DIR"],
-        },
-    },
-    'default': {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    'staticfiles': {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
 
-CRONTAB_COMMAND_SUFFIX = '2>&1'
-CRONJOBS = [
-    ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
-]
-##############################
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
