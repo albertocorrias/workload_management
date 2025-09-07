@@ -116,9 +116,9 @@ else: #Not the production branch
             DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
-                'NAME' : 'workload_db',
-                'USER': 'workload_user',
-                'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+                'NAME' : 'postgres',
+                'USER': 'postgres',
+                'PASSWORD' : 'postgres',#os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
                 'HOST' : '127.0.0.1',
                 'PORT' : '5432'
             }

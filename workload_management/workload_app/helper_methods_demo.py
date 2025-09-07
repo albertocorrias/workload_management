@@ -7,8 +7,6 @@ from .models import Lecturer, Module, TeachingAssignment, ModuleType, Employment
                    WorkloadScenario,Faculty,ProgrammeOffered,SubProgrammeOffered,Academicyear,StudentLearningOutcome,\
                    ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse, ProgrammeEducationalObjective,\
                    PEOSLOMapping, TeachingAssignmentType
-from .forms import ProfessorForm, ModuleForm,AddTeachingAssignmentForm,\
-                    EmplymentTrackForm, ServiceRoleForm,DepartmentForm, FacultyForm
 from .global_constants import DetermineColorBasedOnBalance, ShortenString, \
                               csv_file_type, requested_table_type, DEFAULT_TRACK_NAME, \
                                 DEFAULT_SERVICE_ROLE_NAME,NUMBER_OF_WEEKS_PER_SEM, DEFAULT_MODULE_TYPE_NAME

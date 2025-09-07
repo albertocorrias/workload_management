@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "devel" ]
 env:
-  DEVEL_DB_PASSWORD: "A*ino189"
   DJANGO_DEVEL_KEY: "cwrafo*vhbrweaoufvbsdvbnasdj-cnv"
 jobs:
   build:
@@ -24,8 +23,8 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: workload_user
-          POSTGRES_PASSWORD: A*ino189
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

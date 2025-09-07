@@ -43,9 +43,8 @@ class ProfessorForm(ModelForm):
                   'employment_track' : _('Select employment track'),
                   'service_role' : _('Select service role'),
                   'is_external' : _('Is this staff outside the Department?')}
-        widgets = {'employment_track' : forms.Select(choices=EmploymentTrack.objects.all()),
-                   'service_role' : forms.Select(choices=ServiceRole.objects.all()),
-                   'is_external' : forms.Select(choices=YES_NO_CHOICES)}
+                  
+        widgets = {'is_external' : forms.Select(choices=YES_NO_CHOICES)}
         
     def __init__(self, *args, **kwargs):
         super(ProfessorForm, self).__init__(*args, **kwargs)
@@ -175,7 +174,7 @@ class RemoveModuleForm(forms.Form):
         workload_scenario_id = kwargs.pop('workloadscenario_id')
         super(RemoveModuleForm, self).__init__(*args, **kwargs)
         self.fields['select_module_to_remove'] = forms.ModelChoiceField(label = 'Select the course to remove or retire',\
-                                                    queryset=Module.objects.filter(scenario_ref__id = workload_scenario_id));
+                                                    queryset=Module.objects.filter(scenario_ref__id = workload_scenario_id))
         self.fields['wipe_from_table'] = forms.ChoiceField(label = 'Remove course entirely from the list of courses?', required=False,\
                                                       choices=self.REMOVE_CHOICES)
     
