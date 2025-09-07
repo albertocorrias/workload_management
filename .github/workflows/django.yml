@@ -18,7 +18,7 @@ jobs:
         python-version: [3.11]
         db: [postgres]
         include:
-          - db.postgres
+          - db: postgres
             db_port: 5432
     services:
       postgres:
