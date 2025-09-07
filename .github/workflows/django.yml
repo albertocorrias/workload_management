@@ -47,6 +47,6 @@ jobs:
         DB: ${{ matrix.db }}
         DB_HOST: 127.0.0.1
         DB_PORT: ${{ matrix.db_port }}
-        DB_PASSWORD: A*ino189
+        DB_PASSWORD: postgres
       run: |
         python workload_management/manage.py test workload_app.tests
