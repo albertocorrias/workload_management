@@ -119,7 +119,7 @@ else: #Not the production branch
                 'NAME' : 'workload_db',
                 'USER': 'workload_user',
                 'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
-                'HOST' : 'localhost',
+                'HOST' : '127.0.0.1',
                 'PORT' : '5432'
             }
             }
