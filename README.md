@@ -1,3 +1,5 @@
+[![Django CI](https://github.com/albertocorrias/workload_management/actions/workflows/django.yml/badge.svg?branch=devel)](https://github.com/albertocorrias/workload_management/actions/workflows/django.yml)
+
 # Workload management and accreditation app
 
 ## Overall structure
