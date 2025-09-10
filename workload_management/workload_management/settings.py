@@ -90,6 +90,7 @@ for line in content:
     if line[0:4] == "ref:":
         branch_name = line.partition("refs/heads/")[2]
 
+TESTING=False
 
 if ('production' in str(branch_name)):
     #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
@@ -110,7 +111,7 @@ else: #Not the production branch
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
     if ('devel' in str(branch_name)): 
-        TESTING = True#"test" in sys.argv
+        TESTING = "test" in sys.argv
         if TESTING:
             #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
             DATABASES = {
