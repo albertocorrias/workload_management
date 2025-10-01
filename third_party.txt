@@ -1,16 +1,16 @@
-This application uses the following third party software:
+This application uses the following software which are included in the main repository
 
-1. Django version 3.2.9. Link https://www.djangoproject.com/start/overview/ .   License: BSD license (https://github.com/django/django/blob/main/LICENSE)	
+1. Bootstrap version 5. Link https://getbootstrap.com/. License: MIT license (https://github.com/twbs/bootstrap/blob/main/LICENSE)
 
-2. Bootstrap version 5. Link https://getbootstrap.com/. License: MIT license (https://github.com/twbs/bootstrap/blob/main/LICENSE)
+2. Bootsrap icons version 1.5.0. Link https://icons.getbootstrap.com/. License: MIT license (https://github.com/twbs/icons/blob/main/LICENSE.md).
 
-3. Bootsrap icons version 1.5.0. Link https://icons.getbootstrap.com/. License: MIT license (https://github.com/twbs/icons/blob/main/LICENSE.md).
+3. jQuery version 3.5.1. Link https://jquery.org. License: MIT license (https://jquery.org/license/)
 
-4. jQuery version 3.5.1. Link https://jquery.org. License: MIT license (https://jquery.org/license/)
+4. DataTables version 1.11.3 (including various extensions, all obtained from the same site). Link: https://datatables.net/. License: MIT license (https://datatables.net/license/mit)
 
-5. DataTables version 1.11.3 (including various extensions, all obtained from the same site). Link: https://datatables.net/. License: MIT license (https://datatables.net/license/mit)
+5. Chart.js version version 3.6.0. Link: https://www.chartjs.org/docs/latest/. License: MIT License (https://opensource.org/licenses/MIT)
 
-6. Chart.js version version 3.6.0. Link: https://www.chartjs.org/docs/latest/. License: MIT License (https://opensource.org/licenses/MIT)
+6. PDFmake 0.1.36 Link: http://pdfmake.org/. License: MIT License
 
 
 
