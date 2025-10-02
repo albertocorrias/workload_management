@@ -90,50 +90,48 @@ for line in content:
     if line[0:4] == "ref:":
         branch_name = line.partition("refs/heads/")[2]
 
-TESTING=False
-
+NEED_TOOLBAR = False #This will be picked up by URL, activate only in development, not testing
 if ('devel' in str(branch_name)):
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
-    if ('devel' in str(branch_name)): 
-        TESTING = "test" in sys.argv
-        if TESTING:
-            #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
-            DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME' : 'postgres',
-                'USER': 'postgres',
-                'PASSWORD' : 'postgres',#os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
-                'HOST' : '127.0.0.1',
-                'PORT' : '5432'
-            }
-            }
-        else: #NOT testing.  
-            DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'OPTIONS': {
-                    'service': 'workload_service',
-                    'passfile': '.pgpass',
-                },
-            }
-            }
-            
-            #add the debug toolbar, disabled for testing - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process 
-            INSTALLED_APPS = [
-                *INSTALLED_APPS,
-                "debug_toolbar",
-            ]
-            MIDDLEWARE = [
-                "debug_toolbar.middleware.DebugToolbarMiddleware",
-                *MIDDLEWARE,
-            ]
-            #############################################
-        print('**** We are using devel settings  *****')
+    TESTING = "test" in sys.argv
+    if TESTING:
+        #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
+        DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME' : 'postgres',
+            'USER': 'postgres',
+            'PASSWORD' : 'postgres',#os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+            'HOST' : '127.0.0.1',
+            'PORT' : '5432'
+        }
+        }
+    else: #NOT testing.  
+        DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'OPTIONS': {
+                'service': 'workload_service',
+                'passfile': '.pgpass',
+            },
+        }
+        }
+        NEED_TOOLBAR=True
+        #add the debug toolbar, disabled for testing - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process 
+        INSTALLED_APPS = [
+            *INSTALLED_APPS,
+            "debug_toolbar",
+        ]
+        MIDDLEWARE = [
+            "debug_toolbar.middleware.DebugToolbarMiddleware",
+            *MIDDLEWARE,
+        ]
+    print('**** We are using devel settings  *****')
 else:
-    DEBUG=False #unless developing, we trun DEBUG to false
+    TESTING=False #We only test in devel branch
     if ('production' in str(branch_name)):#the online branch, used for demo
+        DEBUG=False #DEBUG must be false in production
         #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
         SESSION_COOKIE_HTTPONLY = True
         SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
@@ -148,6 +146,7 @@ else:
         }
         print('**** We are using production settings  *****')
     if ('bme' in str(branch_name)):#the local BMe branch with the bMe database (locally installed only)
+        DEBUG=True #local deployment, run with runserver, turn on debug, no debug toolbar though
         SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
         DATABASES = {
             'default': {
@@ -181,9 +180,7 @@ else:
             ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
         ]
         ##############################
-        print('**** We are using main settings (BME) *****')
-
-
+        print('**** We are using settings for local BME database *****')
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
