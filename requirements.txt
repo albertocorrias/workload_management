@@ -1,5 +1,5 @@
 asgiref==3.9.1
-Django==5.2.6
+Django==5.2.7
 django-admin==2.0.2
 django-crontab==0.7.1
 django-dbbackup==5.0.0
