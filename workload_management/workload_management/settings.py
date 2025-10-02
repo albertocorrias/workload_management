@@ -92,22 +92,7 @@ for line in content:
 
 TESTING=False
 
-if ('production' in str(branch_name)):
-    #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
-    SESSION_COOKIE_HTTPONLY = True
-    SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
-    DEBUG = False #Must be false in proiduction!
-    DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'OPTIONS': {
-            'service': 'workload_service',
-            'passfile': '.pgpass',
-        },
-    }
-    }
-    print('**** We are using production settings  *****')
-else: #Not the production branch
+if ('devel' in str(branch_name)):
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
     if ('devel' in str(branch_name)): 
@@ -146,7 +131,24 @@ else: #Not the production branch
             ]
             #############################################
         print('**** We are using devel settings  *****')
-    else: #Main branch - BME database
+else:
+    DEBUG=False #unless developing, we trun DEBUG to false
+    if ('production' in str(branch_name)):#the online branch, used for demo
+        #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
+        SESSION_COOKIE_HTTPONLY = True
+        SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
+        DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'OPTIONS': {
+                'service': 'workload_service',
+                'passfile': '.pgpass',
+            },
+        }
+        }
+        print('**** We are using production settings  *****')
+    if ('bme' in str(branch_name)):#the local BMe branch with the bMe database (locally installed only)
+        SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
@@ -158,7 +160,7 @@ else: #Not the production branch
             }
             }
         #############################
-        # Backup-related settings (for now, "main" is BME, which is the only one we want to backupo actually)
+        # Backup-related settings (we only backup the BME database)
         STORAGES = {
             'dbbackup': {
                 'BACKEND': 'django.core.files.storage.FileSystemStorage',
