@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request'
             ],
         },
     },
@@ -90,7 +91,7 @@ for line in content:
     if line[0:4] == "ref:":
         branch_name = line.partition("refs/heads/")[2]
 
-NEED_TOOLBAR = False #This will be picked up by URL, activate only in development, not testing
+NEED_SILK_DEBUG = False #This will be picked up by URL, activate only in development, not testing
 if ('devel' in str(branch_name)):
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
@@ -117,16 +118,18 @@ if ('devel' in str(branch_name)):
             },
         }
         }
-        NEED_TOOLBAR=True
-        #add the debug toolbar, disabled for testing - see point 7 at https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#process 
+        NEED_SILK_DEBUG=True
+        #add the debug silk plugin, disabled for testing
         INSTALLED_APPS = [
             *INSTALLED_APPS,
-            "debug_toolbar",
+            'silk'
         ]
         MIDDLEWARE = [
-            "debug_toolbar.middleware.DebugToolbarMiddleware",
+            'silk.middleware.SilkyMiddleware',
             *MIDDLEWARE,
         ]
+        DISABLE_PANELS = {}
+
     print('**** We are using devel settings  *****')
 else:
     TESTING=False #We only test in devel branch
@@ -146,7 +149,7 @@ else:
         }
         print('**** We are using production settings  *****')
     if ('bme' in str(branch_name)):#the local BMe branch with the bMe database (locally installed only)
-        DEBUG=True #local deployment, run with runserver, turn on debug, no debug toolbar though
+        DEBUG=True #local deployment, run with runserver, turn on debug, need of silk debugging
         SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
         DATABASES = {
             'default': {

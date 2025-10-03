@@ -29,6 +29,5 @@ from django.conf.urls.static import static
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    if settings.TESTING == False and settings.NEED_TOOLBAR == True:
-        from debug_toolbar.toolbar import debug_toolbar_urls
-        urlpatterns += debug_toolbar_urls()
+    if settings.TESTING == False and settings.NEED_SILK_DEBUG == True:
+        urlpatterns.append(path('silk/', include('silk.urls', namespace='silk')))
