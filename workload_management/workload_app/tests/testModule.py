@@ -273,6 +273,9 @@ class TestModule(TestCase):
         ''' this test simulates the case where the user allows
             the default number of hours to be specified based on module type and 
             number of tutorial groups '''
+        
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
 
         new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)

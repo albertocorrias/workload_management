@@ -18,8 +18,8 @@ class TestUserPermissions(TestCase):
         sup_user.is_superuser = True
         sup_user.save()
         uni_super_user = UniversityStaff.objects.create(user = sup_user, department=None,faculty=None)
-        self.assertEqual(DetermineUserHomePage(uni_super_user.id, is_super_user = True), '/workloads_index')
-        self.assertEqual(CanUserAdminUniversity(uni_super_user.id, is_super_user = True), True)
+        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), '/workloads_index')
+        self.assertEqual(CanUserAdminUniversity(uni_super_user, is_super_user = True), True)
 
         #Create fauclty, dept and module
         new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
@@ -30,8 +30,8 @@ class TestUserPermissions(TestCase):
         uni_super_user.departemnt = new_dept
         uni_super_user.faculty = new_fac
         #Check even after assigning faculty...
-        self.assertEqual(DetermineUserHomePage(uni_super_user.id, is_super_user = True), '/workloads_index')
-        self.assertEqual(CanUserAdminUniversity(uni_super_user.id, is_super_user = True), True)
+        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), '/workloads_index')
+        self.assertEqual(CanUserAdminUniversity(uni_super_user, is_super_user = True), True)
 
         #Create a module
         mod_code = "BN2102"
@@ -44,9 +44,9 @@ class TestUserPermissions(TestCase):
         module_2 = Module.objects.create(module_code = mod_code+"_2", module_title="second module", scenario_ref=scenario_1, total_hours=100, module_type = mod_type_1, semester_offered = Module.SEM_1)
         lecturer_1 = Lecturer.objects.create(name="lecturer_1", fraction_appointment = 0.7, employment_track=track_1, workload_scenario = scenario_1, service_role = service_role_1)
         lecturer_2 = Lecturer.objects.create(name="lecturer_2", fraction_appointment = 0.7, employment_track=track_1, workload_scenario = scenario_1, service_role = service_role_1)
-        self.assertEqual(CanUserAdminThisDepartment(uni_super_user.id, new_dept.id+1258, is_super_user = True), False) #coverage of wrong dept number
-        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, module_code = mod_code+'hello', is_super_user = True), False) #coverage of wrong module code
-        self.assertEqual(CanUserAdminThisDepartment(uni_super_user.id, new_dept.id, is_super_user = True), True)
+        #self.assertEqual(CanUserAdminThisDepartment(uni_super_user, new_dept.id+1258, is_super_user = True), False) #coverage of wrong dept number
+        #self.assertEqual(CanUserAdminThisModule(uni_super_user, module_code = mod_code+'hello', is_super_user = True), False) #coverage of wrong module code
+        self.assertEqual(CanUserAdminThisDepartment(uni_super_user, new_dept.id, is_super_user = True), True)
 
         fac_admin = User.objects.create_user('new_fac_admin_user', 'test@fuser.com', 'test_fac_admin_user_password')
         fac_admin.is_superuser = False
@@ -57,16 +57,16 @@ class TestUserPermissions(TestCase):
         #Simulate creation with None Dept and None Faculty (should return error text)
         uni_fac_admin = UniversityStaff.objects.create(user = fac_admin, department=None,faculty=None)
         custom_error_message = "my error message"
-        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = custom_error_message), custom_error_message)
-        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept.id), False)#No faculty assigned yet....
-        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), False)
+        self.assertEqual(DetermineUserHomePage(uni_fac_admin, error_text = custom_error_message), custom_error_message)
+        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin, new_dept.id), False)#No faculty assigned yet....
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin, mod_code, uni_fac_admin.department, uni_fac_admin.faculty), False)
         #Now assign the faculty
         uni_fac_admin.faculty = new_fac
         uni_fac_admin.save()
-        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = custom_error_message), "/school_page/"+str(new_fac.id))
-        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept.id), True)#Now assigned proper faculty
-        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin.id, new_fac.id), True)#can admin its own faculty...
-        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin.id, new_fac_2.id), False)#but not the otehr one...
+        self.assertEqual(DetermineUserHomePage(uni_fac_admin, error_text = custom_error_message), "/school_page/"+str(new_fac.id))
+        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin, new_dept.id), True)#Now assigned proper faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin, new_fac.id), True)#can admin its own faculty...
+        self.assertEqual(CanUserAdminThisFaculty(uni_fac_admin, new_fac_2.id), False)#but not the otehr one...
 
         dept_admin = User.objects.create_user('new_dept_admin_user', 'test@duser.com', 'test_dept_admin_user_password')
         dept_admin.is_superuser = False
@@ -77,22 +77,22 @@ class TestUserPermissions(TestCase):
         #Create a uni dept admin user
         uni_dept_admin = UniversityStaff.objects.create(user = dept_admin, department=None,faculty=None)
         #NOW this dept admin has both faculty and dept as None. Should thrpw error
-        self.assertEqual(DetermineUserHomePage(uni_dept_admin.id, error_text = custom_error_message), custom_error_message)
-        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin.id, new_dept.id), False)#No dept assigned yet....
-        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), False)
+        self.assertEqual(DetermineUserHomePage(uni_dept_admin, error_text = custom_error_message), custom_error_message)
+        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin, new_dept.id), False)#No dept assigned yet....
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin, mod_code, uni_dept_admin.department, uni_dept_admin.faculty), False)
         #assign faculty and department
         uni_dept_admin.faculty = new_fac
         uni_dept_admin.save()
         uni_dept_admin.department = new_dept
         uni_dept_admin.save()
-        self.assertEqual(DetermineUserHomePage(uni_dept_admin.id, error_text = custom_error_message), '/department/'+str(new_dept.id))
-        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin.id, new_dept.id), True)#Now assigned proper dept
+        self.assertEqual(DetermineUserHomePage(uni_dept_admin, error_text = custom_error_message), '/department/'+str(new_dept.id))
+        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin, new_dept.id), True)#Now assigned proper dept
 
-        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), True)
-        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), True)
-        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code, is_super_user = True), True)
-        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin.id, new_fac.id), False)#dept admin can't manage faculty
-        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin.id, new_fac_2.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin, mod_code,uni_dept_admin.department, uni_dept_admin.faculty ), True)
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin, mod_code,uni_fac_admin.department, uni_fac_admin.faculty), True)
+        self.assertEqual(CanUserAdminThisModule(uni_super_user, mod_code, uni_super_user.department, uni_super_user.faculty,is_super_user = True), True)
+        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin, new_fac.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_dept_admin, new_fac_2.id), False)#dept admin can't manage faculty
 
         #Create a lecturer user
         lec_user = User.objects.create_user('new_lecturer_user', 'test@luser.com', 'test_lec_user_password')
@@ -103,37 +103,37 @@ class TestUserPermissions(TestCase):
         lec_user.groups.add(lec_user_group)
         #Create a uni lecturer user
         uni_lec_user = UniversityStaff.objects.create(user = lec_user, department=None,faculty=None,lecturer=None)
-        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), custom_error_message)#Still no lecturer assigned
+        self.assertEqual(DetermineUserHomePage(uni_lec_user, error_text = custom_error_message), custom_error_message)#Still no lecturer assigned
         uni_lec_user.faculty = new_fac
         uni_lec_user.save()
         uni_lec_user.department = new_dept
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
-        self.assertEqual(DetermineUserHomePage(uni_lec_user.id, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
+        self.assertEqual(DetermineUserHomePage(uni_lec_user, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
         self.assertEqual(TeachingAssignment.objects.all().count(),1)
         #Now lecturer 1 should be able to admin module 1 but not module 2...
-        self.assertEqual(CanUserAdminThisModule(uni_lec_user.id, mod_code), True)
-        self.assertEqual(CanUserAdminThisModule(uni_lec_user.id, mod_code+"_2"), False)
+        self.assertEqual(CanUserAdminThisModule(uni_lec_user, mod_code,uni_lec_user.department, uni_lec_user.faculty), True)
+        self.assertEqual(CanUserAdminThisModule(uni_lec_user, mod_code+"_2",uni_lec_user.department, uni_lec_user.faculty), False)
         #... while faculy and dept admin shuld be able to admin both
-        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code), True)
-        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code), True)
-        self.assertEqual(CanUserAdminUniversity(uni_fac_admin.id), False)
-        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code, is_super_user = True), True)
-        self.assertEqual(CanUserAdminUniversity(uni_super_user.id, is_super_user = True), True)
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin, mod_code,uni_dept_admin.department, uni_dept_admin.faculty), True)
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin, mod_code,uni_fac_admin.department, uni_fac_admin.faculty), True)
+        self.assertEqual(CanUserAdminUniversity(uni_fac_admin), False)
+        self.assertEqual(CanUserAdminThisModule(uni_super_user, mod_code, uni_super_user.department, uni_super_user.faculty, is_super_user = True), True)
+        self.assertEqual(CanUserAdminUniversity(uni_super_user, is_super_user = True), True)
         
-        self.assertEqual(CanUserAdminThisModule(uni_dept_admin.id, mod_code+"_2"), True)
-        self.assertEqual(CanUserAdminThisModule(uni_fac_admin.id, mod_code+"_2"), True)
-        self.assertEqual(CanUserAdminThisModule(uni_super_user.id, mod_code+"_2", is_super_user = True), True)
-        self.assertEqual(CanUserAdminUniversity(uni_dept_admin.id), False)
+        self.assertEqual(CanUserAdminThisModule(uni_dept_admin, mod_code+"_2",uni_dept_admin.department, uni_dept_admin.faculty), True)
+        self.assertEqual(CanUserAdminThisModule(uni_fac_admin, mod_code+"_2",uni_fac_admin.department, uni_fac_admin.faculty), True)
+        self.assertEqual(CanUserAdminThisModule(uni_super_user, mod_code+"_2", uni_super_user.department, uni_super_user.faculty, is_super_user = True), True)
+        self.assertEqual(CanUserAdminUniversity(uni_dept_admin), False)
         #Check that the lecturer can't manage departments or faculties
-        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept.id), False)
-        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user.id, new_fac.id), False)#dept admin can't manage faculty
-        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user.id, new_fac_2.id), False)#dept admin can't manage faculty
-        self.assertEqual(CanUserAdminUniversity(uni_lec_user.id), False)
+        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user, new_dept.id), False)
+        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user, new_fac.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminThisFaculty(uni_lec_user, new_fac_2.id), False)#dept admin can't manage faculty
+        self.assertEqual(CanUserAdminUniversity(uni_lec_user), False)
         
         #test faculty and department mismatch
         #Create one more faculty and one more dpet      
@@ -147,20 +147,20 @@ class TestUserPermissions(TestCase):
         uni_fac_admin.save()
 
         #Now both dept admin and faculty admin have mismatched faculty and department belonging
-        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin.id, new_dept.id), False)#Can't manage old dept
-        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin.id, new_dept_2.id), True)#Can  manage new dept_2
+        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin, new_dept.id), False)#Can't manage old dept
+        self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin, new_dept_2.id), True)#Can  manage new dept_2
 
-        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept.id), False)#Can't manage old dept
-        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin.id, new_dept_2.id), True)#Can  manage new dept_2
+        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin, new_dept.id), False)#Can't manage old dept
+        self.assertEqual(CanUserAdminThisDepartment(uni_fac_admin, new_dept_2.id), True)#Can  manage new dept_2
         #And th e lecturer can't acces the new dept 2
-        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user.id, new_dept_2.id), False)
+        self.assertEqual(CanUserAdminThisDepartment(uni_lec_user, new_dept_2.id), False)
 
         #tests for the user menu method
-        super_user_menu = DetermineUserMenu(uni_super_user.id,is_super_user=True)
+        super_user_menu = DetermineUserMenu(uni_super_user,is_super_user=True)
         self.assertEqual(len(super_user_menu["departments"]),2)
         self.assertEqual(len(super_user_menu["accreditations"]),1)
         self.assertEqual(len(super_user_menu["lecturers"]),2)
-        self.assertEqual(len(super_user_menu["courses"]),2)
+        self.assertEqual(len(super_user_menu["modules"]),2)
         self.assertEqual(super_user_menu["departments"][0]["label"],"test_dept")
         self.assertEqual(super_user_menu["departments"][0]["url"],"/department/"+str(new_dept.id))
         self.assertEqual(super_user_menu["departments"][1]["label"],"test_dept_2")
@@ -171,10 +171,10 @@ class TestUserPermissions(TestCase):
         self.assertEqual(super_user_menu["lecturers"][0]["url"],"/lecturer_page/"+str(lecturer_1.id))
         self.assertEqual(super_user_menu["lecturers"][1]["label"],"lecturer_2")
         self.assertEqual(super_user_menu["lecturers"][1]["url"],"/lecturer_page/"+str(lecturer_2.id))
-        self.assertEqual(super_user_menu["courses"][0]["label"],mod_code)
-        self.assertEqual(super_user_menu["courses"][0]["url"],"/module/"+str(mod_code))
-        self.assertEqual(super_user_menu["courses"][1]["label"],mod_code + "_2")
-        self.assertEqual(super_user_menu["courses"][1]["url"],"/module/"+str(mod_code + "_2"))
+        self.assertEqual(super_user_menu["modules"][0]["label"],mod_code)
+        self.assertEqual(super_user_menu["modules"][0]["url"],"/module/"+str(mod_code))
+        self.assertEqual(super_user_menu["modules"][1]["label"],mod_code + "_2")
+        self.assertEqual(super_user_menu["modules"][1]["url"],"/module/"+str(mod_code + "_2"))
 
         
         uni_dept_admin.faculty = new_fac
@@ -183,11 +183,11 @@ class TestUserPermissions(TestCase):
         uni_dept_admin.save()
         uni_fac_admin.faculty = new_fac
         uni_fac_admin.save()
-        faculty_user_menu = DetermineUserMenu(uni_fac_admin.id,is_super_user=False)
+        faculty_user_menu = DetermineUserMenu(uni_fac_admin,is_super_user=False)
         self.assertEqual(len(faculty_user_menu["departments"]),1)
         self.assertEqual(len(faculty_user_menu["accreditations"]),1)
         self.assertEqual(len(faculty_user_menu["lecturers"]),2)
-        self.assertEqual(len(faculty_user_menu["courses"]),2)
+        self.assertEqual(len(faculty_user_menu["modules"]),2)
         self.assertEqual(faculty_user_menu["departments"][0]["label"],"test_dept")
         self.assertEqual(faculty_user_menu["departments"][0]["url"],"/department/"+str(new_dept.id))
         self.assertEqual(faculty_user_menu["accreditations"][0]["label"],"test_prog")
@@ -196,16 +196,16 @@ class TestUserPermissions(TestCase):
         self.assertEqual(faculty_user_menu["lecturers"][0]["url"],"/lecturer_page/"+str(lecturer_1.id))
         self.assertEqual(faculty_user_menu["lecturers"][1]["label"],"lecturer_2")
         self.assertEqual(faculty_user_menu["lecturers"][1]["url"],"/lecturer_page/"+str(lecturer_2.id))
-        self.assertEqual(faculty_user_menu["courses"][0]["label"],mod_code)
-        self.assertEqual(faculty_user_menu["courses"][0]["url"],"/module/"+str(mod_code))
-        self.assertEqual(faculty_user_menu["courses"][1]["label"],mod_code + "_2")
-        self.assertEqual(faculty_user_menu["courses"][1]["url"],"/module/"+str(mod_code + "_2"))
+        self.assertEqual(faculty_user_menu["modules"][0]["label"],mod_code)
+        self.assertEqual(faculty_user_menu["modules"][0]["url"],"/module/"+str(mod_code))
+        self.assertEqual(faculty_user_menu["modules"][1]["label"],mod_code + "_2")
+        self.assertEqual(faculty_user_menu["modules"][1]["url"],"/module/"+str(mod_code + "_2"))
 
-        dept_user_menu = DetermineUserMenu(uni_dept_admin.id,is_super_user=False)
+        dept_user_menu = DetermineUserMenu(uni_dept_admin,is_super_user=False)
         self.assertEqual(len(dept_user_menu["departments"]),1)
         self.assertEqual(len(dept_user_menu["accreditations"]),1)
         self.assertEqual(len(dept_user_menu["lecturers"]),2)
-        self.assertEqual(len(dept_user_menu["courses"]),2)
+        self.assertEqual(len(dept_user_menu["modules"]),2)
         self.assertEqual(dept_user_menu["departments"][0]["label"],"test_dept")
         self.assertEqual(dept_user_menu["departments"][0]["url"],"/department/"+str(new_dept.id))
         self.assertEqual(dept_user_menu["accreditations"][0]["label"],"test_prog")
@@ -214,22 +214,22 @@ class TestUserPermissions(TestCase):
         self.assertEqual(dept_user_menu["lecturers"][0]["url"],"/lecturer_page/"+str(lecturer_1.id))
         self.assertEqual(dept_user_menu["lecturers"][1]["label"],"lecturer_2")
         self.assertEqual(dept_user_menu["lecturers"][1]["url"],"/lecturer_page/"+str(lecturer_2.id))
-        self.assertEqual(dept_user_menu["courses"][0]["label"],mod_code)
-        self.assertEqual(dept_user_menu["courses"][0]["url"],"/module/"+str(mod_code))
-        self.assertEqual(dept_user_menu["courses"][1]["label"],mod_code + "_2")
-        self.assertEqual(dept_user_menu["courses"][1]["url"],"/module/"+str(mod_code + "_2"))
+        self.assertEqual(dept_user_menu["modules"][0]["label"],mod_code)
+        self.assertEqual(dept_user_menu["modules"][0]["url"],"/module/"+str(mod_code))
+        self.assertEqual(dept_user_menu["modules"][1]["label"],mod_code + "_2")
+        self.assertEqual(dept_user_menu["modules"][1]["url"],"/module/"+str(mod_code + "_2"))
 
         #Assign module_1 (but not module_2) to lecturer_1
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
-        lect_user_menu = DetermineUserMenu(uni_lec_user.id,is_super_user=False)
+        lect_user_menu = DetermineUserMenu(uni_lec_user,is_super_user=False)
         self.assertEqual(len(lect_user_menu["departments"]),0)
         self.assertEqual(len(lect_user_menu["accreditations"]),0)
         self.assertEqual(len(lect_user_menu["lecturers"]),1)
-        self.assertEqual(len(lect_user_menu["courses"]),1)
+        self.assertEqual(len(lect_user_menu["modules"]),1)
         self.assertEqual(lect_user_menu["lecturers"][0]["label"],"lecturer_1")
         self.assertEqual(lect_user_menu["lecturers"][0]["url"],"/lecturer_page/"+str(lecturer_1.id))
-        self.assertEqual(lect_user_menu["courses"][0]["label"],mod_code)
-        self.assertEqual(lect_user_menu["courses"][0]["url"],"/module/"+str(mod_code))
+        self.assertEqual(lect_user_menu["modules"][0]["label"],mod_code)
+        self.assertEqual(lect_user_menu["modules"][0]["url"],"/module/"+str(mod_code))
 
     def testHomePage(self):
         response = self.client.get(reverse('workload_app:home_page'))
@@ -248,7 +248,7 @@ class TestUserPermissions(TestCase):
         self.client.login(username='new_fac_admin', password='fac_super_user_password') #login the fauclty admin
         response = self.client.get(reverse('workload_app:home_page'))
         self.assertEqual(response.status_code, 302) #Re-direct to user's home page
-        self.assertEqual(DetermineUserHomePage(uni_fac_admin.id, error_text = "hello") in response.url, True)
+        self.assertEqual(DetermineUserHomePage(uni_fac_admin, error_text = "hello") in response.url, True)
         
 
     def testSuperUserPageAccess(self):

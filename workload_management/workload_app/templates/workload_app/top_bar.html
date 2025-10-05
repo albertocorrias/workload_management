@@ -48,7 +48,7 @@
               Courses
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-              {% for course in user_menu.courses %}
+              {% for course in user_menu.modules %}
               <li><a class="dropdown-item" href="/workload_app{{course.url}}">{{ course.label }}</a></li>
               {% endfor %}
             </ul>

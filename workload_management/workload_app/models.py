@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from .global_constants import ShortenString
 import datetime
 import math
@@ -523,8 +524,8 @@ class TeachingAssignment(models.Model):
     This is the key model the workload calculations are based upon. It essentially
     captures when one lecturer is assigned to teach one module in a given workload scenario.
     """
-    assigned_module = models.ForeignKey(Module, on_delete=models.CASCADE)
-    assigned_lecturer = models.ForeignKey(Lecturer,on_delete=models.CASCADE)
+    assigned_module = models.ForeignKey(Module, on_delete=models.CASCADE,related_name="module")
+    assigned_lecturer = models.ForeignKey(Lecturer,on_delete=models.CASCADE, related_name="lecturer")
     #The workload scenario this assignment belongs to
     workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)  
 
@@ -772,12 +773,20 @@ class CorrectiveAction(models.Model):
 class UniversityStaff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     #The department of this staff
-    department = models.ForeignKey(Department, null=True, on_delete=models.SET_NULL)
+    department = models.ForeignKey(Department, null=True, on_delete=models.SET_NULL, related_name="user_dept")
     #The faculty of this staff
-    faculty = models.ForeignKey(Faculty, null=True, on_delete=models.SET_NULL)
+    faculty = models.ForeignKey(Faculty, null=True, on_delete=models.SET_NULL, related_name="user_faculty")
     #The lecturer associated. Used only for users in group "lecturers"
-    lecturer = models.ForeignKey(Lecturer, null=True, on_delete=models.SET_NULL, blank=True)
-
-#department admin EQ-fnqS48ru~Gm:
-#faculty admin qPB7UaRSw)M^]a6
-#lecturer (contador) qPB7UaRSw)M^]a6
+    lecturer = models.ForeignKey(Lecturer, null=True, on_delete=models.SET_NULL, blank=True, related_name="user_lecturer")
+    #homepage for this user, as a relative URL 
+    homepage = models.CharField(max_length=1000, default='')
+    #Departments accessible to this user
+    departments_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
+    #modules accessible to this user
+    modules_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
+    #lecturers accessible to this user
+    lecturers_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
+    #programmes accessible to this user
+    programmes_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
+    #whether ot not the menu is populated
+    is_menu_populated = models.BooleanField(default=False)

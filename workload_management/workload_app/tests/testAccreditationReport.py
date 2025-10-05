@@ -1824,7 +1824,6 @@ class TestAccreditationReport(TestCase):
         response = self.client.get(reverse('workload_app:accreditation_report',  kwargs={'programme_id': prog_to_accredit.id, 
                                                                                          'start_year' : 2020, 'end_year':2021, 'compulsory_only':1}))
         self.assertEqual(response.status_code, 200) #No issues
-
         self.assertEqual(response.context['programme_id'], prog_to_accredit.id)
         self.assertEqual(response.context['programme_name'], prog_to_accredit.programme_name)
         self.assertEqual(response.context['start_year'], '2020/2021')

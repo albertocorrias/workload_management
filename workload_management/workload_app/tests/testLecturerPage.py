@@ -8,7 +8,7 @@ from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Facult
     ModuleType, SubProgrammeOffered, Lecturer, Module, TeachingAssignment,ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure, CorrectiveAction, UniversityStaff
 
 from workload_app.report_methods import GetLastNYears,CalculateProfessorIndividualWorkload,CalculateProfessorChartData
-
+from workload_app.helper_methods_users import DetermineUserMenu
 class TestLecturerPage(TestCase):
     def setup_user(self):
         #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
@@ -28,7 +28,7 @@ class TestLecturerPage(TestCase):
         #Cover the case of a random lecturer_id that does not exist
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': 345}))
         self.assertEqual(response.status_code, 200) #no issue
-        self.assertEqual(response.context["error_message"], "No such lecturer exists")
+        self.assertEqual(response.context["error_message"], "Access forbidden. User has no access to this page")
         
         acad_year_1 = Academicyear.objects.create(start_year=years["years"][0])
         acad_year_2 = Academicyear.objects.create(start_year=years["years"][1])
@@ -83,10 +83,14 @@ class TestLecturerPage(TestCase):
         TeachingAssignment.objects.create(assigned_module = module_3, assigned_lecturer = lecturer_3, assignnment_type=assignment_type, number_of_hours = 45, workload_scenario=scenario_3)
         TeachingAssignment.objects.create(assigned_module = module_4, assigned_lecturer = lecturer_4, assignnment_type=assignment_type, number_of_hours = 95, workload_scenario=scenario_4)
         TeachingAssignment.objects.create(assigned_module = module_5, assigned_lecturer = anot_lect, assignnment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_5)
+        
+        user_oobj = UniversityStaff.objects.filter(user__username='test_user').get()
+        menu = DetermineUserMenu(user_oobj, is_super_user=True,force_population=True)
 
         #Now call lecturer page
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': lecturer_1.id}))
         self.assertEqual(response.status_code, 200) #no issues
+        print(response.context)
         self.assertEqual(response.context["lec_name"], "lecturer_1")
         summary_wl_table = response.context["summary_wl_table_individual"]
         self.assertEqual(len(summary_wl_table), 3)#one assigment plus 2 extra lines

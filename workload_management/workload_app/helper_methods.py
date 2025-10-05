@@ -286,7 +286,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
     }
     all_lecturer_items = []
     all_mod_items = []
-    for prof in Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name'):
+    for prof in Lecturer.objects.select_related("employment_track","service_role").filter(workload_scenario__id=workloadscenario_id).order_by('name'):
         prof_tfte =prof.fraction_appointment *  prof.employment_track.track_adjustment * prof.service_role.role_adjustment
         lecturer_item  = {
             "prof_name" : prof.name,
@@ -322,7 +322,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
 
 
         
-    for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
+    for mod in Module.objects.select_related("module_type","primary_programme", "secondary_programme","sub_programme", "secondary_sub_programme").filter(scenario_ref__id = workloadscenario_id):
         student_year_of_study=0
         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
         display_mod_type = DEFAULT_MODULE_TYPE_NAME
@@ -360,7 +360,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }
         all_mod_items.append(single_mod_item)
-    for assign in TeachingAssignment.objects.filter(workload_scenario__id = workloadscenario_id):
+    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module").filter(workload_scenario__id = workloadscenario_id):
         lec_id = assign.assigned_lecturer.id
         mod_id = assign.assigned_module.id
         num_hours = assign.number_of_hours
