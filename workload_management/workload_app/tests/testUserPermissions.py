@@ -486,7 +486,7 @@ class TestUserPermissions(TestCase):
         #Lecturer page of another lecturer from another department of another faculty - SHOULD BE NO ACCESS
         response = self.client.get(reverse('workload_app:lecturer_page', kwargs={'lecturer_id': lecturer_2.id}))
         self.assertEqual(response.status_code, 200) #No issues
-        self.assertEqual(('error_message' in response.context), True)
+        self.assertEqual(('Access forbidden' in response.text), True)
 
         #Survey results page access
         response = self.client.get(reverse('workload_app:survey_results', kwargs={'survey_id': slo_survey_1.id}))

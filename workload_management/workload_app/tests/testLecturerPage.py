@@ -28,7 +28,7 @@ class TestLecturerPage(TestCase):
         #Cover the case of a random lecturer_id that does not exist
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': 345}))
         self.assertEqual(response.status_code, 200) #no issue
-        self.assertEqual(response.context["error_message"], "Access forbidden. User has no access to this page")
+        self.assertEqual(response.context["error_message"], "No such lecturer exists")
         
         acad_year_1 = Academicyear.objects.create(start_year=years["years"][0])
         acad_year_2 = Academicyear.objects.create(start_year=years["years"][1])
@@ -90,7 +90,6 @@ class TestLecturerPage(TestCase):
         #Now call lecturer page
         response = self.client.get(reverse('workload_app:lecturer_page',  kwargs={'lecturer_id': lecturer_1.id}))
         self.assertEqual(response.status_code, 200) #no issues
-        print(response.context)
         self.assertEqual(response.context["lec_name"], "lecturer_1")
         summary_wl_table = response.context["summary_wl_table_individual"]
         self.assertEqual(len(summary_wl_table), 3)#one assigment plus 2 extra lines

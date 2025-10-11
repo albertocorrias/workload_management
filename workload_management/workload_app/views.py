@@ -37,7 +37,7 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
-      CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu
+      CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInpout
 from .helper_methods_demo import populate_database
 
 def home_page(request):
@@ -348,51 +348,41 @@ def workloads_index(request):
 
 def lecturer_page(request,lecturer_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["lecturers"] if item["label"] == lecturer_name), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
+    menus = CheckUserInpout(request)
     
-    lecturer_qs = Lecturer.objects.filter(id = lecturer_id)
-    lec_obj = lecturer_qs.get()
-    lec_name = lec_obj.name
-    if (lecturer_qs.count() != 1):#this should never happen, but just in case the user enters some random number
+    lecturer_qs = Lecturer.objects.select_related("workload_scenario","workload_scenario__dept","workload_scenario__dept__faculty").filter(id = lecturer_id)
+    if (lecturer_qs.count() != 1):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "No such lecturer exists",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
-    
+    lec_obj = lecturer_qs.get() #safe now after the check above
+    lec_name = lec_obj.name
+    #For the lecturer page, we must check if the user can access the page
+    if (CanUserAdminThisLecturer(menus['user_obj'], lec_name, lec_obj.workload_scenario.dept, lec_obj.workload_scenario.dept.faculty ,request.user.is_superuser) == False):
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))
 
     summary_wl_table = CalculateProfessorIndividualWorkload(lec_name)
     chart_data = CalculateProfessorChartData(lec_name)
 
     template = loader.get_template('workload_app/lecturer_page.html')
     context = {
-        'return_page' : 'scenario_view/'+'1',
         'lec_name' : lec_name,
         'summary_wl_table_individual' : summary_wl_table,
         'chart_data' : chart_data,
-        'user_menu' : user_menu,
-        'user_homepage' : user_homepage
+        'user_menu' : menus["user_menu"],
+        'user_homepage' : menus["user_homepage"]
     }
     return HttpResponse(template.render(context, request))       
 

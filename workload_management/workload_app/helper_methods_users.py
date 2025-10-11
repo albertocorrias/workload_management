@@ -1,4 +1,47 @@
 from .models import Department, UniversityStaff, Module,TeachingAssignment,Faculty, Lecturer, ProgrammeOffered
+from django.http import HttpResponse
+from django.template import loader
+from django.conf import settings
+
+def CalculateEmptyMenu():
+    return {
+        'departments' : [],
+        'accreditations' : [],
+        'lecturers' : [],
+        'modules' : []
+    }
+
+
+def CheckUserInpout(request):
+    '''
+    A helper method that checks that the user exists and that it is authenticated. If so, caluclates user menu and use homepage
+    If not, it re-directs to an error page. 
+    User men, user home page and user obj are returned
+    '''
+    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
+    user_obj = None
+    user_menu = CalculateEmptyMenu()
+    user_home_page = settings.LOGOUT_REDIRECT_URL
+    if (user_qs.count() == 1):
+        user_obj = user_qs.get()
+        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
+        user_home_page = DetermineUserHomePage(user_obj,request.user.is_superuser)
+        
+    if request.user.is_authenticated == False or user_obj == None:
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page",
+                'user_menu' : user_menu,
+                'user_homepage' : user_home_page
+        }
+        return HttpResponse(template.render(context, request))
+    
+    #either empty or filled up
+    return {
+        'user_menu' : user_menu,
+        'user_homepage' : user_home_page,
+        'user_obj' : user_obj
+    }
 
 def DetermineUserHomePage(user_obj,is_super_user = False, error_text = "ERROR"):
 
@@ -90,18 +133,12 @@ def CanUserAdminThisLecturer(user_obj, lect_name, dept, fac ,is_super_user = Fal
     if user_obj.user.groups.filter(name__in = ['LecturerStaff']):#Case of the lecturer staff...can only admin what he is teaching
         if user_obj.lecturer is None: return False #Must be assigned a lecturer
         lec_name = user_obj.lecturer.name
-        #we return true only if the lecturer has been assigned to teach the module, at least once...
         if (lec_name == lect_name):
             return True
     return False
 
 def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
-    ret ={
-        'departments' : [],
-        'accreditations' : [],
-        'lecturers' : [],
-        'modules' : []
-    }
+    ret = CalculateEmptyMenu()
 
     if (user_obj.is_menu_populated and force_population == False):
         for dept_id in user_obj.departments_in_menu:
