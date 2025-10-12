@@ -1799,12 +1799,15 @@ def survey_results(request,survey_id):
 # Below here only handler methods that handle some of the POST requests
 ###################
 def add_assignment(request,workloadscenario_id):
+    
     if request.method =='POST':
         id_of_prof_involved = request.POST['select_lecturer']
         id_of_mod_involved = request.POST['select_module']
         id_of_assignment_type = request.POST['teaching_assignment_type']
         counted_or_not_radio_button_status = request.POST['counted_towards_workload']
-        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, module_id = id_of_mod_involved,workloadscenario_id = workloadscenario_id)
+        all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=workloadscenario_id).get().academic_year.start_year)
+        form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, \
+                                         module_id = id_of_mod_involved,workloadscenario_id = workloadscenario_id, valid_assignment_types=all_valid_assignment_types)
         if form.is_valid():
             num_instances = form.cleaned_data['how_many_units']
 
@@ -1854,8 +1857,9 @@ def edit_lecturer_assignments(request, prof_id):
     prof_involved = Lecturer.objects.filter(id = prof_id).get()
     workloadscenario_id = prof_involved.workload_scenario.id
 
-    if request.method =='POST':    
-        form = EditLecturerTeachingAssignmentForm(request.POST,prof_id = prof_id)
+    if request.method =='POST':
+        all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=workloadscenario_id).get().academic_year.start_year)    
+        form = EditLecturerTeachingAssignmentForm(request.POST,prof_id = prof_id, valid_assignment_types = all_valid_assignment_types)
         if form.is_valid():
             for mod in Module.objects.filter(scenario_ref__id = workloadscenario_id):
                 mod_code = mod.module_code
@@ -1885,7 +1889,8 @@ def edit_module_assignments(request, module_id):
     module_involved = Module.objects.filter(id=module_id).get()
     scenario_id = module_involved.scenario_ref.id
     if request.method =='POST':
-        form = EditModuleAssignmentForm(request.POST,module_id = module_id)
+        all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=scenario_id).get().academic_year.start_year)    
+        form = EditModuleAssignmentForm(request.POST,module_id = module_id,valid_assignment_types = all_valid_assignment_types)
         if form.is_valid():
             for prof in Lecturer.objects.filter(workload_scenario__id = scenario_id):
                 prof_name = prof.name

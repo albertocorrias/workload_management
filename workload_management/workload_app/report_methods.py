@@ -1,6 +1,6 @@
 import datetime
 from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, WorkloadScenario,Faculty
-from .helper_methods import CalculateAllWorkloadTables
+from .helper_methods import CalculateAllWorkloadTables,getIdsOfValidTeachingAssignmentsTypeForYear
 from .forms import SelectFacultyForReport
 
 def GetLastNYears(num_years):
@@ -105,7 +105,8 @@ def CalculateProfessorChartData(lec_name):
             total_fte = wl_object.total_tfte_overall
             expected_per_FTE = wl_object.expected_hrs_per_tfte
         else:#need to reecalculate
-            summary_data = CalculateAllWorkloadTables(wl)['summary_data']
+            all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(wl_object.academic_year.start_year)#
+            summary_data = CalculateAllWorkloadTables(wl,all_valid_assignment_types)['summary_data']
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_per_FTE = summary_data["expected_hours_per_tFTE"]

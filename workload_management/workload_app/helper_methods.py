@@ -24,7 +24,7 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
             total_fte = wl_scen.total_tfte_overall
             expected_hrs = wl_scen.expected_hrs_per_tfte
         else:#need to recalculate
-            summary_data = CalculateAllWorkloadTables(wl_scen.id)['summary_data']
+            summary_data = CalculateAllWorkloadTables(wl_scen.id, TeachingAssignmentType.objects.none())['summary_data']#List of assignment type not needed for summary data
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_hrs = summary_data["expected_hours_per_tFTE"]
