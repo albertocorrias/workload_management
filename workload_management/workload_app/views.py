@@ -61,6 +61,8 @@ def post_login_landing(request):
     return HttpResponseRedirect('/workload_app'+menus["user_homepage"])
 
 ##This is the for the page of a single workload scenario
+#from silk.profiling.profiler import silk_profile
+#@silk_profile(name="workload_view")
 def scenario_view(request, workloadscenario_id):
 
     menus = CheckUserInput(request)  
@@ -1717,7 +1719,6 @@ def survey_results(request,survey_id):
             }
             return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get() 
-    programme_id = survey_obj.programme_associated.id
     department_id = survey_obj.programme_associated.primary_dept.id
     if (survey_obj.survey_type != Survey.SurveyType.MLO):#WE block only survey that programme-level. We allow all to see MLO survey results (but there won't be links...)
         if (request.user.is_authenticated == False or CanUserAdminThisDepartment(menus['user_obj'],department_id, is_super_user = request.user.is_superuser)==False\
@@ -1815,14 +1816,14 @@ def add_assignment(request,workloadscenario_id):
             #check if an assignment for same prof, same mod, same type exists. If so, we simply update the hours, otherwise, create a new one
             qs = TeachingAssignment.objects.filter(assigned_module__id = id_of_mod_involved).\
                                             filter(assigned_lecturer__id=id_of_prof_involved).\
-                                            filter(assignnment_type__id = assignment_type_obj.id) 
+                                            filter(assignment_type__id = assignment_type_obj.id) 
             if (qs.count()==1):
                 qs.update(number_of_hours=int(qs.get().number_of_hours + num_hrs))
             else:
                 #Create the object
                 TeachingAssignment.objects.create(assigned_module=Module.objects.filter(id = id_of_mod_involved).get(),\
                                                 assigned_lecturer=Lecturer.objects.filter(id = id_of_prof_involved).get(),\
-                                                assignnment_type = assignment_type_obj,\
+                                                assignment_type = assignment_type_obj,\
                                                 number_of_hours=int(num_hrs),\
                                                 counted_towards_workload = count_in_wl,\
                                                 workload_scenario= WorkloadScenario.objects.filter(id=workloadscenario_id).get())
@@ -1872,7 +1873,7 @@ def edit_lecturer_assignments(request, prof_id):
 
                         if (int(num_hrs) > 0):
                             assign.update(number_of_hours=int(num_hrs),\
-                                          counted_towards_workload = counted_in_wl, assignnment_type = assignment_type_obj)
+                                          counted_towards_workload = counted_in_wl, assignment_type = assignment_type_obj)
                         else:#If zero or negative, remove the assignment
                             assign.delete()
     #Otherwise do nothing
@@ -1902,7 +1903,7 @@ def edit_module_assignments(request, module_id):
 
                         if (int(num_hrs) > 0):
                             assign.update(number_of_hours=int(num_hrs),\
-                                          counted_towards_workload = counted_in_wl, assignnment_type = assignment_type_obj)
+                                          counted_towards_workload = counted_in_wl, assignment_type = assignment_type_obj)
                         else:#If zero or negative, remove the assignment
                             assign.delete()
       

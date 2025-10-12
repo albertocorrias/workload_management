@@ -78,11 +78,11 @@ class TestLecturerPage(TestCase):
 
         #Do some assignmentsto "lecturer_1" for the first four years, to another_elct for the last year
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=first_fac)
-        TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_1)
-        TeachingAssignment.objects.create(assigned_module = module_2, assigned_lecturer = lecturer_2, assignnment_type=assignment_type, number_of_hours = 35, workload_scenario=scenario_2)
-        TeachingAssignment.objects.create(assigned_module = module_3, assigned_lecturer = lecturer_3, assignnment_type=assignment_type, number_of_hours = 45, workload_scenario=scenario_3)
-        TeachingAssignment.objects.create(assigned_module = module_4, assigned_lecturer = lecturer_4, assignnment_type=assignment_type, number_of_hours = 95, workload_scenario=scenario_4)
-        TeachingAssignment.objects.create(assigned_module = module_5, assigned_lecturer = anot_lect, assignnment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_5)
+        TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_1)
+        TeachingAssignment.objects.create(assigned_module = module_2, assigned_lecturer = lecturer_2, assignment_type=assignment_type, number_of_hours = 35, workload_scenario=scenario_2)
+        TeachingAssignment.objects.create(assigned_module = module_3, assigned_lecturer = lecturer_3, assignment_type=assignment_type, number_of_hours = 45, workload_scenario=scenario_3)
+        TeachingAssignment.objects.create(assigned_module = module_4, assigned_lecturer = lecturer_4, assignment_type=assignment_type, number_of_hours = 95, workload_scenario=scenario_4)
+        TeachingAssignment.objects.create(assigned_module = module_5, assigned_lecturer = anot_lect, assignment_type=assignment_type, number_of_hours = 25, workload_scenario=scenario_5)
         
         user_oobj = UniversityStaff.objects.filter(user__username='test_user').get()
         menu = DetermineUserMenu(user_oobj, is_super_user=True,force_population=True)

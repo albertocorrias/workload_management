@@ -113,7 +113,7 @@ class TestUserPermissions(TestCase):
         self.assertEqual(DetermineUserHomePage(uni_lec_user, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
-        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
+        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
         self.assertEqual(TeachingAssignment.objects.all().count(),1)
         #Now lecturer 1 should be able to admin module 1 but not module 2...
         self.assertEqual(CanUserAdminThisModule(uni_lec_user, mod_code,uni_lec_user.department, uni_lec_user.faculty), True)
@@ -220,7 +220,7 @@ class TestUserPermissions(TestCase):
         self.assertEqual(dept_user_menu["modules"][1]["url"],"/module/"+str(mod_code + "_2"))
 
         #Assign module_1 (but not module_2) to lecturer_1
-        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
+        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
         lect_user_menu = DetermineUserMenu(uni_lec_user,is_super_user=False)
         self.assertEqual(len(lect_user_menu["departments"]),0)
         self.assertEqual(len(lect_user_menu["accreditations"]),0)
@@ -281,7 +281,7 @@ class TestUserPermissions(TestCase):
         
         #Make a teaching assignment of lecturer 1 to module 1
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
-        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignnment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
+        teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)
         #Now create an SLO and an SLO survey
         slo_1 = StudentLearningOutcome.objects.create(slo_description = 'This is slo_1', \
                                                       slo_short_description = 'slo_1', \

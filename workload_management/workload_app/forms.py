@@ -125,11 +125,13 @@ class ModuleForm(ModelForm):
     def __init__(self, *args, **kwargs):
         dept_id = kwargs.pop('dept_id')
         super(ModuleForm, self).__init__(*args, **kwargs)
-        self.fields['primary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
-        self.fields['secondary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
-        self.fields['tertiary_programme'] = forms.ModelChoiceField(queryset=ProgrammeOffered.objects.filter(primary_dept__id=dept_id))
-        self.fields['sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
-        self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id))
+        prog_qs = ProgrammeOffered.objects.filter(primary_dept__id=dept_id)
+        subprog_qs = SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id)
+        self.fields['primary_programme'] = forms.ModelChoiceField(queryset=prog_qs)
+        self.fields['secondary_programme'] = forms.ModelChoiceField(prog_qs)
+        self.fields['tertiary_programme'] = forms.ModelChoiceField(prog_qs)
+        self.fields['sub_programme'] = forms.ModelChoiceField(queryset=subprog_qs)
+        self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=subprog_qs)
         self.fields['module_type'] = forms.ModelChoiceField(label="Course type",queryset=ModuleType.objects.filter(department__id=dept_id))
         self.fields['total_hours'].required = False
         self.fields['primary_programme'].required = False
@@ -180,7 +182,7 @@ class RemoveModuleForm(forms.Form):
     
 class ModuleTypeForm(forms.ModelForm):
     class Meta:
-        model = ModuleType;
+        model = ModuleType
         fields = ['type_name']
         labels = {'type_name' :_('Name of area')}
 
@@ -198,7 +200,7 @@ class DepartmentForm(forms.ModelForm):
     dept_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
     
     class Meta:
-        model = Department;
+        model = Department
         fields = ['department_name', 'department_acronym', 'faculty']
         labels = {'department_name' : _('Department name'),
                   'department_acronym' : _('Acronym to be used (max 4 letters)'),
@@ -282,7 +284,7 @@ class ProgrammeOfferedForm(forms.ModelForm):
     dept_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
-        model = ProgrammeOffered;
+        model = ProgrammeOffered
         fields = ['programme_name', 'primary_dept']
         labels = {'programme_name' : _('Name of the programme (e.g., Bachelor of...)'),
                   'primary_dept' : _('Primary Department offering the programme')}
@@ -775,16 +777,16 @@ class EditLecturerTeachingAssignmentForm(forms.Form):
         prof_obj =Lecturer.objects.filter(id=prof_id).get()
         super(EditLecturerTeachingAssignmentForm, self).__init__(*args, **kwargs)
         
-        for assign in TeachingAssignment.objects.filter(assigned_lecturer__id = prof_id):
+        for assign in TeachingAssignment.objects.select_related('assigned_module','assignment_type').filter(assigned_lecturer__id = prof_id):
             module_assigned = assign.assigned_module
             #NOTE: the viw will check if the module code is within the keys
             self.fields[module_assigned.module_code] = forms.CharField(initial=module_assigned.module_code,widget=forms.HiddenInput(), label = "Assignments for " + module_assigned.module_code, required=False)
             
             acad_year = WorkloadScenario.objects.filter(id = prof_obj.workload_scenario.id).get().academic_year.start_year
             self.fields['teaching_assignment_type'+str(module_assigned.id)] = forms.ModelChoiceField(label = "Type of teaching assignment", \
-                                            queryset = TeachingAssignmentType.objects.filter(id__in=getIdsOfValidTeachingAssignmentsTypeForYear(acad_year)), initial=assign.assignnment_type)
+                                            queryset = TeachingAssignmentType.objects.filter(id__in=getIdsOfValidTeachingAssignmentsTypeForYear(acad_year)), initial=assign.assignment_type)
             self.fields['how_many_units'+str(module_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
-                                                                                initial=int(assign.number_of_hours/assign.assignnment_type.quantum_number_of_hours))
+                                                                                initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
 
 
             counted_flag = 'yes'
@@ -805,7 +807,7 @@ class EditModuleAssignmentForm(forms.Form):
         module_obj = Module.objects.filter(id=module_id).get()
         super(EditModuleAssignmentForm, self).__init__(*args, **kwargs)
         
-        for assign in TeachingAssignment.objects.filter(assigned_module__id = module_id):
+        for assign in TeachingAssignment.objects.select_related('assigned_lecturer', 'assignment_type').filter(assigned_module__id = module_id):
                 prof_assigned = assign.assigned_lecturer
                 #Keep the prof name in the keys (view will look for it).
                 self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
@@ -813,9 +815,9 @@ class EditModuleAssignmentForm(forms.Form):
                 acad_year = WorkloadScenario.objects.filter(id = module_obj.scenario_ref.id).get().academic_year.start_year
 
                 self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ModelChoiceField(label = "Type of teaching assignment", \
-                                                queryset = TeachingAssignmentType.objects.filter(id__in=getIdsOfValidTeachingAssignmentsTypeForYear(acad_year)), initial=assign.assignnment_type)
+                                                queryset = TeachingAssignmentType.objects.filter(id__in=getIdsOfValidTeachingAssignmentsTypeForYear(acad_year)), initial=assign.assignment_type)
                 self.fields['how_many_units'+str(prof_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
-                                                                                    initial=int(assign.number_of_hours/assign.assignnment_type.quantum_number_of_hours))
+                                                                                    initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
                 
                 counted_flag = 'yes'
                 if (assign.counted_towards_workload == False): counted_flag = 'no' 

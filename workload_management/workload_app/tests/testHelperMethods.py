@@ -111,15 +111,15 @@ class testHelperMethods(TestCase):
         
         #Module one is assigned to 3 lecturers
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=30, counted_towards_workload = True, workload_scenario=first_scen)
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=educator_track,assignnment_type = assignment_type,number_of_hours=10, counted_towards_workload = True, workload_scenario=first_scen)
-        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=vice_dean,assignnment_type = assignment_type,number_of_hours=12, workload_scenario=first_scen) #Counted towards workload is not mentioned to cover the default "true" value
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=normal_lecturer,assignment_type = assignment_type,number_of_hours=30, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=educator_track,assignment_type = assignment_type,number_of_hours=10, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_1,assigned_lecturer=vice_dean,assignment_type = assignment_type,number_of_hours=12, workload_scenario=first_scen) #Counted towards workload is not mentioned to cover the default "true" value
         
         #Module two is assigned to one only
-        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=educator_track,assignnment_type = assignment_type,number_of_hours=52, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=educator_track,assignment_type = assignment_type,number_of_hours=52, counted_towards_workload = True, workload_scenario=first_scen)
         
         #Module 3 is assigned to the vice dean, partially
-        TeachingAssignment.objects.create(assigned_module=module_3,assigned_lecturer=vice_dean,assignnment_type = assignment_type,number_of_hours=20, counted_towards_workload = True, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_3,assigned_lecturer=vice_dean,assignment_type = assignment_type,number_of_hours=20, counted_towards_workload = True, workload_scenario=first_scen)
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -167,7 +167,7 @@ class testHelperMethods(TestCase):
         ######################################################################
         #Now add another assignment, not to be counted in the workload hours
         ######################################################################
-        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=752, counted_towards_workload = False, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=module_2,assigned_lecturer=normal_lecturer,assignment_type = assignment_type,number_of_hours=752, counted_towards_workload = False, workload_scenario=first_scen)
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         #RE-check everything
         self.assertEqual(response.status_code, 200) #No issues
@@ -357,7 +357,7 @@ class testHelperMethods(TestCase):
         
         #Module one is assigned to 3 lecturers
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
-        TeachingAssignment.objects.create(assigned_module=long_module_1,assigned_lecturer=normal_lecturer,assignnment_type = assignment_type,number_of_hours=30, workload_scenario=first_scen)
+        TeachingAssignment.objects.create(assigned_module=long_module_1,assigned_lecturer=normal_lecturer,assignment_type = assignment_type,number_of_hours=30, workload_scenario=first_scen)
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))
         self.assertEqual(response.status_code, 200) #No issues

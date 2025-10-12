@@ -202,7 +202,7 @@ def HandleScenarioForm(form,department_id):
                 prof.save()
                 
             #Now copy all assignments
-            for to_be_copied in  TeachingAssignment.objects.filter(workload_scenario__label = supplied_copy_from):
+            for to_be_copied in  TeachingAssignment.objects.select_related('assignment_type','assigned_module','assigned_lecturer').filter(workload_scenario__label = supplied_copy_from):
                 #Make sure to involve the profs and mods in the new scenario
                 module_involved = Module.objects.filter(module_code = to_be_copied.assigned_module.module_code).filter(scenario_ref__label = supplied_label).get()
                 prof_involved = Lecturer.objects.filter(name = to_be_copied.assigned_lecturer.name).filter(workload_scenario__label = supplied_label).get()
@@ -211,7 +211,7 @@ def HandleScenarioForm(form,department_id):
                                                 assigned_lecturer=prof_involved,\
                                                 number_of_hours=int(to_be_copied.number_of_hours),\
                                                 counted_towards_workload = to_be_copied.counted_towards_workload,\
-                                                assignnment_type = to_be_copied.assignnment_type,\
+                                                assignment_type = to_be_copied.assignment_type,\
                                                 workload_scenario=new_scen)
     else: #This is an edit
         id_involved = form.cleaned_data['scenario_id'] #for edits, the form has the info on which scenario to be edited
@@ -360,7 +360,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }
         all_mod_items.append(single_mod_item)
-    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module").filter(workload_scenario__id = workloadscenario_id):
+    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module","assignment_type").filter(workload_scenario__id = workloadscenario_id):
         lec_id = assign.assigned_lecturer.id
         mod_id = assign.assigned_module.id
         num_hours = assign.number_of_hours
@@ -720,7 +720,7 @@ def CalculateSingleModuleInformationTable(module_code):
     ret = []
     for acad_year in Academicyear.objects.all():
         for workload in WorkloadScenario.objects.filter(academic_year = acad_year).filter(status=WorkloadScenario.OFFICIAL):
-            for module in Module.objects.filter(module_code=module_code).filter(scenario_ref=workload):
+            for module in Module.objects.select_related('module_type','primary_programme','sub_programme','secondary_programme', 'tertiary_programme', 'secondary_sub_programme').filter(module_code=module_code).filter(scenario_ref=workload):
 
                 #Infer the year of study to display
                 display_year_of_study = ""
@@ -742,7 +742,7 @@ def CalculateSingleModuleInformationTable(module_code):
                     "total_hours_delivered" : 0,
                     "lecturers_involved" : ""}
                 formatted_string = ""
-                for assign in TeachingAssignment.objects.filter(workload_scenario=workload).filter(assigned_module__module_code=module_code):
+                for assign in TeachingAssignment.objects.select_related('assigned_lecturer').filter(workload_scenario=workload).filter(assigned_module__module_code=module_code):
                     table_row_item["total_hours_delivered"] += assign.number_of_hours
                     formatted_string+= (assign.assigned_lecturer.name + " (" + str(assign.number_of_hours) + "), ")
                 if (len(formatted_string) > 0): table_row_item["lecturers_involved"] = formatted_string[:-2] #Otherwise it stays empty

@@ -529,7 +529,7 @@ class TeachingAssignment(models.Model):
     #The workload scenario this assignment belongs to
     workload_scenario = models.ForeignKey(WorkloadScenario, on_delete=models.CASCADE)  
 
-    assignnment_type = models.ForeignKey(TeachingAssignmentType, null=True, on_delete=models.SET_NULL)
+    assignment_type = models.ForeignKey(TeachingAssignmentType, null=True, on_delete=models.SET_NULL)
     number_of_hours = models.PositiveIntegerField() #total number of hours 
     counted_towards_workload = models.BooleanField(default=True) #Whether or not this assignment will be counted towards workload. E.g. if it is remunerated separately, you can set it to False
     

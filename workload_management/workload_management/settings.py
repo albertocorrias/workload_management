@@ -119,6 +119,7 @@ if ('devel' in str(branch_name)):
         }
         }
         NEED_SILK_DEBUG=True
+        SILKY_PYTHON_PROFILER=True
         #add the debug silk plugin, disabled for testing
         INSTALLED_APPS = [
             *INSTALLED_APPS,
