@@ -12,35 +12,38 @@ def CalculateEmptyMenu():
     }
 
 
-def CheckUserInpout(request):
+def CheckUserInput(request):
     '''
     A helper method that checks that the user exists and that it is authenticated. If so, caluclates user menu and use homepage
-    If not, it re-directs to an error page. 
-    User men, user home page and user obj are returned
+    If not, the returned dictionary key "error_message" will have an error message 
+    User menu, user home page and user obj are returne, either empty (or None) or filled up
     '''
     user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
     user_obj = None
     user_menu = CalculateEmptyMenu()
     user_home_page = settings.LOGOUT_REDIRECT_URL
+    error_message = ''
     if (user_qs.count() == 1):
         user_obj = user_qs.get()
         user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
         user_home_page = DetermineUserHomePage(user_obj,request.user.is_superuser)
         
     if request.user.is_authenticated == False or user_obj == None:
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_home_page
-        }
-        return HttpResponse(template.render(context, request))
+        error_message = 'Access forbidden. User has no access to this page'
+        #template = loader.get_template('workload_app/errors_page.html')
+        #context = {
+        #        'error_message': "Access forbidden. User has no access to this page",
+        #        'user_menu' : user_menu,
+        #        'user_homepage' : user_home_page
+        #}
+        #return HttpResponse(template.render(context, request))
     
     #either empty or filled up
     return {
         'user_menu' : user_menu,
         'user_homepage' : user_home_page,
-        'user_obj' : user_obj
+        'user_obj' : user_obj,
+        'error_message': error_message
     }
 
 def DetermineUserHomePage(user_obj,is_super_user = False, error_text = "ERROR"):

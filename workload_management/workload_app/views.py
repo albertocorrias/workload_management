@@ -37,7 +37,7 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
-      CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInpout
+      CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInput
 from .helper_methods_demo import populate_database
 
 def home_page(request):
@@ -47,51 +47,46 @@ def home_page(request):
         return HttpResponseRedirect('/accounts/login')
     
 def post_login_landing(request):
-    myerror = "error"
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-    
-    if request.user.is_authenticated == False or user_obj == None:
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
+
+    menus = CheckUserInput(request)    
+    if len(menus['error_message'])>0 :
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
-    return HttpResponseRedirect('/workload_app'+user_homepage)
+    return HttpResponseRedirect('/workload_app'+menus["user_homepage"])
 
 ##This is the for the page of a single workload scenario
 def scenario_view(request, workloadscenario_id):
-    #Name of this scenario (this will be displayed)
-    this_scen = WorkloadScenario.objects.select_related("dept","academic_year").filter(id = workloadscenario_id).get()
-    name_of_active_scenario = this_scen.label
-    department = this_scen.dept
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = False
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["departments"] if item["id"] == department.id), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    scen_qs = WorkloadScenario.objects.select_related("dept","academic_year").filter(id = workloadscenario_id)
+    if (scen_qs.count() != 1):#This should never happen, but just in case user puts in some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested workload does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+    this_scen = scen_qs.get()
+    #For the scenario page, we must check if the user can access the department to which the scenario is refrerred to
+    if (CanUserAdminThisDepartment(menus['user_obj'], this_scen.dept.id,request.user.is_superuser) == False or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
+
+    #Name of this scenario (this will be displayed)
+    name_of_active_scenario = this_scen.label
+    department = this_scen.dept
     
     acad_year = this_scen.academic_year
     status = this_scen.status
@@ -135,42 +130,35 @@ def scenario_view(request, workloadscenario_id):
         'add_teaching_assignment_form':add_teaching_assignment_form,
         'remove_teaching_assignment_form':remove_teaching_assignment_form.as_p(),
         'department_id' : department.id,
-        'user_menu' : user_menu,
-        'user_homepage' : user_homepage
+        'user_menu' : menus['user_menu'],
+        'user_homepage' : menus['user_homepage']
     }
     return HttpResponse(template.render(context, request))
 
 def school_page(request,faculty_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = False
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = CanUserAdminThisFaculty(user_obj,faculty_id, is_super_user = request.user.is_superuser)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == False):
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
-
+    menus = CheckUserInput(request)  
     fac_qs = Faculty.objects.filter(id = faculty_id)
     if (fac_qs.count() != 1):#This should never happen, but just in case user puts in some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Requested faculty does not exist",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))  
-    fac_obj = fac_qs.get()
 
+    #For the faculty page, we must check if the user can access the faculty page
+    if (CanUserAdminThisFaculty(menus['user_obj'], faculty_id,request.user.is_superuser) == False or len(menus['error_message'])>0):
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Access forbidden. User has no access to this page",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))
+
+    fac_obj = fac_qs.get() #safe now
     if request.method =='POST':
 
         form = EmplymentTrackForm(request.POST)
@@ -285,27 +273,20 @@ def school_page(request,faculty_id):
                     'remove_teaching_assignment_type_form' : remove_teaching_assignment_type_form.as_p(),
                     'scenario_form':scenario_form.as_p(),
                     'remove_scenario_form':remove_scenario_form.as_p(),
-                    'user_menu' : user_menu,
-                    'user_homepage' : user_homepage
+                    'user_menu' : menus["user_menu"],
+                    'user_homepage' : menus["user_homepage"]
                     }
         return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = False
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = CanUserAdminUniversity(user_obj, is_super_user = request.user.is_superuser)
-    #populate_database()#-Used to generate DB for demo leave commented out
-    if request.user.is_authenticated == False or user_obj == None or can_or_not==False:
+
+    menus = CheckUserInput(request) 
+    if (CanUserAdminUniversity(menus['user_obj'], request.user.is_superuser) == False or len(menus['error_message']) > 0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : {},
-                'user_homepage' : {}
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
@@ -341,15 +322,14 @@ def workloads_index(request):
                 'remove_dept_form':remove_dept_form.as_p(),
                'scenario_form':scenario_form.as_p(),
                'remove_scenario_form':remove_scenario_form.as_p(),
-               'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+               'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
                 }
     return HttpResponse(template.render(context, request))
 
 def lecturer_page(request,lecturer_id):
 
-    menus = CheckUserInpout(request)
-    
+    menus = CheckUserInput(request)  
     lecturer_qs = Lecturer.objects.select_related("workload_scenario","workload_scenario__dept","workload_scenario__dept__faculty").filter(id = lecturer_id)
     if (lecturer_qs.count() != 1):
         #This should really never happen, but just in case the user enters some random number...
@@ -364,7 +344,8 @@ def lecturer_page(request,lecturer_id):
     lec_obj = lecturer_qs.get() #safe now after the check above
     lec_name = lec_obj.name
     #For the lecturer page, we must check if the user can access the page
-    if (CanUserAdminThisLecturer(menus['user_obj'], lec_name, lec_obj.workload_scenario.dept, lec_obj.workload_scenario.dept.faculty ,request.user.is_superuser) == False):
+    if (CanUserAdminThisLecturer(menus['user_obj'], lec_name, lec_obj.workload_scenario.dept, lec_obj.workload_scenario.dept.faculty ,request.user.is_superuser) == False\
+        or len(menus["error_message"])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
@@ -388,20 +369,13 @@ def lecturer_page(request,lecturer_id):
 
 def faculty_report(request):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        
-        
-    if request.user.is_authenticated == False or user_obj == None:
+    menus = CheckUserInput(request)  
+    if (len(menus["error_message"])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
 
@@ -426,42 +400,35 @@ def faculty_report(request):
         'table_header' : table_header,
         'labels_faculty' : labels,
         'data_for_faculty_table' : data_for_table,
-        'user_menu' : user_menu,
-        'user_homepage' : user_homepage
+        'user_menu' : menus['user_menu'],
+        'user_homepage' : menus['user_homepage']
     }
     return HttpResponse(template.render(context, request))
 
 def department(request,department_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = False
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["departments"] if item["id"] == department_id), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    dep_qs = Department.objects.filter(id = department_id)
+    if (dep_qs.count() != 1):#This should never happen, but just in case user puts in some random number...
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested department does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+
+    #For the department page, we must check if the user can access the faculty page
+    if (CanUserAdminThisDepartment(menus['user_obj'], department_id,request.user.is_superuser) == False or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
-    
-    dept_qs = Department.objects.filter(id = department_id)
-    if (dept_qs.count() != 1):
-        #This should really never happen, but just in case the user enters some random number...
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "No such department exists",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
-    dept_obj = dept_qs.get()
+
+    dept_obj = dep_qs.get()
     dept_name = dept_obj.department_name
 
     if request.method =='POST':
@@ -611,28 +578,33 @@ def department(request,department_id):
             'remove_sub_prog_form' : remove_sub_prog_form,
             'tables_for_year' : tables_for_year,
             'no_show_message' : no_show_message,
-            'user_menu' : user_menu,
-            'user_homepage' : user_homepage
+            'user_menu' : menus['user_menu'],
+            'user_homepage' : menus['user_homepage']
         }
         return HttpResponse(template.render(context, request))
 
 def module(request, module_code):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["modules"] if item["label"] == module_code), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    mod_qs = Module.objects.select_related('scenario_ref','scenario_ref__dept','scenario_ref__dept__faculty').filter(module_code = module_code)
+    if (mod_qs.count() < 1):#Note <1, instead !=1 as more module objects with same code may exist
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested module code does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+
+    mod_obj = mod_qs.first()
+    #For the module page, we must check if the user can access the faculty page
+    if (CanUserAdminThisModule(menus['user_obj'], module_code, mod_obj.scenario_ref.dept,mod_obj.scenario_ref.dept.faculty,request.user.is_superuser) == False\
+         or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
         
@@ -763,19 +735,8 @@ def module(request, module_code):
 
         return HttpResponseRedirect(reverse('workload_app:module', kwargs={'module_code' : module_code}));#Trigger a get
     else:#This is a get
-        module_name_qs = Module.objects.filter(module_code = module_code)
-        if (module_name_qs.count() < 1):
-            #This should really never happen, but just in case the user enters some random number...
-            template = loader.get_template('workload_app/errors_page.html')
-            context = {
-                'error_message': "There are no modules with the " + module_code + " code in the database.",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-            }
-            return HttpResponse(template.render(context, request))
-        
-        module_name = module_name_qs.first().module_title
-        module_table = CalculateSingleModuleInformationTable(module_name_qs.first().module_code)
+        module_name = mod_obj.module_title
+        module_table = CalculateSingleModuleInformationTable(mod_obj.module_code)
         new_mlo_form = MLOForm(initial = {'mod_code' : module_code, 'fresh_record' : True})
         remove_mlo_form = RemoveMLOForm(module_code = module_code)
         all_mlo_slo_tables = []#One item per programme
@@ -946,43 +907,37 @@ def module(request, module_code):
                     'remove_corrective_action_form' : remove_correctiove_action_form,
                     'department_id' : dept_id,
                     'department_name' : dept_name,
-                    'user_menu' : user_menu,
-                    'user_homepage' : user_homepage
+                    'user_menu' : menus['user_menu'],
+                    'user_homepage' : menus['user_homepage']
                     }
         return HttpResponse(template.render(context, request))
 
 def accreditation(request,programme_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["accreditations"] if item["id"] == programme_id), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    prog_qs = ProgrammeOffered.objects.select_related('primary_dept').filter(id = programme_id)
+    if (prog_qs.count() != 1):#Should never happen, but in case the user puts in some random number
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested programme does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+
+    programme = prog_qs.get()
+
+    #For the module page, we must check if the user can access the faculty page
+    if (CanUserAdminThisDepartment(menus['user_obj'], programme.primary_dept.id,request.user.is_superuser) == False\
+         or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
-    programme_qs = ProgrammeOffered.objects.select_related('primary_dept').filter(id = programme_id)
-    if (programme_qs.count() != 1):
-        #This should really never happen, but just in case the user enters some random number...
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "No such programme exists in the database",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
-    
-    programme = programme_qs.get()
     programme_name = programme.programme_name
     department_id = programme.primary_dept.id
 
@@ -1327,45 +1282,41 @@ def accreditation(request,programme_id):
                 'edit_peo_settings_form' : edit_peo_settings_form,
                 'edit_slo_settings_form' : edit_slo_settings_form,
                 'edit_mlo_settings_form' : edit_mlo_settings_form,
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus['user_menu'],
+                'user_homepage' : menus['user_homepage']
         }
         return HttpResponse(template.render(context, request))
 
 def accreditation_report(request,programme_id, start_year,end_year,compulsory_only):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["accreditations"] if item["id"] == programme_id), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    prog_qs = ProgrammeOffered.objects.select_related('primary_dept').filter(id = programme_id)
+    if (prog_qs.count() != 1):#Should never happen, but in case the user puts in some random number
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested programme does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+
+    programme = prog_qs.get()
+
+    #For the module page, we must check if the user can access the faculty page
+    if (CanUserAdminThisDepartment(menus['user_obj'], programme.primary_dept.id,request.user.is_superuser) == False\
+         or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
     programme_qs = ProgrammeOffered.objects.select_related('primary_dept').filter(id = programme_id)
-    if (programme_qs.count() != 1):
-        #This should really never happen, but just in case the user enters some random number...
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "No such programme exists in the database",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
+
     programme = programme_qs.get()
-    programme_name = programme.programme_name
-    department_id = programme.primary_dept.id
-    
+
     if request.method == 'GET':
         #The overall MLO-SLO mapping (big table with full and half moons, one for the whole period)
         big_mlo_slo_table = CalculateTableForOverallSLOMapping(programme_id, start_year=start_year, end_year=end_year,compulsory_only=compulsory_only)
@@ -1445,28 +1396,33 @@ def accreditation_report(request,programme_id, start_year,end_year,compulsory_on
             'slo_identifiers' : slo_identifiers,
             'all_slo_data_for_plot' : all_slo_data_for_plot,
             'all_slo_ids' : all_slo_ids,
-            'user_menu' : user_menu,
-            'user_homepage' : user_homepage
+            'user_menu' : menus['user_menu'],
+            'user_homepage' : menus['user_homepage']
         }
         return HttpResponse(template.render(context, request))
 
 def input_module_survey_results(request,module_code,survey_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["modules"] if item["label"] == module_code), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    menus = CheckUserInput(request)  
+    mod_qs = Module.objects.select_related('scenario_ref','scenario_ref__dept','scenario_ref__dept__faculty').filter(module_code = module_code)
+    if (mod_qs.count() < 1):#Note <1, instead !=1 as more module objects with same code may exist
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested module code does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
+
+    mod_obj = mod_qs.first()
+    #For the module page, we must check if the user can access the faculty page
+    if (CanUserAdminThisModule(menus['user_obj'], module_code, mod_obj.scenario_ref.dept,mod_obj.scenario_ref.dept.faculty,request.user.is_superuser) == False\
+         or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
         
@@ -1476,8 +1432,8 @@ def input_module_survey_results(request,module_code,survey_id):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "No such survey exists in the database",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
@@ -1561,8 +1517,8 @@ def input_module_survey_results(request,module_code,survey_id):
             'module_code' : module_code,
             'pre_file_upload_message' : pre_file_upload_message,
             'parent_survey' : parent_survey,
-            'user_menu' : user_menu,
-            'user_homepage' : user_homepage
+            'user_menu' : menus["user_menu"],
+            'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
 
@@ -1570,33 +1526,38 @@ def input_module_survey_results(request,module_code,survey_id):
     return HttpResponseRedirect(reverse('workload_app:module',  kwargs={'module_code': module_code}))
 
 def input_programme_survey_results(request,programme_id,survey_id):
+    menus = CheckUserInput(request)  
+    prog_qs = ProgrammeOffered.objects.select_related('primary_dept').filter(id = programme_id)
+    if (prog_qs.count() != 1):#Should never happen, but in case the user puts in some random number
+        template = loader.get_template('workload_app/errors_page.html')
+        context = {
+                'error_message': "Requested programme does not exist",
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
+        }
+        return HttpResponse(template.render(context, request))  
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
-    can_or_not = None
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-        can_or_not = next((item for item in user_menu["accreditations"] if item["id"] == programme_id), None)
-        
-    if request.user.is_authenticated == False or user_obj == None or (can_or_not == None):
+    programme = prog_qs.get()
+
+    #For the programme page, we must check if the user can access the dept page
+    if (CanUserAdminThisDepartment(menus['user_obj'], programme.primary_dept.id,request.user.is_superuser) == False\
+         or len(menus['error_message'])>0):
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
-    
+
     survey_qs  =Survey.objects.filter(id = survey_id)
     if (survey_qs.count() != 1):
         #This should really never happen, but just in case the user enters some random number...
         template = loader.get_template('workload_app/errors_page.html')
         context = {
                 'error_message': "No such survey exissts in the database",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
+                'user_menu' : menus["user_menu"],
+                'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
     
@@ -1605,17 +1566,6 @@ def input_programme_survey_results(request,programme_id,survey_id):
     labels = survey_obj.likert_labels.GetListOfLabels()
     full_labels = survey_obj.likert_labels.GetFullListOfLabels()#this one includes "empty" unused ones
 
-    programme = ProgrammeOffered.objects.filter(id = programme_id).get()
-    department_id = programme.primary_dept.id
-    if request.user.is_authenticated == False or CanUserAdminThisDepartment(user_obj,department_id, is_super_user = request.user.is_superuser)==False:
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
-    
     if request.method =='POST':
         if survey_obj.survey_type == Survey.SurveyType.SLO:
             slo_survey_form = InputSLOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
@@ -1669,7 +1619,6 @@ def input_programme_survey_results(request,programme_id,survey_id):
                             survey = Survey.objects.filter(id = survey_id).get()
                             survey.original_file = file_obj
                             survey.save(update_fields = ["original_file"])
-
 
         if survey_obj.survey_type == Survey.SurveyType.PEO:
             peo_survey_form = InputPEOSurveyDataForm(request.POST, request.FILES, programme_id = programme_id,survey_id = survey_id)
@@ -1749,41 +1698,35 @@ def input_programme_survey_results(request,programme_id,survey_id):
             'parent_survey': parent_survey,
             'pre_file_upload_message' : pre_file_upload_message,
             'file_url' : file_url,
-            'user_menu' : user_menu,
-            'user_homepage' : user_homepage
+            'user_menu' : menus["user_menu"],
+            'user_homepage' : menus["user_homepage"]
         }
         return HttpResponse(template.render(context, request))
 
 def survey_results(request,survey_id):
 
-    user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
-    user_obj = None
+    menus = CheckUserInput(request)
 
-    if (user_qs.count() == 1):
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_homepage = DetermineUserHomePage(user_obj,request.user.is_superuser)
-
-    if request.user.is_authenticated == False or user_obj == None:
-        template = loader.get_template('workload_app/errors_page.html')
-        context = {
-                'error_message': "Access forbidden. User has no access to this page",
-                'user_menu' : user_menu,
-                'user_homepage' : user_homepage
-        }
-        return HttpResponse(template.render(context, request))
-    
     survey_qs = Survey.objects.select_related("programme_associated", "programme_associated__primary_dept").filter(id=survey_id)
+    if (survey_qs.count() != 1):#This should really never happen, but just in case the use inputs some random number
+            template = loader.get_template('workload_app/errors_page.html')
+            context = {
+                    'error_message': "No' such survey exists",
+                    'user_menu' : menus['user_menu'],
+                    'user_homepage' : menus['user_homepage']
+            }
+            return HttpResponse(template.render(context, request))
     survey_obj = survey_qs.get() 
     programme_id = survey_obj.programme_associated.id
-    department_id = ProgrammeOffered.objects.filter(id = programme_id).get().primary_dept.id
+    department_id = survey_obj.programme_associated.primary_dept.id
     if (survey_obj.survey_type != Survey.SurveyType.MLO):#WE block only survey that programme-level. We allow all to see MLO survey results (but there won't be links...)
-        if request.user.is_authenticated == False or CanUserAdminThisDepartment(user_obj,department_id, is_super_user = request.user.is_superuser)==False:
+        if (request.user.is_authenticated == False or CanUserAdminThisDepartment(menus['user_obj'],department_id, is_super_user = request.user.is_superuser)==False\
+            or len(menus["error_message"])>0):
             template = loader.get_template('workload_app/errors_page.html')
             context = {
                     'error_message': "Access forbidden. User has no access to this page",
-                    'user_menu' : user_menu,
-                    'user_homepage' : user_homepage
+                    'user_menu' : menus['user_menu'],
+                    'user_homepage' : menus['user_homepage']
             }
             return HttpResponse(template.render(context, request))
     
@@ -1843,8 +1786,8 @@ def survey_results(request,survey_id):
             'questions_nps_messages' : questions_nps_messages,
             'questions_perc_positive' : questions_perc_positive,
             'questions_perc_non_negative' : questions_perc_non_negative,
-            'user_menu' : user_menu,
-            'user_homepage' : user_homepage
+            'user_menu' : menus['user_menu'],
+            'user_homepage' : menus['user_homepage']
         }
         return HttpResponse(template.render(context, request))
     
