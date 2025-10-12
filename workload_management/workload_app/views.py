@@ -30,7 +30,8 @@ from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table
 from .helper_methods import CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables, CalculateTeachingAssignmentTypesTable
+                            CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables, CalculateTeachingAssignmentTypesTable,\
+                            getIdsOfValidTeachingAssignmentsTypeForYear
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
@@ -97,8 +98,9 @@ def scenario_view(request, workloadscenario_id):
                                                         'dept' : department,
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
-        
-    all_tables = CalculateAllWorkloadTables(workloadscenario_id)
+    
+    all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(acad_year.start_year)#calculate once, pass to all forms
+    all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types)
     workload_table = all_tables["table_by_prof"]
     modules_table = all_tables["table_by_mod"]
     summary_data = all_tables["summary_data"]
@@ -114,7 +116,7 @@ def scenario_view(request, workloadscenario_id):
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
     #Teaching Assignment forms
-    add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id)
+    add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id, valid_assignment_types=all_valid_assignment_types)
     remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id)
     
     template = loader.get_template('workload_app/workload.html')

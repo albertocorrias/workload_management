@@ -226,6 +226,14 @@ def HandleScenarioForm(form,department_id):
         WorkloadScenario.objects.filter(academic_year = supplied_acad_year).filter(dept = supplied_dept.get()).exclude(id=id_involved)\
                                     .update(status=WorkloadScenario.DRAFT)
 
+
+def getIdsOfValidTeachingAssignmentsTypeForYear(year):
+    ret = []
+    for assign_type in TeachingAssignmentType.objects.select_related('workload_valid_from','workload_valid_until'):
+        if (assign_type.IsValidForYear(year)==True):
+            ret.append(assign_type.id)
+    return ret
+
 #This helper method queries the database and returrns 3 dictionaries.
 # One key is 'table_by_prof' which is a list of items, one per professor
 # For each professor, the dictionary has the following items
@@ -261,7 +269,7 @@ def HandleScenarioForm(form,department_id):
 # Another key is summary_data which is a table with some summary data on the workload scenario
 # 
 #The input parameter is the id of the workload scenario
-def CalculateAllWorkloadTables(workloadscenario_id):
+def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
 
     summary_data =   {
         'module_type_labels' : [], #Used by the chart
@@ -286,6 +294,7 @@ def CalculateAllWorkloadTables(workloadscenario_id):
     }
     all_lecturer_items = []
     all_mod_items = []
+    
     for prof in Lecturer.objects.select_related("employment_track","service_role").filter(workload_scenario__id=workloadscenario_id).order_by('name'):
         prof_tfte =prof.fraction_appointment *  prof.employment_track.track_adjustment * prof.service_role.role_adjustment
         lecturer_item  = {
@@ -303,8 +312,8 @@ def CalculateAllWorkloadTables(workloadscenario_id):
             "prof_form" : ProfessorForm(initial = {'name' : prof.name, 'fraction_appointment' : prof.fraction_appointment,\
                                                        'employment_track' : prof.employment_track.id, \
                                                         'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
-            "edit_assign_form" : EditLecturerTeachingAssignmentForm(prof_id = prof.id),
-            "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id),
+            "edit_assign_form" : EditLecturerTeachingAssignmentForm(prof_id = prof.id, valid_assignment_types = all_valid_assignment_types),
+            "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id, valid_assignment_types = all_valid_assignment_types),
             "num_assigns_for_prof" : 0, #placeholder, will update later
             'is_external' : False
         }
@@ -355,12 +364,12 @@ def CalculateAllWorkloadTables(workloadscenario_id):
                                           'sub_programme' : mod.sub_programme,\
                                           'secondary_sub_programme' : mod.secondary_sub_programme,\
                                           'fresh_record' : False}),
-            "edit_module_assign_form" :  EditModuleAssignmentForm(module_id=mod.id),
-            "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id),
+            "edit_module_assign_form" :  EditModuleAssignmentForm(module_id=mod.id,valid_assignment_types = all_valid_assignment_types),
+            "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id,valid_assignment_types = all_valid_assignment_types),
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }
         all_mod_items.append(single_mod_item)
-    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module","assignment_type").filter(workload_scenario__id = workloadscenario_id):
+    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module").filter(workload_scenario__id = workloadscenario_id):
         lec_id = assign.assigned_lecturer.id
         mod_id = assign.assigned_module.id
         num_hours = assign.number_of_hours
