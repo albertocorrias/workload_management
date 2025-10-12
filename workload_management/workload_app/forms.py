@@ -12,7 +12,7 @@ from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, Modu
 
 def getIdsOfValidTeachingAssignmentsTypeForYear(year):
     ret = []
-    for assign_type in TeachingAssignmentType.objects.all():
+    for assign_type in TeachingAssignmentType.objects.select_related('workload_valid_from','workload_valid_until'):
         if (assign_type.IsValidForYear(year)==True):
             ret.append(assign_type.id)
     return ret
