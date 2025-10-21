@@ -841,7 +841,7 @@ def module(request, module_code):
         remove_mlo_perfroamnce_measure_form  = RemoveMLOPerformanceMeasureForm(module_code = module_code)
 
         mlo_measure_table = []
-        for measure in MLOPerformanceMeasure.objects.filter(associated_mlo__module_code = module_code):
+        for measure in MLOPerformanceMeasure.objects.select_related('academic_year','associated_mlo').filter(associated_mlo__module_code = module_code):
             mlo_measure_table_row = {
                 'year' : measure.academic_year,
                 'description' : measure.description,
@@ -882,7 +882,7 @@ def module(request, module_code):
         #Determine the primary department this module is on. We take as the dept of the first workload this module appears in
         dept_id = ''
         dept_name = ''
-        for mod in Module.objects.filter(module_code = module_code):
+        for mod in Module.objects.select_related('scenario_ref','scenario_ref__dept').filter(module_code = module_code):
             dept_id  = mod.scenario_ref.dept.id
             dept_name  = mod.scenario_ref.dept.department_acronym
             break

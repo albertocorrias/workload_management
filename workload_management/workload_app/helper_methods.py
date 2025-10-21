@@ -296,7 +296,7 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
     all_mod_items = []
     
     for prof in Lecturer.objects.select_related("employment_track","service_role").filter(workload_scenario__id=workloadscenario_id).order_by('name'):
-        prof_tfte =prof.fraction_appointment *  prof.employment_track.track_adjustment * prof.service_role.role_adjustment
+        prof_tfte = prof.fraction_appointment *  prof.employment_track.track_adjustment * prof.service_role.role_adjustment
         lecturer_item  = {
             "prof_name" : prof.name,
             "assignments" : '',#Placeholder, will upadte later
@@ -751,7 +751,7 @@ def CalculateSingleModuleInformationTable(module_code):
                     "total_hours_delivered" : 0,
                     "lecturers_involved" : ""}
                 formatted_string = ""
-                for assign in TeachingAssignment.objects.select_related('assigned_lecturer').filter(workload_scenario=workload).filter(assigned_module__module_code=module_code):
+                for assign in TeachingAssignment.objects.select_related('assigned_lecturer','assigned_module').filter(workload_scenario=workload).filter(assigned_module__module_code=module_code):
                     table_row_item["total_hours_delivered"] += assign.number_of_hours
                     formatted_string+= (assign.assigned_lecturer.name + " (" + str(assign.number_of_hours) + "), ")
                 if (len(formatted_string) > 0): table_row_item["lecturers_involved"] = formatted_string[:-2] #Otherwise it stays empty

@@ -253,7 +253,7 @@ class ServiceRoleForm(forms.ModelForm):
                   'role_adjustment' : _('Multiplier for teaching expectations (e.g., 0 for no expectations, 2 for double, etc)')}
     
     def clean(self):
-        cleaned_data = super().clean();
+        cleaned_data = super().clean()
         role_name  = cleaned_data.get("role_name")
         #if it is a fesh record, we must make sure no duplicate names 
         if (cleaned_data.get("fresh_record") == True):
@@ -725,11 +725,11 @@ class AddTeachingAssignmentForm(forms.Form):
 
         if str(id_of_prof_involved) != str(-1): # a bit dodgy, but comparing against -1 works to check if name is found
             self.fields['select_lecturer'].widget = forms.HiddenInput()#Hides the name alltogether
-            self.fields['select_lecturer'].initial = Lecturer.objects.get(id = id_of_prof_involved)
+            self.fields['select_lecturer'].initial = id_of_prof_involved#
         if str(id_of_mod_involved) != str(-1): #see above
             self.fields['select_module'].widget = forms.HiddenInput()#Hides the module alltogether
-            self.fields['select_module'].initial = Module.objects.get(id = id_of_mod_involved)
-        acad_year = WorkloadScenario.objects.filter(id = workload_scenario_id).get().academic_year.start_year
+            self.fields['select_module'].initial = id_of_mod_involved#
+
         self.fields['teaching_assignment_type'] = forms.ModelChoiceField(label = "Select the type of teaching assignment", \
                                                 queryset = TeachingAssignmentType.objects.filter(id__in=valid_assignment_types))
         self.fields['how_many_units'] = forms.IntegerField(label="How many?", min_value=0, max_value=100000)
@@ -805,12 +805,10 @@ class EditModuleAssignmentForm(forms.Form):
         valid_assignment_types = kwargs.pop('valid_assignment_types')
         super(EditModuleAssignmentForm, self).__init__(*args, **kwargs)
         
-        for assign in TeachingAssignment.objects.select_related('assigned_lecturer', 'assignment_type').filter(assigned_module__id = module_id):
+        for assign in TeachingAssignment.objects.select_related('assigned_lecturer', 'assignment_type','assigned_module').filter(assigned_module__id = module_id):
                 prof_assigned = assign.assigned_lecturer
                 #Keep the prof name in the keys (view will look for it).
                 self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
-
-                acad_year = WorkloadScenario.objects.filter(id = module_obj.scenario_ref.id).get().academic_year.start_year
 
                 self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ModelChoiceField(label = "Type of teaching assignment", \
                                                 queryset = TeachingAssignmentType.objects.filter(id__in=valid_assignment_types), initial=assign.assignment_type)

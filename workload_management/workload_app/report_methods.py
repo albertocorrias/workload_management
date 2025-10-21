@@ -67,7 +67,7 @@ def CalculateProfessorIndividualWorkload(prof_name):
     for idx, year in enumerate(years):
         for row in ret:
             total_years[idx+2] = total_years[idx+2] + row[idx+2] #+2 for module code and title (see above)
-        lecturer = Lecturer.objects.filter(workload_scenario__academic_year__start_year = year).\
+        lecturer = Lecturer.objects.select_related("employment_track","service_role").filter(workload_scenario__academic_year__start_year = year).\
                                            filter(name = prof_name).filter(workload_scenario__status=WorkloadScenario.OFFICIAL)
         if (lecturer.count() >0):
             lect_obj = lecturer.first()
@@ -88,7 +88,7 @@ def CalculateProfessorChartData(lec_name):
     hours_expected = [0]*len(years)
     hours_delivered = [0]*len(years)
     
-    all_assignments = TeachingAssignment.objects.filter(assigned_lecturer__name = lec_name).filter(workload_scenario__status=WorkloadScenario.OFFICIAL)
+    all_assignments = TeachingAssignment.objects.select_related("workload_scenario","workload_scenario__academic_year").filter(assigned_lecturer__name = lec_name).filter(workload_scenario__status=WorkloadScenario.OFFICIAL)
     workload_ids = []
     for assign in all_assignments:
         for index, year in enumerate(years):

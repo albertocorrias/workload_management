@@ -119,8 +119,9 @@ def CalculateTableForMLOSurveys(slo_id, start_year,end_year,compulsory_only):
 
     mlo_survey_measures = []
     attention_scores =  [0]*(end_year - start_year +1) #will store the attention scores
-    for mlo_mapping in MLOSLOMapping.objects.filter(slo__id = slo_id):
-        for srv_resp in SurveyQuestionResponse.objects.filter(associated_mlo = mlo_mapping.mlo):
+
+    for mlo_mapping in MLOSLOMapping.objects.select_related('mlo','slo','slo__cohort_valid_from','mlo__mlo_valid_from').filter(slo__id = slo_id):
+        for srv_resp in SurveyQuestionResponse.objects.select_related("parent_survey").filter(associated_mlo = mlo_mapping.mlo):
             year_of_mod_delivery = srv_resp.parent_survey.opening_date.year #year of mod delivery is the year the year the survey was administered
             #Note the filter for module offered in the year
             module_qs = None
@@ -219,11 +220,11 @@ def CalculateTableForMLODirectMeasures(slo_id, start_year,end_year,compulsory_on
     attention_scores =  [0]*(end_year - start_year +1) #will store the attention scores
 
     #We look at all the mapped measures
-    for mlo_mapping in MLOSLOMapping.objects.filter(slo = slo):
+    for mlo_mapping in MLOSLOMapping.objects.select_related('mlo').filter(slo = slo):
         mod_code = mlo_mapping.mlo.module_code
-        for measure in (MLOPerformanceMeasure.objects.filter(associated_mlo = mlo_mapping.mlo) or \
-                        MLOPerformanceMeasure.objects.filter(secondary_associated_mlo = mlo_mapping.mlo) or \
-                        MLOPerformanceMeasure.objects.filter(tertiary_associated_mlo = mlo_mapping.mlo)):
+        for measure in (MLOPerformanceMeasure.objects.select_related('academic_year').filter(associated_mlo = mlo_mapping.mlo) or \
+                        MLOPerformanceMeasure.objects.select_related('academic_year').filter(secondary_associated_mlo = mlo_mapping.mlo) or \
+                        MLOPerformanceMeasure.objects.select_related('academic_year').filter(tertiary_associated_mlo = mlo_mapping.mlo)):
             year_of_measurement = measure.academic_year.start_year #This is when the module was delivered and measureds
             
             #We loop over all the modules with the correct code, offered the year of measurement AND checking for compulsory if needed
