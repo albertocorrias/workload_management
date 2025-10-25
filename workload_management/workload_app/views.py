@@ -149,12 +149,21 @@ def bulk_add_professor(request,workload_id):
         form = BulkUploadProfForm(request.POST,request.FILES)
 
         if (form.is_valid()):
-            print('***************************************************************')
-            #print(request.FILES['bulk_prof_file'])
-            result = readInUploadedFile(request.FILES['bulk_prof_file'],skip_header=0,file_type = csv_file_type.PROFESSOR_FILE)
+            skip_header = form.cleaned_data['skip_header']
+
+            wl = WorkloadScenario.objects.filter(id=workload_id).get()
+            result = readInUploadedFile(request.FILES['bulk_prof_file'],skip_header=skip_header,file_type = csv_file_type.PROFESSOR_FILE)
             print(result)
-            #for chunk in request.FILES['bulk_prof_file'].chunks():
-            #    print(chunk)
+            if (result["errors"]==False):
+                names = result["data"][0]
+                frac_appts = result["data"][1]
+                service_role = ServiceRole.objects.first()
+                empl_track = EmploymentTrack.objects.first()
+                for idx in range(0,len(names)):
+                    Lecturer.objects.create(name=names[idx],fraction_appointment=frac_appts[idx], workload_scenario =wl,\
+                            service_role= service_role,employment_track=empl_track)
+            else:
+                print('there is an  error')
 
     #Otherwise just go back to workload view
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workload_id}))

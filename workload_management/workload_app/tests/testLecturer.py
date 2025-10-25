@@ -1,7 +1,9 @@
+import os
 from django.test import TestCase
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import *
 
 from workload_app.models import Faculty,Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType,\
@@ -444,5 +446,31 @@ class TestLecturer(TestCase):
         self.assertEqual(teaching_assignments.count(),3)#Same as above
         teaching_assignments_for_active_scen = TeachingAssignment.objects.filter(workload_scenario__id = scenario_2.id)
         self.assertEqual(teaching_assignments_for_active_scen.count(),1)#One assignment in scenario 2
+
+    def test_upload_lecturers_in_bulk(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
+        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
+
+        #create one scenario
+        scen_name_1 = 'scen_1'
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, academic_year=acad_year, dept=first_dept)
+        self.assertEqual(Lecturer.objects.all().count(),0)
+
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        #upload  a list of lecturers
+        response = self.client.post(reverse('workload_app:bulk_add_professor',  kwargs={'workload_id': scenario_1.id}),\
+            {'bulk_prof_file': upload_file,'skip_header': 0})
+        self.assertEqual(response.status_code, 302) #should re-direct
+
+        self.assertEqual(Lecturer.objects.all().count(),3)    
+
 
     

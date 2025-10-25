@@ -72,6 +72,7 @@ class RemoveProfessorForm(forms.Form):
 
 class BulkUploadProfForm(forms.Form):
     bulk_prof_file = forms.FileField()
+    skip_header=forms.IntegerField(label = "If the file has headers, how many lines?",initial=0,max_value=100000,min_value=0)
 
 #Form to add new module. Modelled after the Module model.
 class ModuleForm(ModelForm):
