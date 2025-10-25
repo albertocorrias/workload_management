@@ -14,8 +14,43 @@
       Add/Remove teaching assignments...
     </button>
 
-    </p><!--End of workload management-->
+    <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#BulkProfessorsModal">
+      Add professors in bulk...
+    </button>
+
+    </p><!--End of buttons-->
     
+    <!-- Bulk add professor modal -->
+    <div class="modal fade" id="BulkProfessorsModal" tabindex="-1" role="dialog" aria-labelledby="BulkProfessorsModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="BulkProfessorsModalLabel">Add a new lecturer</h5>
+		            <button type="button" class="btn btn-default" data-bs-dismiss="modal" aria-label="Close">
+		              <img src="{% static 'workload_app/x-square-red.svg' %}" alt="close">
+		            </button>
+              </div>
+             <form action="{% url 'workload_app:bulk_add_professor' workloadscenario_id %}" method="post" enctype="multipart/form-data">
+             {% csrf_token %}
+                  <div class="modal-body">
+                        {{ bulk_upload_prof_form }}
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel and Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                  </div>
+            </form>       
+        </div><!-- Modal content -->
+      </div><!-- Mdal dialogue-->
+    </div><!--whole modal-->
+
+
+
+
+
+
+
+
     <!-- Manage professor modal -->
     <div class="modal fade" id="ManageProfessorModal" tabindex="-1" role="dialog" aria-labelledby="ManageProfessorModalLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">

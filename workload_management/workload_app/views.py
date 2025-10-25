@@ -23,15 +23,16 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    AddMLOSurveyForm,RemoveMLOSurveyForm,MLOPerformanceMeasureForm,RemoveMLOPerformanceMeasureForm,\
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
                    CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,\
-                   EditSurveySettingsForm,TeachingAssignmentTypeForm,RemoveTeachingAssignmentTypeForm
+                   EditSurveySettingsForm,TeachingAssignmentTypeForm,RemoveTeachingAssignmentTypeForm,\
+                   BulkUploadProfForm
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
-                              accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore
+                              accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore,csv_file_type
 from .helper_methods import CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
                             CalculateFacultiesTable,CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                             CalculateSingleModuleInformationTable, HandleScenarioForm, CalculateAllWorkloadTables, CalculateTeachingAssignmentTypesTable,\
-                            getIdsOfValidTeachingAssignmentsTypeForYear
+                            getIdsOfValidTeachingAssignmentsTypeForYear,readInUploadedFile
 from .helper_methods_survey import CalculateSurveyDetails,DetermineSurveyLabelsForProgramme,DeteremineSurveyInitialValues
 from .helper_methods_accreditation import DetermineIconBasedOnStrength,CalculateTableForOverallSLOMapping,\
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
@@ -115,6 +116,9 @@ def scenario_view(request, workloadscenario_id):
     mod_form  = ModuleForm(dept_id = department.id,initial = {'fresh_record' : True})
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
+    #bulk uploads
+    bulk_upload_prof_form = BulkUploadProfForm()
+
     #Teaching Assignment forms
     add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id, valid_assignment_types=all_valid_assignment_types)
     remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id)
@@ -134,10 +138,27 @@ def scenario_view(request, workloadscenario_id):
         'add_teaching_assignment_form':add_teaching_assignment_form,
         'remove_teaching_assignment_form':remove_teaching_assignment_form.as_p(),
         'department_id' : department.id,
+        'bulk_upload_prof_form' :bulk_upload_prof_form.as_p(),
         'user_menu' : menus['user_menu'],
         'user_homepage' : menus['user_homepage']
     }
     return HttpResponse(template.render(context, request))
+
+def bulk_add_professor(request,workload_id):
+    if (request.method == 'POST'):
+        form = BulkUploadProfForm(request.POST,request.FILES)
+
+        if (form.is_valid()):
+            print('***************************************************************')
+            #print(request.FILES['bulk_prof_file'])
+            result = readInUploadedFile(request.FILES['bulk_prof_file'],skip_header=0,file_type = csv_file_type.PROFESSOR_FILE)
+            print(result)
+            #for chunk in request.FILES['bulk_prof_file'].chunks():
+            #    print(chunk)
+
+    #Otherwise just go back to workload view
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workload_id}))
+    
 
 def school_page(request,faculty_id):
 

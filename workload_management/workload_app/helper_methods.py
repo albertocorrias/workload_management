@@ -797,8 +797,7 @@ def RegularizeName(name):
     return ret
 
 
-
-def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FILE):
+def readInUploadedFile(uploaded_file, skip_header=0, file_type = csv_file_type.PROFESSOR_FILE):
     '''
     Method that reads in a file in csv format.
 
@@ -824,7 +823,7 @@ def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FI
     If the second column is empty, this method will interpret it as 1 for professors and "No title" for modules
     If, for professors, the appointment fraction is > 1, this method will force it to be 1
 
-    The filename parameter is the path to the csv filename.
+    The uploaed_file parameter is a Django UploadFileObject (this function will read from it).
     The optional parameter skip_header will make the method skip the number of lines at the start 
     It returns a dictionary with the following keys
     - "errors" : boolean (True if there are errors in reading and False if not)
@@ -838,42 +837,47 @@ def ReadInCsvFile(filename,skip_header=0, file_type = csv_file_type.PROFESSOR_FI
     }
     first_info = []#Name of prof or module code for modules
     second_info = []#Appointment (0 to 1) or module title for modules
-
-    try:
-        with open(filename, 'r') as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            line_count = 1
-            for row in csv_reader:
-                if line_count > skip_header:
-                    if len(row) > 0 :#Handle the name or module code
-                        if (row[0] != '' and row[0].isspace() == False): 
-                            first_info.append(row[0])
-                        else:
-                            continue 
-                    else:
-                        continue #ignore empty lines
-                    if len(row) > 1 : #Handle the appointment or module title
-                        if (row[1] != '' and row[1].isspace() == False): #If not empty and not only spaces
-                            if file_type == csv_file_type.PROFESSOR_FILE:
-                                if float(row[1]) > 1:#force to be 1 if the file has some strange number greater than 1
-                                    second_info.append('1')
-                                else:
-                                    second_info.append(row[1])
-                            else:#Module file
-                                second_info.append(row[1])
-                        else:#append the value of 1 if in the file there is no indication (empty or only spaces)
-                            if file_type == csv_file_type.PROFESSOR_FILE:
-                                second_info.append('1')
-                            else:#If it is a  module file
-                                second_info.append('No title')
-                    else: #No appointment indicated. We get here if there was never a second column
-                            if file_type == csv_file_type.PROFESSOR_FILE:
-                                second_info.append('1')
-                            else:#If it is a  module file
-                                second_info.append('No title')
-                line_count += 1
-        ret.update({"data" : [first_info,second_info]})
-    except:
-        ret["errors"] = True
     
+    decoded_stream = uploaded_file.read().decode("utf-8").splitlines()
+    csv_reader = csv.reader(decoded_stream, delimiter=',')
+    line_count = 1
+    for row in csv_reader:
+        try:
+            if line_count > skip_header:
+                if len(row) > 0 :#Handle the name or module code
+                    if (row[0] != '' and row[0].isspace() == False): 
+                        first_info.append(row[0])
+                    else:
+                        continue 
+                else:
+                    continue #ignore empty lines
+                if len(row) > 1 : #Handle the appointment or module title
+                    if (row[1] != '' and row[1].isspace() == False): #If not empty and not only spaces
+                        if file_type == csv_file_type.PROFESSOR_FILE:
+                            if float(row[1]) > 1:#force to be 1 if the file has some strange number greater than 1
+                                second_info.append('1')
+                            else:
+                                second_info.append(row[1])
+                        else:#Module file
+                            second_info.append(row[1])
+                    else:#append the value of 1 if in the file there is no indication (empty or only spaces)
+                        if file_type == csv_file_type.PROFESSOR_FILE:
+                            second_info.append('1')
+                        else:#If it is a  module file
+                            second_info.append('No title')
+                else: #No appointment indicated. We get here if there was never a second column
+                        if file_type == csv_file_type.PROFESSOR_FILE:
+                            second_info.append('1')
+                        else:#If it is a  module file
+                            second_info.append('No title')
+            line_count += 1
+        except:
+            #if something wrong, empty the lists, flag the error and break out of the loop
+            first_info = []
+            second_info = []
+            ret["errors"] = True
+            break
+    if (ret["errors"] == False):
+        ret.update({"data" : [first_info,second_info]})
+
     return ret

@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import *
 from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario,\
                                 ModuleType,Department, EmploymentTrack, ServiceRole, Faculty,Academicyear, \
@@ -11,7 +12,7 @@ from workload_app.global_constants import MAX_NUMBER_OF_CHARACTERS_IN_TABLE_CELL
     CalculateNumHoursBasedOnWeeklyInfo,csv_file_type,requested_table_type
 from workload_app.helper_methods import RegularizeName,CalculateEmploymentTracksTable,CalculateServiceRolesTable,\
                                          CalculateDepartmentTable, CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
-                                         CalculateSingleModuleInformationTable, ReadInCsvFile
+                                         CalculateSingleModuleInformationTable, readInUploadedFile
 
 # Helper method for tests
 # def create_lecturer(lec_name, appt,adj):
@@ -1058,10 +1059,15 @@ class testHelperMethods(TestCase):
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(1,0,0,2),0)
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(2,1,1,2),int(4))
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(2,1,2,2),int(8))
-        
-    def testReadInCsvFileForProfessors(self):
+    
+    
+    def testreadInUploadedFileForProfessors(self):
+
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
         #Regular file. Two columns, no header
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header.csv'), file_type = csv_file_type.PROFESSOR_FILE)
+        all_results = readInUploadedFile(upload_file)
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1075,7 +1081,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], '0.8')
 
         #Regular file. Two columns, no header, one extra new line at the end of the file
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header_newline_at_end.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header_newline_at_end.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+
+        all_results = readInUploadedFile(upload_file)
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1089,7 +1099,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], '0.8')
 
         #Regular file. Two columns, no header, missing one line in the middle
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header_missing_line_in_the_middle.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header_missing_line_in_the_middle.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+
+        all_results = readInUploadedFile(upload_file)
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1102,7 +1116,11 @@ class testHelperMethods(TestCase):
 
         #Irregular file. Two columns, no header, missing one name (but appt is there)
         #Expected behaviour is to ignore the line, even if appt is there
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/missing_one_name_no_header.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/missing_one_name_no_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+
+        all_results = readInUploadedFile(upload_file)
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1115,7 +1133,11 @@ class testHelperMethods(TestCase):
 
          #Irregular file. Two columns, no header, missing one name (but appt is there). Instead of the name, a bunch of white spaces are there
         #Expected behaviour is to ignore the line, even if appt is there and the name is just white spaces
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/missing_one_name_spaces_instead_no_header.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/missing_one_name_spaces_instead_no_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1126,13 +1148,12 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][0], '1')
         self.assertEqual(data_read[1][1], '0.8')       
 
-        #Non existing file. Error flag true and data key not even in dictionary
-        invalid = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/hellohello.csv'))
-        self.assertEqual(invalid["errors"], True)
-        self.assertEqual("data" in invalid.keys(), False)
-
         #Empty file. No errors, but data is empty
-        empty = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/empty_file.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/empty_file.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        empty = readInUploadedFile(upload_file)
+
         self.assertEqual(empty["errors"], False)
         data_read = empty["data"]
         self.assertEqual(len(data_read), 2)
@@ -1140,7 +1161,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(len(data_read[1]), 0)
 
         #File with only white spaces in it. No errors, but data is empty
-        empty = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/empty_file_whitespaces.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/empty_file_whitespaces.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        empty = readInUploadedFile(upload_file)
+
         self.assertEqual(empty["errors"], False)
         data_read = empty["data"]
         self.assertEqual(len(data_read), 2)
@@ -1148,7 +1173,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(len(data_read[1]), 0)
 
         #Regular file. Two columns, one line header
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/regular_one_line_header.csv'), skip_header=1)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_one_line_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,skip_header=1)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1162,7 +1191,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], '0.8')
 
         #Regular file. Two columns, two lines header
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/regular_two_lines_header.csv'), skip_header=2)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_two_lines_header.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,skip_header=2)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1176,7 +1209,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], '0.8')
 
         #irregular file. No header. One guy has appt > 1
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/appt_greater_than_one.csv'))
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/appt_greater_than_one.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1191,7 +1228,11 @@ class testHelperMethods(TestCase):
 
         #Irregular file. This file (one line header) has two columns, but the second (appointment) column has some missing values
         #The expected behaviour is to turn missing values into "1"
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/missing_some_appts.csv'), skip_header=1)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/missing_some_appts.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,skip_header=1)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1207,7 +1248,11 @@ class testHelperMethods(TestCase):
         #Irregular file. This file (one line header) has two columns, but the second (appointment) column has some missing values
         #Instead of missing values, a series of white spaces are inserted
         #The expected behaviour is to turn missing values into "1"
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/missing_some_appts_white_spaces.csv'), skip_header=1)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/missing_some_appts_white_spaces.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,skip_header=1)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1222,7 +1267,11 @@ class testHelperMethods(TestCase):
 
         #Irregular file. This file (one line header) has two columns, but the second (appointment) column has all missing values
         #The expected behaviour is to turn missing values into "1"
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/missing_all_appts.csv'), skip_header=1)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/missing_all_appts.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,skip_header=1)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1237,7 +1286,11 @@ class testHelperMethods(TestCase):
 
         #Irregular file. This file is just one column of names, no appointments and no headers
         #The expected behaviour is to turn missing values into "1"
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/profs/one_column_of_names.csv'),file_type = csv_file_type.PROFESSOR_FILE )
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/one_column_of_names.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.PROFESSOR_FILE)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1250,9 +1303,13 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][1], '1')#Missing turned to 1
         self.assertEqual(data_read[1][2], '1')#Missing turned to 1
 
-    def testReadInCsvFileForModules(self):
-        #Regular file. Two columns, no header
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/mods/regular_file_no_headers.csv'), file_type = csv_file_type.MODULE_FILE)
+    def testreadInUploadedFileForModules(self):
+         #Regular file. Two columns, no header
+        with open(os.path.join(os.path.dirname(__file__), 'data/mods/regular_file_no_headers.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.MODULE_FILE)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1266,7 +1323,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], 'Module 3')
 
         #File with one line missing in the middle
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/mods/missing_one_line_no_headers.csv'), file_type = csv_file_type.MODULE_FILE)
+        with open(os.path.join(os.path.dirname(__file__), 'data/mods/missing_one_line_no_headers.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.MODULE_FILE)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1278,7 +1339,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][1], 'Module 3')
 
         #File with one module title missing
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/mods/missing_one_module_title_no_headers.csv'), file_type = csv_file_type.MODULE_FILE)
+        with open(os.path.join(os.path.dirname(__file__), 'data/mods/missing_one_module_title_no_headers.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.MODULE_FILE)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1292,7 +1357,11 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][2], 'Module 3')
         
         #File with one column of codes, all  titles missing
-        all_results = ReadInCsvFile(os.path.join(os.path.dirname(__file__), 'data/mods/one_column_of_codes.csv'), file_type = csv_file_type.MODULE_FILE)
+        with open(os.path.join(os.path.dirname(__file__), 'data/mods/one_column_of_codes.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.MODULE_FILE)
+
         self.assertEqual(all_results["errors"], False)
         data_read = all_results["data"]
         self.assertEqual(len(data_read), 2)
@@ -1304,9 +1373,3 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][0], 'No title') #Turned to a default because absent in file
         self.assertEqual(data_read[1][1], 'No title') #Turned to a default because absent in file
         self.assertEqual(data_read[1][2], 'No title') #Turned to a default because absent in file
-
-
-        
-        
-        
-        

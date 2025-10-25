@@ -69,7 +69,10 @@ class RemoveProfessorForm(forms.Form):
                                                         queryset=Lecturer.objects.filter(workload_scenario__id = workload_scenario_id))
         self.fields['wipe_out_from_table'] = forms.BooleanField(label = 'Remove professor entirely from the database?', required=False,\
                                                      help_text='If this option is ticked, the name of the professor will be eliminated from the table')
-        
+
+class BulkUploadProfForm(forms.Form):
+    bulk_prof_file = forms.FileField()
+
 #Form to add new module. Modelled after the Module model.
 class ModuleForm(ModelForm):
     """
