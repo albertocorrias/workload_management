@@ -783,7 +783,7 @@ class UniversityStaff(models.Model):
     #Departments accessible to this user
     departments_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
     #modules accessible to this user
-    modules_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
+    modules_in_menu = ArrayField(models.CharField(max_length=10,default='',blank=True),blank=True, default = list)
     #lecturers accessible to this user
     lecturers_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
     #programmes accessible to this user

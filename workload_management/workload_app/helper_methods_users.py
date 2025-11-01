@@ -165,11 +165,11 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
                     'url' :'/accreditation/' + str(prog_id)
                 }
             ret["accreditations"].append(prog_item)        
-        for mod_id in user_obj.modules_in_menu:
+        for mod_code in user_obj.modules_in_menu:
             mod_item = {
-                    'label' : Module.objects.filter(id=mod_id).get().module_code,
-                    'id' : mod_id,
-                    'url' :'/module/' + str(mod_id)
+                    'label' :mod_code,
+                    'id' : 1,#unused
+                    'url' :'/module/' + mod_code
                 }
             ret["modules"].append(mod_item)   
             
@@ -231,11 +231,11 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
                 if (CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user=is_super_user)):
                     mod_item = {
                         'label' : mod.module_code,
-                        'id' : mod.id,
+                        'id' : mod.id,#actually unused
                         'url' :'/module/' + mod.module_code
                     }
                     ret["modules"].append(mod_item)
-                    user_obj.modules_in_menu.append(mod.id)
+                    user_obj.modules_in_menu.append(module_code)
                     added_modules.append(mod.module_code)        
         user_obj.is_menu_populated = True
         user_obj.save()
