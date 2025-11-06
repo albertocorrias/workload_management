@@ -42,6 +42,16 @@ from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartm
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInput
 from .helper_methods_demo import populate_database
 
+
+def home(request):
+
+    template = loader.get_template('workload_app/home.html')
+    context = {
+                'error_message': "hello"
+    }
+    return HttpResponse(template.render(context, request))
+
+#This is intended as the user home page. If the user is logged in, it goes to his/her own home page
 def home_page(request):
     if request.user.is_authenticated: #logged in user ->Figure out home page and send there
         return post_login_landing(request)

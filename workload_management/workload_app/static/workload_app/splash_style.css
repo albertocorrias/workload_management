@@ -1,0 +1,27 @@
+div.banner_container {
+    margin:0;
+    padding: 0;
+    width:100%;
+}
+img.banner_image{
+    width: 100%;
+}
+
+div.header_container{
+    text-align:center;
+}
+
+img.feature_image{
+    width: 60%;
+    margin-bottom: 2em;
+}
+
+div.feature_text{
+    text-align:left;
+    color: black;
+    font-size: 1.5em;
+}
+span.highlight_text{
+    color:rgb(32, 164, 86);
+
+}

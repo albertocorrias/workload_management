@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="16"
+   height="16"
+   fill="currentColor"
+   class="bi bi-bar-chart-fill"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="bar-chart-fill-coloured.svg"
+   inkscape:version="1.4.2 (2aeb623e1d, 2025-05-12)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="56.4375"
+     inkscape:cx="8"
+     inkscape:cy="8"
+     inkscape:window-width="1854"
+     inkscape:window-height="1131"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <path
+     d="m 1.0885936,11 a 1,1 0 0 1 1,-1 h 2 a 1,1 0 0 1 1,1 v 3 a 1,1 0 0 1 -1,1 h -2 a 1,1 0 0 1 -1,-1 z m 5,-4 a 1,1 0 0 1 1,-1 h 2 a 1,1 0 0 1 1.0000004,1 v 7 a 1,1 0 0 1 -1.0000004,1 h -2 a 1,1 0 0 1 -1,-1 z M 11.088594,2 a 1,1 0 0 1 1,-1 h 2 a 1,1 0 0 1 1,1 v 12 a 1,1 0 0 1 -1,1 h -2 a 1,1 0 0 1 -1,-1 z"
+     id="path1"
+     style="fill:#20a456;fill-opacity:1;stroke:none;stroke-opacity:1" />
+</svg>

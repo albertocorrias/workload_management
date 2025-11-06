@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+
+  <head>
+    <meta charset="utf-8">
+    <title>Workload Management App</title>
+    {% include './headers.html' %}
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/splash_style.css' %}">
+   
+  </head>
+  <body>
+  <div class="banner_container">
+    <img class ="banner_image" src="{% static 'workload_app/splash-banner.png' %}" alt="my image"/>
+  </div>
+<div class="overall_container" id="overall_container">
+<div class="header_container">
+<h1>Key features    </h1>
+</div>
+<div class="container text-center">
+    <div class="row align-items-start">
+       <div class="col">
+            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt = " "/>
+            <div class="feature_text">
+                Manage common academic administration needs such as teaching workload balancing and programme-level accreditation 
+                <span class="highlight_text">from your browser</span>. No installation required. <span class="highlight_text">Free of charge</span>.
+            </div>
+        </div>
+        <div class="col">
+            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/bar-chart-fill-coloured.svg' %}" alt = " "/>
+            <div class="feature_text">Easily keep track of department-level <span class="highlight_text">teaching workload</span>, with unlimited number of lecturers and courses,
+                with <span class="highlight_text">customizable teaching assigment types</span>, and across many years. 
+            </div>
+        </div>
+        <div class="col">
+            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/graph-up-coloured.svg' %}" alt = " "/>
+            <div class="feature_text">Ease the <span class="highlight_text">accreditation process</span>. Define programme-level <span class="highlight_text">graduate attributes</span>, 
+                single course-level <span class="highlight_text">learning outcomes</span>,
+                and keep track of their performance measures over time, including <span class="highlight_text">surveys</span> and exam results.
+            </div>
+        </div>
+    </div>
+</div>  
+</div><!--overall container-->
+  {% include './footer.html' %}
+  </body>
+</html>
+
+
+
