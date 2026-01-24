@@ -227,12 +227,12 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
             dept = ws.dept
             fac = dept.faculty
             
-            if mod.module_code not in added_modules:
+            if module_code not in added_modules:
                 if (CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user=is_super_user)):
                     mod_item = {
-                        'label' : mod.module_code,
+                        'label' : module_code,
                         'id' : mod.id,#actually unused
-                        'url' :'/module/' + mod.module_code
+                        'url' :'/module/' + module_code
                     }
                     ret["modules"].append(mod_item)
                     user_obj.modules_in_menu.append(module_code)
