@@ -269,7 +269,7 @@ def getIdsOfValidTeachingAssignmentsTypeForYear(year):
 # Another key is summary_data which is a table with some summary data on the workload scenario
 # 
 #The input parameter is the id of the workload scenario
-def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
+def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list):
 
     summary_data =   {
         'module_type_labels' : [], #Used by the chart
@@ -294,7 +294,7 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
     }
     all_lecturer_items = []
     all_mod_items = []
-    
+    dept_id = WorkloadScenario.objects.filter(id=workloadscenario_id).get().dept.id
     for prof in Lecturer.objects.select_related("employment_track","service_role").filter(workload_scenario__id=workloadscenario_id).order_by('name'):
         prof_tfte = prof.fraction_appointment *  prof.employment_track.track_adjustment * prof.service_role.role_adjustment
         lecturer_item  = {
@@ -330,14 +330,58 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
             lecturer_item['is_external'] = True
 
 
-        
+
     for mod in Module.objects.select_related("module_type","primary_programme", "secondary_programme","sub_programme", "secondary_sub_programme").filter(scenario_ref__id = workloadscenario_id):
         student_year_of_study=0
         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
+        
         display_mod_type = DEFAULT_MODULE_TYPE_NAME
         if (mod.module_type is not None): display_mod_type = mod.module_type.type_name
-        display_prg_name = "No programme"
-        if (mod.primary_programme is not None): display_prg_name = mod.primary_programme.programme_name
+        
+        mod_type_index = -1
+        if (mod.module_type is not None): 
+            for i in range(0,len(mod_type_list)):
+                if mod.module_type.id in mod_type_list[i]:
+                    mod_type_index = i
+                    break
+
+        primary_prog_index = -1
+        if (mod.primary_programme is not None): 
+            display_prg_name = mod.primary_programme.programme_name
+            for i in range(0,len(prog_list)):
+                if mod.primary_programme.id in prog_list[i]:
+                    primary_prog_index = i
+                    break
+        else:
+            display_prg_name = "No programme"
+
+        secondary_prog_index = -1
+        if (mod.secondary_programme is not None): 
+            for i in range(0,len(prog_list)):
+                if mod.primary_programme.id in prog_list[i]:
+                    secondary_prog_index = i
+                    break
+
+        tertiary_prog_index = -1
+        if (mod.tertiary_programme is not None): 
+            for i in range(0,len(prog_list)):
+                if mod.tertiary_programme.id in prog_list[i]:
+                    tertiary_prog_index = i
+                    break
+        
+        sub_prog_index = -1
+        if (mod.sub_programme is not None): 
+            for i in range(0,len(sub_prog_list)):
+                if mod.sub_programme.id in sub_prog_list[i]:
+                    sub_prog_index = i
+                    break
+            
+        secondary_sub_prog_index=-1
+        if (mod.secondary_sub_programme is not None): 
+            for i in range(0,len(sub_prog_list)):
+                if mod.secondary_sub_programme.id in sub_prog_list[i]:
+                    secondary_sub_prog_index = i
+                    break
 
         single_mod_item = {
             "module_code" : mod.module_code,
@@ -354,15 +398,19 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types):
             "module_hex_code" : '#FFFFFF', #White as default. May be updated later
             "module_id" : mod.id,
             "semester_offered" : mod.semester_offered,
-            "mod_form" : ModuleForm(dept_id = mod.scenario_ref.dept.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
-                                          'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
+            "mod_form" : ModuleForm(dept_id = dept_id, prog_list = prog_list, sub_prog_list = sub_prog_list, mod_type_list = mod_type_list,\
+                                    initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
+                                          'total_hours' : mod.total_hours, 'module_type' : mod_type_list[mod_type_index],\
                                           'semester_offered' : mod.semester_offered,\
-                                          'primary_programme' : mod.primary_programme,\
+                                          'primary_programme' : prog_list[primary_prog_index],\
                                           'compulsory_in_primary_programme' : mod.compulsory_in_primary_programme,\
                                           'students_year_of_study' : student_year_of_study,\
-                                          'secondary_programme' : mod.secondary_programme,\
-                                          'sub_programme' : mod.sub_programme,\
-                                          'secondary_sub_programme' : mod.secondary_sub_programme,\
+                                          'secondary_programme' : prog_list[secondary_prog_index] ,\
+                                          'compulsory_in_secondary_programme' : mod.compulsory_in_secondary_programme,\
+                                          'tertiary_programme' : prog_list[tertiary_prog_index] ,\
+                                          'compulsory_in_tertiary_programme' : mod.compulsory_in_tertiary_programme,\
+                                          'sub_programme' : sub_prog_list[sub_prog_index],\
+                                          'secondary_sub_programme' : sub_prog_list[secondary_sub_prog_index],\
                                           'fresh_record' : False}),
             "edit_module_assign_form" :  EditModuleAssignmentForm(module_id=mod.id,valid_assignment_types = all_valid_assignment_types),
             "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id,valid_assignment_types = all_valid_assignment_types),

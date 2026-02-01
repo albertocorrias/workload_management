@@ -110,22 +110,33 @@ def scenario_view(request, workloadscenario_id):
                                                         'status' : status,
                                                         'academic_year' : acad_year}).as_p()
     
-    all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(acad_year.start_year)#calculate once, pass to all forms
-    all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types)
-    workload_table = all_tables["table_by_prof"]
-    modules_table = all_tables["table_by_mod"]
-    summary_data = all_tables["summary_data"]
-    
+
+    #Generate relevant lists of programems, subprogrammes, assignment and module types to be passed to the forms (DB hit only once, here)
+    all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(acad_year.start_year)
+    prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=department.id).values_list('id','programme_name'))
+    prog_list.append((-1,"No programme"))
+    sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = department.id).values_list('id','sub_programme_name'))
+    sub_prog_list.append((-1,"No sub-programme"))
+    mod_type_list = list(ModuleType.objects.filter(department__id=department.id).values_list('id','type_name'))
+    mod_type_list.append((-1,"No module type"))
+
     #Make sure the empty forms are avilable to the scenario page
     #NOTE: The edit assignments form is created within within wl_table
     
     #Lecturer forms (the edit forms are added in the helper methods in the table)
     prof_form = ProfessorForm(initial = {'fresh_record' : True})
     remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id)
-    #Module forms (the edit forms are added in the helper methods in the table)
-    mod_form  = ModuleForm(dept_id = department.id,initial = {'fresh_record' : True})
+    #Module form for new course (the edit forms are added in the helper methods in the table)
+    mod_form  = ModuleForm(dept_id = department.id,prog_list = prog_list, sub_prog_list = sub_prog_list, mod_type_list = mod_type_list, \
+                            initial = {'fresh_record' : True, 'compulsory_in_secondary_programme': False, 'compulsory_in_tertiary_programme': False})
+
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
+        
+    all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)
+    workload_table = all_tables["table_by_prof"]
+    modules_table = all_tables["table_by_mod"]
+    summary_data = all_tables["summary_data"]
     #bulk uploads
     bulk_upload_prof_form = BulkUploadProfForm()
 
@@ -2066,10 +2077,19 @@ def remove_professor(request,workloadscenario_id):
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workloadscenario_id}))
 
 def add_module(request,workloadscenario_id):
-    department = WorkloadScenario.objects.filter(id = workloadscenario_id).get().dept
-    
+    this_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
+    department = this_scen.dept
+    #Generate relevant lists of programems, subprogrammes, assignment and module types to be passed to the forms (DB hit only once, here)
+    prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=department.id).values_list('id','programme_name'))
+    prog_list.append((-1,"No programme"))
+    sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = department.id).values_list('id','sub_programme_name'))
+    sub_prog_list.append((-1,"No sub-programme"))
+    mod_type_list = list(ModuleType.objects.filter(department__id=department.id).values_list('id','type_name'))
+    mod_type_list.append((-1,"No module type"))
+
     if request.method =='POST':
-        form = ModuleForm(request.POST, dept_id = department.id)      
+        form = ModuleForm(request.POST, dept_id = department.id, prog_list = prog_list, sub_prog_list=sub_prog_list, mod_type_list = mod_type_list)
+ 
         if form.is_valid():
             supplied_module_code = form.cleaned_data['module_code']
             supplied_module_title = form.cleaned_data['module_title']
@@ -2091,6 +2111,14 @@ def add_module(request,workloadscenario_id):
             else:
                 supplied_hours = 39
             
+            #Check the foreign keys
+            if (supplied_type == '-1'): supplied_type = None
+            if (supplied_programme_belongs_to == '-1'): supplied_programme_belongs_to = None
+            if (supplied_secondary_programme_belongs_to == '-1'): supplied_secondary_programme_belongs_to = None
+            if (supplied_tertirary_programme_belongs_to == '-1'): supplied_tertirary_programme_belongs_to = None
+            if (supplied_sub_programme_belongs_to == '-1'): supplied_sub_programme_belongs_to = None
+            if (supplied_secondary_sub_programme_belongs_to == '-1'): supplied_secondary_sub_programme_belongs_to = None
+
             if (request.POST['fresh_record'] == 'False'):
                 #This is an update
                 Module.objects.filter(module_code=supplied_module_code).filter(scenario_ref__id=workloadscenario_id).update(module_code=supplied_module_code, \

@@ -75,85 +75,47 @@ class BulkUploadProfForm(forms.Form):
     skip_header=forms.IntegerField(label = "If the file has headers, how many lines?",initial=0,max_value=100000,min_value=0)
 
 #Form to add new module. Modelled after the Module model.
-class ModuleForm(ModelForm):
+class ModuleForm(forms.Form):
     """
     Form to add new module. Modelled after the Module model.
     
     Attributes
     ----------
     
-    manual_hours_checked : boolean
-        whether or not the number of assigne dhours will be manually enetered or not.
+
     fresh_record : boolean
         This is a flag that differentiate when the form is for adding a 
         fresh record or when it is for editing an existing one
     """    
-    #manual_hours_checked = forms.BooleanField(initial=False, required=False, label="Specify custom number of hours? (if left unticked, number of hours will be assigned automatically based on course type and number of tutorial groups)")    
-
     fresh_record = forms.BooleanField(widget=forms.HiddenInput(), required=False)
     
-    class Meta:
-        model = Module
-        fields = ['module_code', 'module_title', 'module_type', 'semester_offered', 'students_year_of_study', 'primary_programme',
-                  'compulsory_in_primary_programme','secondary_programme','compulsory_in_secondary_programme',\
-                  'tertiary_programme','compulsory_in_tertiary_programme','sub_programme', \
-                  'secondary_sub_programme', 'total_hours', ]
-        labels = {'module_code' : _('Course code'),
-                  'module_title' : _('Course title'),
-                  'module_type' : _('Type of course'),
-                  'semester_offered' : _('Semester offered'),
-                  'students_year_of_study': _('Year of study of students taking this course'),
-                  'primary_programme' : _('Primary  programme the course is part of'),
-                  'compulsory_in_primary_programme': _('Compulsory in primary programme?'),
-                  'secondary_programme' : _('A second programme the course may be part of'),
-                  'compulsory_in_secondary_programme' : _('Compulsory in this second programme?'),
-                  'tertiary_programme' : _('A third  programme the course may be part of'),
-                  'compulsory_in_tertiary_programme' : _('Compulsory in this third programme?'),
-                  'sub_programme' : _('Sub-programme this course may be part of'),
-                  'secondary_sub_programme' : _('Another sub-programme this course is also part of'),
-                  'total_hours' : _('Total expected hours needed')
-                  }
-
-        widgets = {
-                   'semester_offered' : forms.Select(choices=Module.SEMESTER_OFFERED),
-                   'compulsory_in_primary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
-                   'compulsory_in_secondary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
-                   'compulsory_in_tertiary_programme' : forms.Select(choices=Module.YES_NO_MODULE),
-                   }
-        
     def __init__(self, *args, **kwargs):
         dept_id = kwargs.pop('dept_id')
+        prog_choices = kwargs.pop('prog_list')
+        subprog_choices = kwargs.pop('sub_prog_list')
+        mod_type_choices = kwargs.pop('mod_type_list')
+
         super(ModuleForm, self).__init__(*args, **kwargs)
-        prog_qs = ProgrammeOffered.objects.filter(primary_dept__id=dept_id)
-        subprog_qs = SubProgrammeOffered.objects.filter(main_programme__primary_dept__id=dept_id)
-        self.fields['primary_programme'] = forms.ModelChoiceField(queryset=prog_qs)
-        self.fields['secondary_programme'] = forms.ModelChoiceField(prog_qs)
-        self.fields['tertiary_programme'] = forms.ModelChoiceField(prog_qs)
-        self.fields['sub_programme'] = forms.ModelChoiceField(queryset=subprog_qs)
-        self.fields['secondary_sub_programme'] = forms.ModelChoiceField(queryset=subprog_qs)
-        self.fields['module_type'] = forms.ModelChoiceField(label="Course type",queryset=ModuleType.objects.filter(department__id=dept_id))
-        self.fields['total_hours'].required = False
-        self.fields['primary_programme'].required = False
-        self.fields['compulsory_in_primary_programme'].required=False
-        self.fields['compulsory_in_secondary_programme'].required=False
-        self.fields['compulsory_in_tertiary_programme'].required=False
-        self.fields['students_year_of_study'].required=False
-        self.fields['secondary_programme'].required = False
-        self.fields['tertiary_programme'].required = False
-        self.fields['sub_programme'].required = False
-        self.fields['secondary_sub_programme'].required = False
+
+        self.fields['module_code']= forms.CharField(max_length=7, label='Course code')
+        self.fields['module_title']= forms.CharField(max_length=300, label='Course title')
+        self.fields['module_type'] = forms.ChoiceField(choices=mod_type_choices,label="Course type")
+        self.fields['semester_offered'] = forms.ChoiceField(choices=Module.SEMESTER_OFFERED, label = 'Semester offered')
+        self.fields['students_year_of_study'] = forms.IntegerField(min_value=0, label = 'Year of study of students taking this course')
+        self.fields['total_hours'] = forms.IntegerField(min_value=0,required = False, label  ='Total expected hours needed')
+        self.fields['primary_programme'] = forms.ChoiceField(choices=prog_choices, required=False, label = 'Primary  programme the course is part of')
+        self.fields['compulsory_in_primary_programme'] = forms.ChoiceField(choices=Module.YES_NO_MODULE, required=False, label = 'Compulsory in primary programme?')
+        self.fields['secondary_programme'] = forms.ChoiceField(choices=prog_choices, required=False, label  ='A second programme the course may be part of')
+        self.fields['compulsory_in_secondary_programme'] = forms.ChoiceField(choices=Module.YES_NO_MODULE, required=False, label = 'Compulsory in this second programme?')
+        self.fields['tertiary_programme'] = forms.ChoiceField(choices=prog_choices, required=False, label = 'A third  programme the course may be part of')
+        self.fields['compulsory_in_tertiary_programme'] = forms.ChoiceField(choices=Module.YES_NO_MODULE, required=False, label = 'Compulsory in this third programme?')
+        self.fields['sub_programme'] = forms.ChoiceField(choices=subprog_choices, required=False, label='Sub-programme this course may be part of')
+        self.fields['secondary_sub_programme'] = forms.ChoiceField(choices=subprog_choices, required=False, label = 'Another sub-programme this course is also part of')
+
         #No editing of module codes of existing modules
         if 'fresh_record' in self.initial: #Must check, otherwise a KeyError occurs (I suspect this is run a couple of times upon post)
             if (self.initial["fresh_record"] == False):
-                self.fields['module_code'].widget = forms.HiddenInput()#Hides the module code alltogether
-            
-    # class Media:
-    #     """ 
-    #     Media subclaas to associate the relevant JS. The JS hides/shwos the total hours field
-    #     according to the tickbox status
-    #     """
-        
-    #     js = ('workload_app/module_form.js',)           
+                self.fields['module_code'].widget = forms.HiddenInput()#Hides the module code alltogether   
                 
 class RemoveModuleForm(forms.Form):
     """

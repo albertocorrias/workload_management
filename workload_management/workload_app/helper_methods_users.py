@@ -173,7 +173,7 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
                 }
             ret["modules"].append(mod_item)   
             
-    else:#populate the menu -should happen rarely, and only at the start for a user
+    else:#populate the menu -should happen rarely, e.g. at the start for a user or when modules or lecturers are added
         user_obj.departments_in_menu = []
         user_obj.programmes_in_menu = []
         user_obj.lecturers_in_menu = []
