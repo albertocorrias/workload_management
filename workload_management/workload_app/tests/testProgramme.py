@@ -114,6 +114,10 @@ class TestProgramme(TestCase):
                                 'module_type' : mod_type_1.id, 
                                 'semester_offered' : Module.UNASSIGNED,  
                                 'primary_programme' : new_prog.id,
+                                'students_year_of_study' :2, 
+                                'compulsory_in_primary_programme' : False, 
+                                'compulsory_in_secondary_programme':  False, 
+                                'compulsory_in_tertiary_programme': False, 
                                 'fresh_record' : True})
         self.assertEqual(Module.objects.all().count(),1)
         self.assertEqual(Module.objects.filter(primary_programme__programme_name=new_programme_name).count(),1)
@@ -132,6 +136,10 @@ class TestProgramme(TestCase):
                                 'semester_offered' : Module.UNASSIGNED,
                                 'primary_programme' : new_prog.id,
                                 'secondary_programme' : secondary_prog_obj.id,
+                                'students_year_of_study' :2, 
+                                'compulsory_in_primary_programme' : False, 
+                                'compulsory_in_secondary_programme':  False, 
+                                'compulsory_in_tertiary_programme': False, 
                                 'fresh_record' : False})
         self.assertEqual(Module.objects.all().count(),1)
         self.assertEqual(Module.objects.filter(primary_programme__programme_name=new_programme_name).count(),1)
@@ -257,6 +265,10 @@ class TestProgramme(TestCase):
                                 'semester_offered' : Module.UNASSIGNED, 
                                 'primary_programme' : new_prog.id,
                                 'sub_programme' : new_sub_prog.id,
+                                'students_year_of_study' :2, 
+                                'compulsory_in_primary_programme' : False, 
+                                'compulsory_in_secondary_programme':  False, 
+                                'compulsory_in_tertiary_programme': False, 
                                 'fresh_record' : True})
         self.assertEqual(Module.objects.all().count(),1)
         self.assertEqual(Module.objects.filter(primary_programme__programme_name=new_programme_name).count(),1)
@@ -284,6 +296,10 @@ class TestProgramme(TestCase):
                                 'primary_programme' : new_prog.id,
                                 'sub_programme' : new_sub_prog.id,
                                 'secondary_sub_programme' : secondary_subprogramme_obj.id,
+                                'students_year_of_study' :2, 
+                                'compulsory_in_primary_programme' : False, 
+                                'compulsory_in_secondary_programme':  False, 
+                                'compulsory_in_tertiary_programme': False, 
                                 'fresh_record' : False})
         
         self.assertEqual(Module.objects.all().count(),1)

@@ -43,9 +43,9 @@ class TestTeachingAssignments(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         
         self.assertEqual(Module.objects.all().count(),3)
         
@@ -110,7 +110,7 @@ class TestTeachingAssignments(TestCase):
         
         normal_lecturer = normal_lecturer = Lecturer.objects.create(name="normal_lecturer",fraction_appointment=0.7, employment_track=track_def,service_role=srvc_role, workload_scenario=new_scen);        
         mod_code_1 = 'AS101'
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': new_scen.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
 
         module_1 = Module.objects.filter(module_code = mod_code_1).get() 
         
@@ -179,9 +179,9 @@ class TestTeachingAssignments(TestCase):
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
         
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         
         module_1 = Module.objects.filter(module_code = mod_code_1).get()
@@ -276,9 +276,9 @@ class TestTeachingAssignments(TestCase):
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
         
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,  'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,  'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,  'students_year_of_study' :2,'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         
         module_1 = Module.objects.filter(module_code = mod_code_1).get()
@@ -469,9 +469,9 @@ class TestTeachingAssignments(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'semester_offered' : Module.UNASSIGNED,  'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'semester_offered' : Module.UNASSIGNED,  'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'semester_offered' : Module.UNASSIGNED,  'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         
         module_1 = Module.objects.filter(module_code = mod_code_1).get()
@@ -581,9 +581,9 @@ class TestTeachingAssignments(TestCase):
         mod_code_1 = 'AS101'
         mod_code_2 = 'AS201'
         mod_code_3 = 'AS301'
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_1, 'module_title' : 'module 1', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'students_year_of_study' :2, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_2, 'module_title' : 'module 2', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'students_year_of_study' :2, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code_3, 'module_title' : 'module 3', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'students_year_of_study' :2, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})    
         self.assertEqual(Module.objects.all().count(),3)
         
         module_1 = Module.objects.filter(module_code = mod_code_1).get()
@@ -760,7 +760,7 @@ class TestTeachingAssignments(TestCase):
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department = first_dept)
         
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_1.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})
         
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
         self.assertEqual(response.status_code, 200) #No issues
@@ -827,7 +827,7 @@ class TestTeachingAssignments(TestCase):
         self.assertEqual(TeachingAssignment.objects.filter(number_of_hours = '16').filter(workload_scenario__label = scen_name_2).count(), 0)
         
         #Now edit the module in scenario 2 (the active one) - KEY CHANGE num tutorial groups is now 2
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.get().id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : False})
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': scenario_2.get().id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : False})
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_2.get().id}))
         self.assertEqual(response.status_code, 200) #No issues
         self.assertEqual(TeachingAssignment.objects.filter(assigned_module__module_code = mod_code).count(), 2)
@@ -898,7 +898,7 @@ class TestTeachingAssignments(TestCase):
         #Create a module type
         mod_type_1 = ModuleType.objects.create(type_name="TEST_MOD_TYPE", department=first_dept)
         
-        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'semester_offered' : Module.UNASSIGNED,   'fresh_record' : True})
+        self.client.post(reverse('workload_app:add_module',  kwargs={'workloadscenario_id': first_scen.id}), {'module_code': mod_code, 'module_title' : 'testing', 'total_hours' : '234', 'module_type' : mod_type_1.id, 'students_year_of_study' :2, 'semester_offered' : Module.UNASSIGNED,  'compulsory_in_primary_programme' : False, 'compulsory_in_secondary_programme':  False, 'compulsory_in_tertiary_programme': False,  'fresh_record' : True})
         
         #Check still all good
         response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': first_scen.id}))

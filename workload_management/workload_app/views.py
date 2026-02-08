@@ -2089,7 +2089,6 @@ def add_module(request,workloadscenario_id):
 
     if request.method =='POST':
         form = ModuleForm(request.POST, dept_id = department.id, prog_list = prog_list, sub_prog_list=sub_prog_list, mod_type_list = mod_type_list)
- 
         if form.is_valid():
             supplied_module_code = form.cleaned_data['module_code']
             supplied_module_title = form.cleaned_data['module_title']
@@ -2112,12 +2111,35 @@ def add_module(request,workloadscenario_id):
                 supplied_hours = 39
             
             #Check the foreign keys
-            if (supplied_type == '-1'): supplied_type = None
-            if (supplied_programme_belongs_to == '-1'): supplied_programme_belongs_to = None
-            if (supplied_secondary_programme_belongs_to == '-1'): supplied_secondary_programme_belongs_to = None
-            if (supplied_tertirary_programme_belongs_to == '-1'): supplied_tertirary_programme_belongs_to = None
-            if (supplied_sub_programme_belongs_to == '-1'): supplied_sub_programme_belongs_to = None
-            if (supplied_secondary_sub_programme_belongs_to == '-1'): supplied_secondary_sub_programme_belongs_to = None
+            if (supplied_type == '-1' or supplied_type==''): 
+                supplied_type = None
+            else:
+                supplied_type = ModuleType.objects.filter(id = int(supplied_type)).get()
+
+            if (supplied_programme_belongs_to == '-1' or supplied_programme_belongs_to==''): 
+                supplied_programme_belongs_to = None
+            else:
+                supplied_programme_belongs_to = ProgrammeOffered.objects.filter(id = int(supplied_programme_belongs_to)).get()
+
+            if (supplied_secondary_programme_belongs_to == '-1' or supplied_secondary_programme_belongs_to==''): 
+                supplied_secondary_programme_belongs_to = None
+            else:
+                supplied_secondary_programme_belongs_to = ProgrammeOffered.objects.filter(id = int(supplied_secondary_programme_belongs_to)).get()
+            
+            if (supplied_tertirary_programme_belongs_to == '-1' or supplied_tertirary_programme_belongs_to == ''): 
+                supplied_tertirary_programme_belongs_to = None
+            else:
+                supplied_tertirary_programme_belongs_to = ProgrammeOffered.objects.filter(id = int(supplied_tertirary_programme_belongs_to)).get()
+
+            if (supplied_sub_programme_belongs_to == '-1' or supplied_sub_programme_belongs_to == ''): 
+                supplied_sub_programme_belongs_to = None
+            else:
+                supplied_sub_programme_belongs_to = SubProgrammeOffered.objects.filter(id = int(supplied_sub_programme_belongs_to)).get()
+
+            if (supplied_secondary_sub_programme_belongs_to == '-1' or supplied_secondary_sub_programme_belongs_to == ''): 
+                supplied_secondary_sub_programme_belongs_to = None
+            else:
+                supplied_secondary_sub_programme_belongs_to = SubProgrammeOffered.objects.filter(id = int(supplied_secondary_sub_programme_belongs_to)).get()
 
             if (request.POST['fresh_record'] == 'False'):
                 #This is an update

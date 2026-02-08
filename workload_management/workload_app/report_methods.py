@@ -1,5 +1,6 @@
 import datetime
-from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, WorkloadScenario,Faculty
+from .models import Lecturer, Module, TeachingAssignment, ModuleType, EmploymentTrack,ServiceRole, Department, WorkloadScenario,Faculty,\
+                    ProgrammeOffered, SubProgrammeOffered
 from .helper_methods import CalculateAllWorkloadTables,getIdsOfValidTeachingAssignmentsTypeForYear
 from .forms import SelectFacultyForReport
 
@@ -100,13 +101,21 @@ def CalculateProfessorChartData(lec_name):
 
     for wl in workload_ids:
         wl_object = WorkloadScenario.objects.filter(id=wl).get()
+
+        prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=wl_object.dept.id).values_list('id','programme_name'))
+        prog_list.append((-1,"No programme"))
+        sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = wl_object.dept.id).values_list('id','sub_programme_name'))
+        sub_prog_list.append((-1,"No sub-programme"))
+        mod_type_list = list(ModuleType.objects.filter(department__id=wl_object.dept.id).values_list('id','type_name'))
+        mod_type_list.append((-1,"No module type"))
+
         if (wl_object.expected_hrs_per_tfte>-1):#already calculated, if not, it is -1
             total_hrs_delivered = wl_object.total_hours_delivered
             total_fte = wl_object.total_tfte_overall
             expected_per_FTE = wl_object.expected_hrs_per_tfte
         else:#need to reecalculate
             all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(wl_object.academic_year.start_year)#
-            summary_data = CalculateAllWorkloadTables(wl,all_valid_assignment_types)['summary_data']
+            summary_data = CalculateAllWorkloadTables(wl,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)['summary_data']
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_per_FTE = summary_data["expected_hours_per_tFTE"]
@@ -137,7 +146,16 @@ def CalculateFacultyReportTable(faculty, report_type):
     ret =[]
     time_info = GetLastNYears(5)
     years = time_info["years"]
+
     for dept in Department.objects.filter(faculty__faculty_name = faculty):
+
+        prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=dept.id).values_list('id','programme_name'))
+        prog_list.append((-1,"No programme"))
+        sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = dept.id).values_list('id','sub_programme_name'))
+        sub_prog_list.append((-1,"No sub-programme"))
+        mod_type_list = list(ModuleType.objects.filter(department__id=dept.id).values_list('id','type_name'))
+        mod_type_list.append((-1,"No module type"))
+
         table_row = [None] * (len(years) + 2) #+2 for module code and title (below)
         table_row[0] =  dept.department_name
         table_row[1] =  dept.department_acronym
@@ -145,6 +163,7 @@ def CalculateFacultyReportTable(faculty, report_type):
         for idx, year in enumerate(years):
             #Figure out workload for this year
             workload_query = WorkloadScenario.objects.filter(dept = dept).filter(academic_year__start_year = year).filter(status = WorkloadScenario.OFFICIAL)
+            all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(year)
             if (workload_query.count() < 1):
                 relevant_data = 0
             else:
@@ -154,7 +173,7 @@ def CalculateFacultyReportTable(faculty, report_type):
                     total_fte = workload_obj.total_tfte_overall
                     expected_hrs = workload_obj.expected_hrs_per_tfte
                 else:#need to reecalculate
-                    summary_data = CalculateAllWorkloadTables(workload_obj.id)['summary_data']
+                    summary_data = CalculateAllWorkloadTables(workload_obj.id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)['summary_data']
                     total_hrs_delivered = summary_data["total_hours_for_workload"]
                     total_fte = summary_data["total_department_tFTE"],
                     expected_hrs = summary_data["expected_hours_per_tFTE"]

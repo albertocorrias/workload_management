@@ -24,7 +24,17 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
             total_fte = wl_scen.total_tfte_overall
             expected_hrs = wl_scen.expected_hrs_per_tfte
         else:#need to recalculate
-            summary_data = CalculateAllWorkloadTables(wl_scen.id, TeachingAssignmentType.objects.none())['summary_data']#List of assignment type not needed for summary data
+
+            #Generate relevant lists of programems, subprogrammes, assignment and module types to be passed to the forms (DB hit only once, here)
+            all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(wl_scen.academic_year.start_year)
+            prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=wl_scen.dept.id).values_list('id','programme_name'))
+            prog_list.append((-1,"No programme"))
+            sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = wl_scen.dept.id).values_list('id','sub_programme_name'))
+            sub_prog_list.append((-1,"No sub-programme"))
+            mod_type_list = list(ModuleType.objects.filter(department__id=wl_scen.dept.id).values_list('id','type_name'))
+            mod_type_list.append((-1,"No module type"))
+
+            summary_data = CalculateAllWorkloadTables(wl_scen.id, all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)['summary_data']#List of assignment type not needed for summary data
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_hrs = summary_data["expected_hours_per_tFTE"]
@@ -567,13 +577,19 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
     }
 
     scenario_qs = WorkloadScenario.objects.filter(id = scenario_id)
-    programme_qs = ProgrammeOffered.objects.filter(id = programme_id)
-    if (scenario_qs.count()==1) : department = scenario_qs.get().dept
-    
-    if (request_type == requested_table_type.SUB_PROGRAMME): programme_qs = SubProgrammeOffered.objects.filter(id = programme_id)
 
-    if ((scenario_qs.count() != 1) or (programme_qs.count() != 1)): #wrong ids for scenario or programme
-        return main_table_data
+    if (scenario_qs.count()==1) : 
+        department = scenario_qs.get().dept
+        dept_id = department.id
+        
+    if (request_type == requested_table_type.SUB_PROGRAMME): 
+        programme_qs = SubProgrammeOffered.objects.filter(id = programme_id)
+        if ((scenario_qs.count() != 1) or (programme_qs.count() != 1)): #wrong ids for scenario or programme
+            return main_table_data
+    else:#PROGRAMME
+        programme_qs = ProgrammeOffered.objects.filter(id = programme_id)
+        if ((scenario_qs.count() != 1) or (programme_qs.count() != 1)): #wrong ids for scenario or programme
+            return main_table_data
 
     main_table_data["scenario_name"] = scenario_qs.get().label
     if (request_type == requested_table_type.PROGRAMME):
@@ -612,11 +628,21 @@ def CalculateModuleHourlyTableForProgramme(scenario_id,programme_id, request_typ
         student_year_of_study=0
         if(mod.students_year_of_study is not None): student_year_of_study = mod.students_year_of_study
         
+        
+        prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=dept_id).values_list('id','programme_name'))
+        prog_list.append((-1,"No programme"))
+        sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = dept_id).values_list('id','sub_programme_name'))
+        sub_prog_list.append((-1,"No sub-programme"))
+        mod_type_list = list(ModuleType.objects.filter(department__id=dept_id).values_list('id','type_name'))
+        mod_type_list.append((-1,"No module type"))
+
+
         mods_row_item = {"mod_code" : mod.module_code,
             "module_title" : mod.module_title,
             "mod_hours" : hours_assigned,
             "regularized_module_code" : RegularizeName(mod.module_code),
-            "mod_form" : ModuleForm(dept_id = department.id, initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
+            "mod_form" : ModuleForm(dept_id = dept_id, prog_list = prog_list, sub_prog_list = sub_prog_list, mod_type_list = mod_type_list, \
+                                    initial = {'module_code' : mod.module_code, 'module_title' : mod.module_title,\
                                           'total_hours' : mod.total_hours, 'module_type' : mod.module_type,\
                                           'semester_offered' : mod.semester_offered,\
                                           'primary_programme' : mod.primary_programme,\
