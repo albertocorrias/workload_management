@@ -241,7 +241,7 @@ def getIdsOfValidTeachingAssignmentsTypeForYear(year):
     ret = []
     for assign_type in TeachingAssignmentType.objects.select_related('workload_valid_from','workload_valid_until'):
         if (assign_type.IsValidForYear(year)==True):
-            ret.append(assign_type.id)
+            ret.append((assign_type.id,assign_type.__str__()))
     return ret
 
 #This helper method queries the database and returrns 3 dictionaries.

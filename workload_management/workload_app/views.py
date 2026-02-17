@@ -111,7 +111,8 @@ def scenario_view(request, workloadscenario_id):
                                                         'academic_year' : acad_year}).as_p()
     
 
-    #Generate relevant lists of programems, subprogrammes, assignment and module types to be passed to the forms (DB hit only once, here)
+    #Generate relevant lists of programems, subprogrammes, and module types 
+    # to be passed to the forms (DB hit only once, here). See #32 for more details
     all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(acad_year.start_year)
     prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=department.id).values_list('id','programme_name'))
     prog_list.append((-1,"No programme"))
@@ -119,11 +120,8 @@ def scenario_view(request, workloadscenario_id):
     sub_prog_list.append((-1,"No sub-programme"))
     mod_type_list = list(ModuleType.objects.filter(department__id=department.id).values_list('id','type_name'))
     mod_type_list.append((-1,"No module type"))
-
-    #Make sure the empty forms are avilable to the scenario page
-    #NOTE: The edit assignments form is created within within wl_table
     
-    #Lecturer forms (the edit forms are added in the helper methods in the table)
+    #New Lecturer form (the edit forms are added in the helper methods in the table)
     prof_form = ProfessorForm(initial = {'fresh_record' : True})
     remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id)
     #Module form for new course (the edit forms are added in the helper methods in the table)
@@ -132,7 +130,7 @@ def scenario_view(request, workloadscenario_id):
 
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
-        
+    #Note the lists passed in for the edit forms
     all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)
     workload_table = all_tables["table_by_prof"]
     modules_table = all_tables["table_by_mod"]
@@ -1940,7 +1938,8 @@ def edit_module_assignments(request, module_id):
     module_involved = Module.objects.filter(id=module_id).get()
     scenario_id = module_involved.scenario_ref.id
     if request.method =='POST':
-        all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=scenario_id).get().academic_year.start_year)    
+        all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=scenario_id).get().academic_year.start_year)
+
         form = EditModuleAssignmentForm(request.POST,module_id = module_id,valid_assignment_types = all_valid_assignment_types)
         if form.is_valid():
             for prof in Lecturer.objects.filter(workload_scenario__id = scenario_id):
@@ -2079,7 +2078,8 @@ def remove_professor(request,workloadscenario_id):
 def add_module(request,workloadscenario_id):
     this_scen = WorkloadScenario.objects.filter(id = workloadscenario_id).get()
     department = this_scen.dept
-    #Generate relevant lists of programems, subprogrammes, assignment and module types to be passed to the forms (DB hit only once, here)
+    #Generate relevant lists of programems, subprogrammes, and module types to be passed to the forms 
+    #(DB hit only once, here), see #32 for more details
     prog_list  = list(ProgrammeOffered.objects.filter(primary_dept__id=department.id).values_list('id','programme_name'))
     prog_list.append((-1,"No programme"))
     sub_prog_list = list(SubProgrammeOffered.objects.filter(main_programme__primary_dept__id = department.id).values_list('id','sub_programme_name'))

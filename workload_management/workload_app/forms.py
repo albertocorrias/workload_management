@@ -696,8 +696,8 @@ class AddTeachingAssignmentForm(forms.Form):
             self.fields['select_module'].widget = forms.HiddenInput()#Hides the module alltogether
             self.fields['select_module'].initial = id_of_mod_involved#
 
-        self.fields['teaching_assignment_type'] = forms.ModelChoiceField(label = "Select the type of teaching assignment", \
-                                                queryset = TeachingAssignmentType.objects.filter(id__in=valid_assignment_types))
+        self.fields['teaching_assignment_type'] = forms.ChoiceField(label = "Select the type of teaching assignment", \
+                                                choices= valid_assignment_types)
         self.fields['how_many_units'] = forms.IntegerField(label="How many?", min_value=0, max_value=100000)
         self.fields['counted_towards_workload'] = forms.ChoiceField(widget=forms.RadioSelect(attrs={'class': 'teaching_assignment_counted_style'}), \
                                     choices=self.YES_NO_CHOICES, \
@@ -746,8 +746,8 @@ class EditLecturerTeachingAssignmentForm(forms.Form):
             self.fields[module_assigned.module_code] = forms.CharField(initial=module_assigned.module_code,widget=forms.HiddenInput(), label = "Assignments for " + module_assigned.module_code, required=False)
             
             acad_year = WorkloadScenario.objects.filter(id = prof_obj.workload_scenario.id).get().academic_year.start_year
-            self.fields['teaching_assignment_type'+str(module_assigned.id)] = forms.ModelChoiceField(label = "Type of teaching assignment", \
-                                            queryset = TeachingAssignmentType.objects.filter(id__in=valid_assignment_types), initial=assign.assignment_type)
+            self.fields['teaching_assignment_type'+str(module_assigned.id)] = forms.ChoiceField(label = "Type of teaching assignment", \
+                                            choices=valid_assignment_types, initial=assign.assignment_type)
             self.fields['how_many_units'+str(module_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
                                                                                 initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
 
@@ -776,8 +776,8 @@ class EditModuleAssignmentForm(forms.Form):
                 #Keep the prof name in the keys (view will look for it).
                 self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
 
-                self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ModelChoiceField(label = "Type of teaching assignment", \
-                                                queryset = TeachingAssignmentType.objects.filter(id__in=valid_assignment_types), initial=assign.assignment_type)
+                self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ChoiceField(label = "Type of teaching assignment", \
+                                                choices = valid_assignment_types)
                 self.fields['how_many_units'+str(prof_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
                                                                                     initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
                 
