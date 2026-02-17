@@ -108,14 +108,15 @@ def CalculateProfessorChartData(lec_name):
         sub_prog_list.append((-1,"No sub-programme"))
         mod_type_list = list(ModuleType.objects.filter(department__id=wl_object.dept.id).values_list('id','type_name'))
         mod_type_list.append((-1,"No module type"))
-
+        prof_list = list(Lecturer.objects.filter(workload_scenario__id=wl_object.id).values_list('id','name'))
+        mod_list = list(Module.objects.filter(scenario_ref__id=wl_object.id).values_list('id','module_code'))
         if (wl_object.expected_hrs_per_tfte>-1):#already calculated, if not, it is -1
             total_hrs_delivered = wl_object.total_hours_delivered
             total_fte = wl_object.total_tfte_overall
             expected_per_FTE = wl_object.expected_hrs_per_tfte
         else:#need to reecalculate
             all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(wl_object.academic_year.start_year)#
-            summary_data = CalculateAllWorkloadTables(wl,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)['summary_data']
+            summary_data = CalculateAllWorkloadTables(wl,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list,prof_list,mod_list)['summary_data']
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_per_FTE = summary_data["expected_hours_per_tFTE"]

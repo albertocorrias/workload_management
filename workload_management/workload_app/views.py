@@ -120,7 +120,9 @@ def scenario_view(request, workloadscenario_id):
     sub_prog_list.append((-1,"No sub-programme"))
     mod_type_list = list(ModuleType.objects.filter(department__id=department.id).values_list('id','type_name'))
     mod_type_list.append((-1,"No module type"))
-    
+    prof_list = list(Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).order_by('name').values_list('id','name'))
+    mod_list = list(Module.objects.filter(scenario_ref__id=workloadscenario_id).order_by('module_code').values_list('id','module_code'))
+
     #New Lecturer form (the edit forms are added in the helper methods in the table)
     prof_form = ProfessorForm(initial = {'fresh_record' : True})
     remove_prof_form = RemoveProfessorForm(workloadscenario_id = workloadscenario_id)
@@ -131,7 +133,7 @@ def scenario_view(request, workloadscenario_id):
     remove_mod_form = RemoveModuleForm(workloadscenario_id = workloadscenario_id)
     
     #Note the lists passed in for the edit forms
-    all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)
+    all_tables = CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list,prof_list,mod_list)
     workload_table = all_tables["table_by_prof"]
     modules_table = all_tables["table_by_mod"]
     summary_data = all_tables["summary_data"]
@@ -139,7 +141,8 @@ def scenario_view(request, workloadscenario_id):
     bulk_upload_prof_form = BulkUploadProfForm()
 
     #Teaching Assignment forms
-    add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id, valid_assignment_types=all_valid_assignment_types)
+    add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id, \
+                                                             valid_assignment_types=all_valid_assignment_types,prof_list=prof_list,mod_list=mod_list)
     remove_teaching_assignment_form = RemoveTeachingAssignmentForm(workloadscenario_id = workloadscenario_id)
     
     template = loader.get_template('workload_app/workload.html')
@@ -1855,8 +1858,11 @@ def add_assignment(request,workloadscenario_id):
         id_of_assignment_type = request.POST['teaching_assignment_type']
         counted_or_not_radio_button_status = request.POST['counted_towards_workload']
         all_valid_assignment_types = getIdsOfValidTeachingAssignmentsTypeForYear(WorkloadScenario.objects.filter(id=workloadscenario_id).get().academic_year.start_year)
+        prof_list = list(Lecturer.objects.filter(workload_scenario__id=workloadscenario_id).values_list('id','name'))
+        mod_list = list(Module.objects.filter(scenario_ref__id=workloadscenario_id).values_list('id','module_code'))
         form = AddTeachingAssignmentForm(request.POST, prof_id = id_of_prof_involved, \
-                                         module_id = id_of_mod_involved,workloadscenario_id = workloadscenario_id, valid_assignment_types=all_valid_assignment_types)
+                                         module_id = id_of_mod_involved,workloadscenario_id = workloadscenario_id,\
+                                         valid_assignment_types=all_valid_assignment_types,prof_list=prof_list,mod_list=mod_list)
         if form.is_valid():
             num_instances = form.cleaned_data['how_many_units']
 

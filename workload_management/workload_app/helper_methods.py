@@ -33,8 +33,10 @@ def CalculateWorkloadsIndexTable(faculty_id = -1):
             sub_prog_list.append((-1,"No sub-programme"))
             mod_type_list = list(ModuleType.objects.filter(department__id=wl_scen.dept.id).values_list('id','type_name'))
             mod_type_list.append((-1,"No module type"))
-
-            summary_data = CalculateAllWorkloadTables(wl_scen.id, all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list)['summary_data']#List of assignment type not needed for summary data
+            prof_list = list(Lecturer.objects.filter(workload_scenario__id=wl_scen.id).values_list('id','name'))
+            mod_list = list(Module.objects.filter(scenario_ref__id=wl_scen.id).values_list('id','module_code'))
+            
+            summary_data = CalculateAllWorkloadTables(wl_scen.id, all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list,prof_list,mod_list)['summary_data']#List of assignment type not needed for summary data
             total_hrs_delivered = summary_data["total_hours_for_workload"]
             total_fte = summary_data["total_department_tFTE"],
             expected_hrs = summary_data["expected_hours_per_tFTE"]
@@ -279,7 +281,7 @@ def getIdsOfValidTeachingAssignmentsTypeForYear(year):
 # Another key is summary_data which is a table with some summary data on the workload scenario
 # 
 #The input parameter is the id of the workload scenario
-def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list):
+def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, prog_list, sub_prog_list,mod_type_list, prof_list,mod_list):
 
     summary_data =   {
         'module_type_labels' : [], #Used by the chart
@@ -323,7 +325,10 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
                                                        'employment_track' : prof.employment_track.id, \
                                                         'service_role' : prof.service_role.id, 'is_external': prof.is_external, 'fresh_record' : False}),
             "edit_assign_form" : EditLecturerTeachingAssignmentForm(prof_id = prof.id, valid_assignment_types = all_valid_assignment_types),
-            "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1, workloadscenario_id = workloadscenario_id, valid_assignment_types = all_valid_assignment_types),
+            "add_assignment_for_prof_form" : AddTeachingAssignmentForm(prof_id = prof.id, module_id=-1,\
+                                                                       workloadscenario_id = workloadscenario_id,\
+                                                                       valid_assignment_types = all_valid_assignment_types,\
+                                                                       prof_list=prof_list,mod_list=mod_list),
             "num_assigns_for_prof" : 0, #placeholder, will update later
             'is_external' : False
         }
@@ -423,7 +428,10 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
                                           'secondary_sub_programme' : sub_prog_list[secondary_sub_prog_index],\
                                           'fresh_record' : False}),
             "edit_module_assign_form" :  EditModuleAssignmentForm(module_id=mod.id,valid_assignment_types = all_valid_assignment_types),
-            "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, workloadscenario_id = workloadscenario_id,valid_assignment_types = all_valid_assignment_types),
+            "add_assignment_for_mod_form" : AddTeachingAssignmentForm(prof_id = -1, module_id=mod.id, \
+                                                                      workloadscenario_id = workloadscenario_id,\
+                                                                      valid_assignment_types = all_valid_assignment_types,\
+                                                                      prof_list=prof_list,mod_list=mod_list),
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }
         all_mod_items.append(single_mod_item)
