@@ -745,9 +745,8 @@ class EditLecturerTeachingAssignmentForm(forms.Form):
             #NOTE: the view will check if the module code is within the keys
             self.fields[module_assigned.module_code] = forms.CharField(initial=module_assigned.module_code,widget=forms.HiddenInput(), label = "Assignments for " + module_assigned.module_code, required=False)
             
-            acad_year = WorkloadScenario.objects.filter(id = prof_obj.workload_scenario.id).get().academic_year.start_year
             self.fields['teaching_assignment_type'+str(module_assigned.id)] = forms.ChoiceField(label = "Type of teaching assignment", \
-                                            choices=valid_assignment_types, initial=assign.assignment_type)
+                                            choices=valid_assignment_types, initial=assign.assignment_type.id)
             self.fields['how_many_units'+str(module_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
                                                                                 initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
 
@@ -767,7 +766,6 @@ class EditModuleAssignmentForm(forms.Form):
     YES_NO_CHOICES = [('no', 'No'), ('yes', 'Yes')] #Used by the radio button
     def __init__(self, *args, **kwargs):
         module_id = kwargs.pop('module_id')
-        module_obj = Module.objects.filter(id=module_id).get()
         valid_assignment_types = kwargs.pop('valid_assignment_types')
         super(EditModuleAssignmentForm, self).__init__(*args, **kwargs)
         
@@ -777,7 +775,7 @@ class EditModuleAssignmentForm(forms.Form):
                 self.fields[prof_assigned.name] = forms.CharField(initial=prof_assigned.name,widget=forms.HiddenInput(), label = "Assignments for " + prof_assigned.name, required=False)
 
                 self.fields['teaching_assignment_type'+str(prof_assigned.id)] = forms.ChoiceField(label = "Type of teaching assignment", \
-                                                choices = valid_assignment_types)
+                                                choices = valid_assignment_types,initial=assign.assignment_type.id)
                 self.fields['how_many_units'+str(prof_assigned.id)] = forms.IntegerField(label="How many?", min_value=0, max_value=100000,\
                                                                                     initial=int(assign.number_of_hours/assign.assignment_type.quantum_number_of_hours))
                 

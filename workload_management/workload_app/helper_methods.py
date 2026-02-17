@@ -392,7 +392,7 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
                 if mod.secondary_sub_programme.id in sub_prog_list[i]:
                     secondary_sub_prog_index = i
                     break
-
+        
         single_mod_item = {
             "module_code" : mod.module_code,
             "module_title" : ShortenString(mod.module_title),
@@ -427,7 +427,7 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
             "num_assigns_for_module" : 0 #Placeholder, will update later
         }
         all_mod_items.append(single_mod_item)
-    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module").filter(workload_scenario__id = workloadscenario_id):
+    for assign in TeachingAssignment.objects.select_related("assigned_lecturer","assigned_module","assignment_type").filter(workload_scenario__id = workloadscenario_id):
         lec_id = assign.assigned_lecturer.id
         mod_id = assign.assigned_module.id
         num_hours = assign.number_of_hours
@@ -466,7 +466,6 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
             else:
                 mod_item["module_lecturers_not_counted"] += assign.assigned_lecturer.name + ' (' + str(assign.number_of_hours) + '), '
                 mod_item["module_assigned_hours_not_counted"] += num_hours
-
 
             mod_item["num_assigns_for_module"] += 1
             
