@@ -71,8 +71,11 @@ class RemoveProfessorForm(forms.Form):
                                                      help_text='If this option is ticked, the name of the professor will be eliminated from the table')
 
 class BulkUploadProfForm(forms.Form):
-    bulk_prof_file = forms.FileField()
-    skip_header=forms.IntegerField(label = "If the file has headers, how many lines?",initial=0,max_value=100000,min_value=0)
+    bulk_prof_file = forms.FileField(label="File with professor information")
+    skip_header=forms.IntegerField(label = "If the file has headers to be ignored, how many lines?",initial=0,max_value=100000,min_value=0)
+class BulkUploadModuleForm(forms.Form):
+    bulk_mod_file = forms.FileField(label="File with courses information")
+    skip_header=forms.IntegerField(label = "If the file has headers to be ignored, how many lines?",initial=0,max_value=100000,min_value=0)
 
 #Form to add new module. Modelled after the Module model.
 class ModuleForm(forms.Form):

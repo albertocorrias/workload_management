@@ -24,7 +24,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    AddSLOSurveyForm,RemoveSLOSurveyForm, RemovePEOSurveyForm,AddPEOSurveyForm,SelectAccreditationReportForm,\
                    CorrectiveActionForm, RemoveCorrectiveActionForm, InputPEOSurveyDataForm, InputSLOSurveyDataForm, InputMLOSurveyForm,\
                    EditSurveySettingsForm,TeachingAssignmentTypeForm,RemoveTeachingAssignmentTypeForm,\
-                   BulkUploadProfForm
+                   BulkUploadProfForm,BulkUploadModuleForm
 
 from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
                               accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore,csv_file_type
@@ -139,6 +139,7 @@ def scenario_view(request, workloadscenario_id):
     summary_data = all_tables["summary_data"]
     #bulk uploads
     bulk_upload_prof_form = BulkUploadProfForm()
+    bulk_upload_module_form = BulkUploadModuleForm()
 
     #Teaching Assignment forms
     add_teaching_assignment_form = AddTeachingAssignmentForm(prof_id = -1, module_id= -1, workloadscenario_id = workloadscenario_id, \
@@ -161,10 +162,40 @@ def scenario_view(request, workloadscenario_id):
         'remove_teaching_assignment_form':remove_teaching_assignment_form.as_p(),
         'department_id' : department.id,
         'bulk_upload_prof_form' :bulk_upload_prof_form.as_p(),
+        'bulk_upload_module_form':bulk_upload_module_form.as_p(),
         'user_menu' : menus['user_menu'],
         'user_homepage' : menus['user_homepage']
     }
     return HttpResponse(template.render(context, request))
+
+def bulk_add_module(request,workload_id):
+    if (request.method == 'POST'):
+        form = BulkUploadModuleForm(request.POST,request.FILES)
+
+        if (form.is_valid()):
+            skip_header = form.cleaned_data['skip_header']
+
+            wl = WorkloadScenario.objects.filter(id=workload_id).get()
+            result = readInUploadedFile(request.FILES['bulk_mod_file'],skip_header=skip_header,file_type = csv_file_type.MODULE_FILE)
+            if (result["errors"]==False):
+                codes = result["data"][0]
+                titles = result["data"][1]
+
+                for idx in range(0,len(codes)):
+                    Module.objects.create(module_code=codes[idx],module_title=titles[idx], scenario_ref =wl)
+                
+                #Force re-population of user menu
+                user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
+                new_menu = DetermineUserMenu(user_qs.get(), is_super_user=request.user.is_superuser,force_population=True)
+            else:
+                template = loader.get_template('workload_app/errors_page.html')
+                context = {
+                    'error_message': 'The uploaded file is invalid.'
+                }
+                return HttpResponse(template.render(context, request)) 
+
+    #Otherwise just go back to workload view
+    return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workload_id}))
 
 def bulk_add_professor(request,workload_id):
     if (request.method == 'POST'):
@@ -175,17 +206,34 @@ def bulk_add_professor(request,workload_id):
 
             wl = WorkloadScenario.objects.filter(id=workload_id).get()
             result = readInUploadedFile(request.FILES['bulk_prof_file'],skip_header=skip_header,file_type = csv_file_type.PROFESSOR_FILE)
-            print(result)
             if (result["errors"]==False):
                 names = result["data"][0]
                 frac_appts = result["data"][1]
-                service_role = ServiceRole.objects.first()
-                empl_track = EmploymentTrack.objects.first()
+                #look for service role with adjustment closest to 1
+                max_diff = 1e19
+                for srvc in ServiceRole.objects.all():
+                    if abs(srvc.role_adjustment - 1) < max_diff:
+                        max_diff = abs(srvc.role_adjustment - 1) 
+                        service_role = srvc
+                max_diff = 1e19
+                for empl in EmploymentTrack.objects.all():
+                    if (abs(empl.track_adjustment - 1)<max_diff):
+                        max_diff = abs(empl.track_adjustment - 1)
+                        empl_track = empl
+
                 for idx in range(0,len(names)):
                     Lecturer.objects.create(name=names[idx],fraction_appointment=frac_appts[idx], workload_scenario =wl,\
                             service_role= service_role,employment_track=empl_track)
+                
+                #Force re-population of user menu
+                user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
+                new_menu = DetermineUserMenu(user_qs.get(), is_super_user=request.user.is_superuser,force_population=True)
             else:
-                print('there is an  error')
+                template = loader.get_template('workload_app/errors_page.html')
+                context = {
+                    'error_message': 'The uploaded file is invalid.'
+                }
+                return HttpResponse(template.render(context, request)) 
 
     #Otherwise just go back to workload view
     return HttpResponseRedirect(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': workload_id}))

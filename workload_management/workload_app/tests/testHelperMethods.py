@@ -1066,7 +1066,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(2,1,1,2),int(4))
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(2,1,2,2),int(8))
     
-    
+    #Note this one tests the actual reading itself.
+    #The method that actually creates the DB objects from the information in the forms
+    # are are tested in tesstModule and testLecturer
     def testreadInUploadedFileForProfessors(self):
 
         with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header.csv'), 'r') as file:
@@ -1308,6 +1310,13 @@ class testHelperMethods(TestCase):
         self.assertEqual(data_read[1][0], '1')#Missing turned to 1
         self.assertEqual(data_read[1][1], '1')#Missing turned to 1
         self.assertEqual(data_read[1][2], '1')#Missing turned to 1
+
+        #Coverage - try reading a non-text file (a font file in this case)
+        with open(os.path.join(os.path.dirname(__file__), 'data/profs/example_non_text_file.ttf'), 'rb') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("example_non_text_file.tiff",bytes(file_content))
+        all_results = readInUploadedFile(upload_file,file_type = csv_file_type.PROFESSOR_FILE)
+        self.assertEqual(all_results["errors"],True)
 
     def testreadInUploadedFileForModules(self):
          #Regular file. Two columns, no header

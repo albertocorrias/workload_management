@@ -397,7 +397,9 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
                 if mod.secondary_sub_programme.id in sub_prog_list[i]:
                     secondary_sub_prog_index = i
                     break
-        
+        module_hours= mod.total_hours
+        if mod.total_hours is None:
+            module_hours = 39
         single_mod_item = {
             "module_code" : mod.module_code,
             "module_title" : ShortenString(mod.module_title),
@@ -408,7 +410,7 @@ def CalculateAllWorkloadTables(workloadscenario_id,all_valid_assignment_types, p
             "module_assigned_hours_not_counted" : 0,   #Placeholder, will update later
             "module_type" : display_mod_type,
             "primary_programme" : display_prg_name,
-            "module_hours_needed" : mod.total_hours,
+            "module_hours_needed" : module_hours,
             "module_balance_hours" : 0,#placeholder, will update later
             "module_hex_code" : '#FFFFFF', #White as default. May be updated later
             "module_id" : mod.id,
@@ -885,7 +887,7 @@ def readInUploadedFile(uploaded_file, skip_header=0, file_type = csv_file_type.P
     If file_type = PROFESSOR_FILE
         then the file is intended as 
         Professor_name_1, appt_fraction_1
-        Professor_name_1, appt_fraction_2
+        Professor_name_2, appt_fraction_2
         etc
         For example:
         John Smith, 0.5
@@ -918,12 +920,11 @@ def readInUploadedFile(uploaded_file, skip_header=0, file_type = csv_file_type.P
     }
     first_info = []#Name of prof or module code for modules
     second_info = []#Appointment (0 to 1) or module title for modules
-    
-    decoded_stream = uploaded_file.read().decode("utf-8").splitlines()
-    csv_reader = csv.reader(decoded_stream, delimiter=',')
-    line_count = 1
-    for row in csv_reader:
-        try:
+    try:
+        decoded_stream = uploaded_file.read().decode("utf-8").splitlines()
+        csv_reader = csv.reader(decoded_stream, delimiter=',')
+        line_count = 1
+        for row in csv_reader:
             if line_count > skip_header:
                 if len(row) > 0 :#Handle the name or module code
                     if (row[0] != '' and row[0].isspace() == False): 
@@ -952,12 +953,12 @@ def readInUploadedFile(uploaded_file, skip_header=0, file_type = csv_file_type.P
                         else:#If it is a  module file
                             second_info.append('No title')
             line_count += 1
-        except:
-            #if something wrong, empty the lists, flag the error and break out of the loop
-            first_info = []
-            second_info = []
-            ret["errors"] = True
-            break
+    except:
+        #if something wrong, empty the lists, flag the error and break out of the loop
+        first_info = []
+        second_info = []
+        ret["errors"] = True
+
     if (ret["errors"] == False):
         ret.update({"data" : [first_info,second_info]})
 

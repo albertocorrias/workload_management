@@ -41,6 +41,7 @@ urlpatterns = [
     path('remove_subprogramme_offered/<int:dept_id>/', views.remove_subprogramme_offered, name='remove_subprogramme_offered'),
     path('lecturer_page/<int:lecturer_id>/', views.lecturer_page,name="lecturer_page"),
     path('bulk_add_professor/<int:workload_id>/', views.bulk_add_professor, name='bulk_add_professor'),
+    path('bulk_add_module/<int:workload_id>/', views.bulk_add_module, name='bulk_add_module'),
     path('accounts/', include('django.contrib.auth.urls')),
     path("admin/", admin.site.urls),
 ]

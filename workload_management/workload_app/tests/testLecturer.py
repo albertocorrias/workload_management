@@ -454,8 +454,10 @@ class TestLecturer(TestCase):
         new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
         first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
         acad_year = Academicyear.objects.create(start_year=2025)
-        def_role = ServiceRole.objects.create(role_name="test role", role_adjustment=1, faculty=new_fac)
-        new_track = EmploymentTrack.objects.create(track_name = "track default", track_adjustment = 0.8, faculty=new_fac)
+        role_1 = ServiceRole.objects.create(role_name="first role", role_adjustment=1, faculty=new_fac)
+        role_2 = ServiceRole.objects.create(role_name="second role", role_adjustment=0.8, faculty=new_fac)
+        new_track_1 = EmploymentTrack.objects.create(track_name = "track 1", track_adjustment = 0.8, faculty=new_fac)
+        new_track_2 = EmploymentTrack.objects.create(track_name = "track 2", track_adjustment = 1.0, faculty=new_fac)
 
         #create one scenario
         scen_name_1 = 'scen_1'
@@ -470,7 +472,21 @@ class TestLecturer(TestCase):
             {'bulk_prof_file': upload_file,'skip_header': 0})
         self.assertEqual(response.status_code, 302) #should re-direct
 
-        self.assertEqual(Lecturer.objects.all().count(),3)    
+        self.assertEqual(Lecturer.objects.all().count(),3)
+        #Check that they all get assigned employment track and service role as close to 1 as possible (there are two each, see above)
+        for lec in Lecturer.objects.all():
+            self.assertAlmostEqual(lec.employment_track.track_adjustment,Decimal(1.0))
+            self.assertAlmostEqual(lec.service_role.role_adjustment,Decimal(1.0))
+        #Check we can load the scenario without issues
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
 
-
-    
+        #The file contains John, Paul and Chris, with 0.5, 1, and 0.8 and 1 as appointments 
+        self.assertEqual('John' in response.text,True)
+        self.assertEqual('Paul' in response.text,True)
+        self.assertEqual('Chris' in response.text,True)
+        self.assertEqual('strange_name' in response.text,False)#Not there
+        self.assertEqual('0.5' in response.text,True)
+        self.assertEqual('0.8' in response.text,True)
+        self.assertEqual('1.0' in response.text,True)
+        self.assertEqual('8.0' in response.text,False)#Not there

@@ -1,8 +1,10 @@
+import os
 from django.test import TestCase
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
+from django.core.files.uploadedfile import SimpleUploadedFile
 from workload_app.models import Lecturer, Module, TeachingAssignment,WorkloadScenario, ModuleType, \
     Department,EmploymentTrack,ServiceRole, Faculty, Academicyear, ProgrammeOffered, UniversityStaff, TeachingAssignmentType
 from workload_app.forms import RemoveModuleForm
@@ -837,4 +839,36 @@ class TestModule(TestCase):
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_1).count(),2)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = name_type_1).count(),1)
         self.assertEqual(TeachingAssignment.objects.filter(workload_scenario__label = scen_name_2).filter(assigned_module__module_type__type_name = name_type_2).count(),0)
-         
+    
+    def test_add_modules_in_bulk(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+
+        new_fac = Faculty.objects.create(faculty_name="test_fac", faculty_acronym="FFCC")
+        first_dept = Department.objects.create(department_name="test_dept", department_acronym="TTDD", faculty=new_fac)
+        acad_year = Academicyear.objects.create(start_year=2025)
+        #create one scenario
+        scen_name_1 = 'scen_1'
+        scenario_1 = WorkloadScenario.objects.create(label=scen_name_1, academic_year=acad_year, dept=first_dept)
+        self.assertEqual(Module.objects.all().count(),0)
+
+        with open(os.path.join(os.path.dirname(__file__), 'data/mods/regular_file_no_headers.csv'), 'r') as file:
+            file_content = file.read()
+        upload_file = SimpleUploadedFile("test_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")
+        #upload  a list of 3 modules
+        response = self.client.post(reverse('workload_app:bulk_add_module',  kwargs={'workload_id': scenario_1.id}),\
+            {'bulk_mod_file': upload_file,'skip_header': 0})
+        self.assertEqual(response.status_code, 302) #should re-direct
+        #Now there should be 3 modules, up from 0
+        self.assertEqual(Module.objects.all().count(),3)
+        #Load the workload scenario page
+        response = self.client.get(reverse('workload_app:scenario_view',  kwargs={'workloadscenario_id': scenario_1.id}))
+        self.assertEqual(response.status_code, 200) #No issues
+        #The file contains BN1111, BN2102 and BN2201, named Module 1, Module 2, Module 3
+        self.assertEqual('BN1111' in response.text,True)
+        self.assertEqual('BN2102' in response.text,True)
+        self.assertEqual('BN2201' in response.text,True)
+        self.assertEqual('Module 1' in response.text,True)
+        self.assertEqual('Module 2' in response.text,True)
+        self.assertEqual('Module 3' in response.text,True)
+        self.assertEqual('Module 4' in response.text,False)
