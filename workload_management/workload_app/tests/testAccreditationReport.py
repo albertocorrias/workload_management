@@ -8,7 +8,7 @@ from workload_app.global_constants import DEFAULT_TRACK_NAME,DEFAULT_SERVICE_ROL
 from workload_app.models import StudentLearningOutcome, ProgrammeOffered, Faculty, Department, ModuleType, Module,WorkloadScenario, Academicyear,\
                                 ModuleLearningOutcome,MLOSLOMapping,MLOPerformanceMeasure,Survey,SurveyQuestionResponse,\
                                 ProgrammeEducationalObjective, EmploymentTrack, ServiceRole, Lecturer, TeachingAssignment, UniversityStaff
-from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys,CalculateTableForMLOSurveys, CalculateTableForMLODirectMeasures,\
+from workload_app.helper_methods_accreditation import CalculateTableForSLOSurveys, CalculateMLOSLOTables,\
                                                         CalculateTableForOverallSLOMapping,DetermineIconBasedOnStrength, CalculateMLOSLOMappingTable,\
                                                         CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
@@ -410,7 +410,7 @@ class TestAccreditationReport(TestCase):
         measure_mod_2 = MLOPerformanceMeasure.objects.create(description = 'test 2', academic_year = acad_year_1, associated_mlo = mlo_mod_2,percentage_score=90)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),2)
         #Call for programme 1, compulosry only, module 2 is not compulosry and should not show up
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 3)
         self.assertEqual(len(table_slo_1[1]), 3)
@@ -427,7 +427,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[1],0) #no measures in second year
         
         #Now include electives also: module 2 should show up for SLO 3 of prog 1
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=0)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=0)
         self.assertEqual(len(table_slo_3), 2)#1 measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 3)
         self.assertEqual(len(table_slo_3[1]), 3)
@@ -443,7 +443,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[1],0) #no measures in second year
         
         #same as above, but asking for compulsory only. Module 2 should disappear.
-        table_slo_3_compulsory, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
+        table_slo_3_compulsory, attn_score_direct, mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3_prog_1.id,start_year = acad_year_1.start_year, end_year = acad_year_2.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3_compulsory), 1)#No measures, only the totals row
         self.assertEqual(len(table_slo_3_compulsory[0]), 3)
         self.assertEqual(table_slo_3_compulsory[0][0], 'Weighted average')
@@ -466,7 +466,7 @@ class TestAccreditationReport(TestCase):
                                                            parent_survey = mlo_survey )
         props = response_1.CalculateRepsonsesProprties()
         # #Generate the table for SLO 3, programme 1 - Including electives (module 2 should show up)
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
+        table_slo_3_compulsory, attn_score_direct, mlo_table_slo_3, mlo_survey_attention_scores  = CalculateMLOSLOTables(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=0)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -478,7 +478,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2013
 
         # Do the same, table for SLO 3, programme 1 - Including compulsory only: module 2 should disappear
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_slo_3_compulsory, attn_score_direct,mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3_prog_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 1)#Totals only
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(mlo_table_slo_3[0][0], "Weighted average")
@@ -487,7 +487,7 @@ class TestAccreditationReport(TestCase):
 
         #IF we calculate the table for SLO 1 of prog 2, compulsory only, mod 2 should appear
         # #Generate the table for SLO 1, programme 2 - compulsory only
-        mlo_table_slo_1_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_slo_1_prog_2, attn_score_direct, mlo_table_slo_1_2, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_1_prog_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1_2[1]), 3)#Two years plus the label
@@ -686,7 +686,7 @@ class TestAccreditationReport(TestCase):
         #First measure added performed in acad_year_2 on module 1_2, which is taken by students in year 1. Measure should appear in second academic year 
         measure_1 = MLOPerformanceMeasure.objects.create(description = 'test 1', academic_year = acad_year_2, associated_mlo = mlo_1_1,percentage_score=75)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),1)
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -707,7 +707,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
         
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -722,7 +722,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_2[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_2[1][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -763,7 +763,7 @@ class TestAccreditationReport(TestCase):
         #Now add another measure for MLO 2, still module 1. This is mapped to SLO 1 (strength 2). So only the table for SLO1 should change - SAME academic year
         measure_2 = MLOPerformanceMeasure.objects.create(description = 'test 2', academic_year = acad_year_2, associated_mlo = mlo_1_2,percentage_score=45)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),2)
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -784,7 +784,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -799,7 +799,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_2[1][3], 0)#no measure in third academic year -> totals row is zero
         self.assertEqual(table_slo_2[1][4], 0)#no measure in last academic year -> totals row is zero
 
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -819,7 +819,7 @@ class TestAccreditationReport(TestCase):
         # Tables for SLO1 and SLO2 should change. Tbale for SLO3 should remain unaltered
         measure_3 = MLOPerformanceMeasure.objects.create(description = 'test 3', academic_year = acad_year_3, associated_mlo = mlo_2_1,percentage_score=65)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),3)
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 3)#measures for Module 1 and module 2 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -848,7 +848,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
         
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 3)#MOD 1, MOD 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -875,7 +875,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 2)#one measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -895,7 +895,7 @@ class TestAccreditationReport(TestCase):
         # # Tables for SLO1 and SLO3 should change. Table for SLO2 should remain unaltered
         measure_4 = MLOPerformanceMeasure.objects.create(description = 'test 3', academic_year = acad_year_3, associated_mlo = mlo_3_1,percentage_score=15)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),4)
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -931,7 +931,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
         # #unchanged
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 3)#MOD 1, MOS 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -963,7 +963,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -996,7 +996,7 @@ class TestAccreditationReport(TestCase):
         measure_5 = MLOPerformanceMeasure.objects.create(description = 'test 4', academic_year = acad_year_4, associated_mlo = mlo_4_1,percentage_score=12.6)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),5)
         #unchanged
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -1032,7 +1032,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 4)#MOD 1, MOS 2 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -1064,8 +1064,8 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(attn_score_direct[2],0) #no measures in third year
         self.assertEqual(attn_score_direct[3],0) #no measures in fourth year
 
-        # #unachanged
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        #unchanged
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -1118,7 +1118,7 @@ class TestAccreditationReport(TestCase):
                                                         tertiary_associated_mlo = mlo_1_4,
                                                         percentage_score=89.9)
         self.assertEqual(MLOPerformanceMeasure.objects.all().count(),6)
-        table_slo_1, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_1, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_1), 4)#measures for Module 1, Module 2 and module 3 plus the totals row
         self.assertEqual(len(table_slo_1[0]), 5)
         self.assertEqual(len(table_slo_1[1]), 5)
@@ -1146,7 +1146,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_1[3][4], Decimal((89.9*2+89.9*1)/(2.0+1.0)))#4th academic year -> totals row is weighted average
 
         
-        table_slo_2, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_2, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_2), 4)#MOD 1, MOD 2 , MOD 4 plus the totals row
         self.assertEqual(len(table_slo_2[0]), 5)
         self.assertEqual(len(table_slo_2[1]), 5)
@@ -1173,7 +1173,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(table_slo_2[3][4], Decimal(89.9))#only one  measure in last academic year
 
 
-        table_slo_3, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
+        table_slo_3, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year, end_year = acad_year_4.start_year, compulsory_only=1)
         self.assertEqual(len(table_slo_3), 3)#two moduleswith measure plus the totals row
         self.assertEqual(len(table_slo_3[0]), 5)
         self.assertEqual(len(table_slo_3[1]), 5)
@@ -1194,7 +1194,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(table_slo_3[2][3], 0)#no measure in third academic year -> totals row is zero
         self.assertAlmostEqual(table_slo_3[2][4], Decimal(89.9))#this last measure just added 
 
-        table_slo_wrong_range, attn_score_direct = CalculateTableForMLODirectMeasures(slo_id = slo_3.id,start_year = acad_year_1.start_year-50, end_year = acad_year_4.start_year-50, compulsory_only=1)
+        table_slo_wrong_range, attn_score_direct, table_survey,attn_scores_survey = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = acad_year_1.start_year-50, end_year = acad_year_4.start_year-50, compulsory_only=1)
         self.assertEqual(len(table_slo_wrong_range), 1)#totals only
         self.assertEqual(len(attn_score_direct),4) #request is 4 academic years
         self.assertEqual(attn_score_direct[0],0) #o
@@ -1221,7 +1221,7 @@ class TestAccreditationReport(TestCase):
         props = response_1.CalculateRepsonsesProprties()
         self.assertAlmostEqual(props["percentage_positive"],100*(50+30)/(50+30+5+15))
         # #Generate the table for SLO 1
-        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_1, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -1253,7 +1253,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(all_info_slo_1["slo_measures_plot_data"][3][1],0)#NO slo surveys 
 
         #Generate the table for SLO 2 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct,mlo_table_slo_2, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1269,7 +1269,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_survey_attention_scores[1],0) #
 
         #Generate the table for SLO 3 - at this stage this is the same as the one for SLO 1, with just one measure
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1294,7 +1294,7 @@ class TestAccreditationReport(TestCase):
                                                            parent_survey = mlo_survey_1 )
         props_2 = response_2.CalculateRepsonsesProprties()
         #Generate the table for SLO 1 - CHANGED
-        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_1, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -1311,7 +1311,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_survey_attention_scores[1],0) #
 
         #Generate the table for SLO 2 - UNCHANGED as MLO 2 of module 1 does not map to slo 2
-        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_2, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1323,7 +1323,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[1][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 2 of module 1 does not map to slo 3
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1350,7 +1350,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_2_1,\
                                                            parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3)
         props_3 = response_3.CalculateRepsonsesProprties()
-        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_1, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -1375,7 +1375,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_survey_attention_scores[1],0) #
 
         # #Generate the table for SLO 2 
-        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_2, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1397,7 +1397,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_survey_attention_scores[1],0) #
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1421,7 +1421,7 @@ class TestAccreditationReport(TestCase):
                                                            associated_mlo = mlo_2_1,\
                                                            parent_survey = mlo_survey_2 ) #mapped to slo 1 (2) and slo 2 (3) - NOT SAME MLO, SAME SURVEY
         props_4 = response_4.CalculateRepsonsesProprties()
-        mlo_table_slo_1, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_1, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_1.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_1), 3)#Two modules, plus the totals
         self.assertEqual(len(mlo_table_slo_1[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_1[1]), 3)#Two years plus the label
@@ -1446,7 +1446,7 @@ class TestAccreditationReport(TestCase):
         self.assertEqual(mlo_survey_attention_scores[1],0) #
 
         # #Generate the table for SLO 2 
-        mlo_table_slo_2, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_2, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_2.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_2), 3)#Three meausures, plus the totals
         self.assertEqual(len(mlo_table_slo_2[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_2[1]), 3)#Two years plus the label
@@ -1464,7 +1464,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_2[2][2],0)#Nothing in 2021
 
         #Generate the table for SLO 3 - UNCHANGED as MLO 1 of module 2 does not map to slo 3
-        mlo_table_slo_3, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
+        table_direct, attn_scores_direct, mlo_table_slo_3, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = 2012, end_year = 2013, compulsory_only=1)
         self.assertEqual(len(mlo_table_slo_3), 2)#One meausre, plus the totals
         self.assertEqual(len(mlo_table_slo_3[0]), 3)#Two years plus the label
         self.assertEqual(len(mlo_table_slo_3[1]), 3)#Two years plus the label
@@ -1476,7 +1476,7 @@ class TestAccreditationReport(TestCase):
         self.assertAlmostEqual(mlo_table_slo_3[1][2],0)#Nothing in 2021
         
         #Cover the empty table because of dates out of range
-        empty_mlo_table_slo, mlo_survey_attention_scores = CalculateTableForMLOSurveys(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
+        table_direct, attn_scores_direct, empty_mlo_table_slo, mlo_survey_attention_scores = CalculateMLOSLOTables(slo_id = slo_3.id,start_year = 1990, end_year = 1994, compulsory_only=1)
         self.assertEqual(len(empty_mlo_table_slo), 1)#Only the totals
 
 

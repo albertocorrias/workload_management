@@ -4,10 +4,6 @@ from django.urls import reverse
 from django.template import loader
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from django.forms import ValidationError
-from django.conf import settings
-from django.db.models import F
-from django.core.files.storage import default_storage
 
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
@@ -26,7 +22,7 @@ from .forms import ProfessorForm, RemoveProfessorForm, ModuleForm, RemoveModuleF
                    EditSurveySettingsForm,TeachingAssignmentTypeForm,RemoveTeachingAssignmentTypeForm,\
                    BulkUploadProfForm,BulkUploadModuleForm
 
-from .global_constants import CalculateNumHoursBasedOnWeeklyInfo,requested_table_type,COLOUR_SCHEMES,\
+from .global_constants import requested_table_type,COLOUR_SCHEMES,\
                               accreditation_outcome_type,ShortenString, DetermineColourBasedOnAttentionScore,csv_file_type
 from .helper_methods import CalculateWorkloadsIndexTable,\
                             CalculateEmploymentTracksTable, CalculateServiceRolesTable, CalculateModuleTypeTable, CalculateDepartmentTable,\
@@ -38,9 +34,9 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
                                           CalculateAllInforAboutOneSLO, DisplayOutcomeValidity
 
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
-from .helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
+from .helper_methods_users import  CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInput
-from .helper_methods_demo import populate_database
+#from .helper_methods_demo import populate_database
 
 
 def home(request):
