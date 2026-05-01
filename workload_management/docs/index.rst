@@ -13,5 +13,9 @@ documentation for details.
 
 .. toctree::
    :maxdepth: 2
+
+   modules/workload_docs
+
    :caption: Contents:
+
 
