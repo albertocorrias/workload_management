@@ -33,8 +33,8 @@ The **workload scenario** contains a table where each row is a lecturer, and for
 
 * The name of the lecturer
 * The lectrer teaching Full TIme Equivalent (see '`The concept of tFTE`_ below)
-* The list of teaching assignments (with hours in brackets). Assignments in gery are not counted towards the workload.
-* The total hours assigned 
+* The list of teaching assignments (with hours in brackets). Assignments in grey are not counted towards the workload.
+* The total hours assigned
 * The expected hours (see below)
 * The balance (hours aasssigned - expected hours)
 
