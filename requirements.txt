@@ -3,7 +3,7 @@ asgiref==3.9.1
 babel==2.18.0
 certifi==2026.4.22
 charset-normalizer==3.4.7
-Django==6.0.3
+Django==6.0.5
 django-admin==2.0.2
 django-crontab==0.7.1
 django-dbbackup==5.0.0
@@ -22,7 +22,7 @@ packaging==26.2
 psycopg2-binary==2.9.10
 Pygments==2.20.0
 python-dateutil==2.9.0.post0
-python-dotenv==1.1.1
+python-dotenv==1.2.2
 requests==2.33.1
 roman-numerals==4.1.0
 screen==1.0.1
