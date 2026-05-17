@@ -5,18 +5,12 @@
   <head>
     <meta charset="utf-8">
     <title>Workload Management App</title>
-    {% include './headers.html' %}
-    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/splash_style.css' %}">
-   
+    {% include './headers.html' %}   
   </head>
   <body>
 
 
-    <div class="top_bar_above_image">
-      <a href="/workload_app/home">
-        <img src="{% static 'workload_app/text_and_logo.png' %}" alt="home" width="70%"> 
-      </a>
-    </div>
+   {% include './app_name_banner.html' %}
 
   <div class="banner_container">
     <img class ="banner_image" src="{% static 'workload_app/splash-banner.png' %}" alt="my image"/>
