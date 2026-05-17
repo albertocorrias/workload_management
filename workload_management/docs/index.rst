@@ -3,18 +3,19 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-EAB workload documentation
+EduLoad documentation
 ==========================
 
-This is the documentation for the Workload and Accreditation Management (WAM) software. 
+This is the documentation for the EduLoad software. 
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   modules/user_docs
    modules/workload_docs
+   modules/accreditation_docs
 
-   
 
 

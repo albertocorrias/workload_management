@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'EAB workload'
+project = 'EduLoad'
 copyright = '2026, Alberto Corrias'
 author = 'Alberto Corrias'
 

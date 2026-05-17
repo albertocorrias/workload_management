@@ -2,14 +2,7 @@
 Workload Management
 ===================================
 
------------------------
-Overview
------------------------
-Therer are 4 types of users with cascading access priviliges. At the bottom, the lecturer can see the courses he/she is assigned to. The Department admin manages the programmes offered by the department and the teaching wrokloads. The Faculty admin manages all the Departments in the Faculty, while the University admin has access to all Faculties.
 
-.. image:: ../images/overview.svg
-   :alt: Overview of access and entities
-   :width: 100%
 
 ---------------------
 The workload scenario
@@ -68,7 +61,7 @@ The software is based on the principle of **fair distribution of workload**. Let
    TOT = \sum_{i=1}^{N} t_{i}
 
 where :math:`t_{i}` is the number of hours for each of the :math:`N` teaching assignments. In the example above, one of these :math:`t_{i}` would be 39. We then define :math:`Dept_{tFTE}`
-as the summation of all the :math:`tFTE` of the all the individual lecturers of the Department for that year
+as the summation of all the :math:`tFTE` of all the individual lecturers of the Department for that year
 
 .. math::
    Dept_{tFTE} = \sum_{i=1}^{n} tFTE_{i}
@@ -90,6 +83,3 @@ The number :math:`E_{i}` is calculated and reported in the workload table and la
 
 
 
-===================================
-Accreditation Management
-===================================
