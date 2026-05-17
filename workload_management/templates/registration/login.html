@@ -8,12 +8,15 @@
     <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'workload_app/style.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'workload_app/login_style.css' %}">
-    <title>Workload and accreditation</title>          
+    <link rel="stylesheet" type="text/css" href="{% static 'workload_app/splash_style.css' %}">
+    <title>EduLoad App</title>          
   </head>
   <body>
-  <div class="top_bar top_login_bar">   
-      Workload + Accreditation
-  </div>
+    <div class="top_bar_above_image">
+      <a href="/workload_app/home">
+        <img src="{% static 'workload_app/text_and_logo.png' %}" alt="home"> 
+      </a>
+    </div>
   <div class="overall_container">
       <h2>Log In</h2>
       <div class="form_container">
