@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path('', include('workload_app.urls')),#root of the links
+    path('', include('eduload.urls')),#root of the links
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
 ]

@@ -25,7 +25,7 @@ ALLOWED_HOSTS = ['104.248.157.119','localhost', 'www.eabworkload.org', 'eabworkl
 
 # Application definition
 INSTALLED_APPS = [
-    'workload_app.apps.WorkloadAppConfig',
+    'eduload.apps.EduLoadConfig',
     'django.contrib.postgres',
     'django.contrib.admin',
     'django.contrib.auth',
