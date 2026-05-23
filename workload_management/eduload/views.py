@@ -36,7 +36,7 @@ from .helper_methods_accreditation import DetermineIconBasedOnStrength,Calculate
 from .report_methods import GetLastNYears,CalculateProfessorIndividualWorkload, CalculateProfessorChartData, CalculateFacultyReportTable
 from .helper_methods_users import  CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty,\
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInput
-#from .helper_methods_demo import populate_database
+from .helper_methods_demo import populate_database
 
 
 def home(request):
@@ -66,7 +66,7 @@ def post_login_landing(request):
         }
         return HttpResponse(template.render(context, request))
     
-    return HttpResponseRedirect('/eduload'+menus["user_homepage"])
+    return HttpResponseRedirect('/'+menus["user_homepage"])
 
 ##This is the for the page of a single workload scenario
 #from silk.profiling.profiler import silk_profile
@@ -379,7 +379,7 @@ def school_page(request,faculty_id):
         return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
-
+    #populate_database()
     menus = CheckUserInput(request) 
     if (CanUserAdminUniversity(menus['user_obj'], request.user.is_superuser) == False or len(menus['error_message']) > 0):
         template = loader.get_template('eduload/errors_page.html')

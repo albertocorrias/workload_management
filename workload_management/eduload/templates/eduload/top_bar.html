@@ -4,7 +4,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/eduload{{user_homepage}}">
+      <a class="navbar-brand" href="{{user_homepage}}">
         <img src="{% static 'bootstrap-icons-1.5.0/house-door-fill-white.svg' %}" alt="home" width="30"> 
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +18,7 @@
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                   {% for dep in user_menu.departments %}
-                  <li><a class="dropdown-item" href="/eduload{{dep.url}}">{{ dep.label }}</a></li>
+                  <li><a class="dropdown-item" href="{{dep.url}}">{{ dep.label }}</a></li>
                   {% endfor %}
                 </ul>
               </li>
@@ -28,7 +28,7 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
               {% for prog in user_menu.accreditations %}
-              <li><a class="dropdown-item" href="/eduload{{prog.url}}">{{ prog.label }}</a></li>
+              <li><a class="dropdown-item" href="{{prog.url}}">{{ prog.label }}</a></li>
               {% endfor %}
             </ul>
           </li>
@@ -38,7 +38,7 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
               {% for lecturer in user_menu.lecturers %}
-              <li><a class="dropdown-item" href="/eduload{{lecturer.url}}">{{ lecturer.label }}</a></li>
+              <li><a class="dropdown-item" href="{{lecturer.url}}">{{ lecturer.label }}</a></li>
               {% endfor %}
             </ul>
           </li>
@@ -48,7 +48,7 @@
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
               {% for course in user_menu.modules %}
-              <li><a class="dropdown-item" href="/eduload{{course.url}}">{{ course.label }}</a></li>
+              <li><a class="dropdown-item" href="{{course.url}}">{{ course.label }}</a></li>
               {% endfor %}
             </ul>
           </li>
