@@ -230,7 +230,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
-LOGIN_REDIRECT_URL = '/workload_app/post_login_landing'
+LOGIN_REDIRECT_URL = '/post_login_landing'
 LOGOUT_REDIRECT_URL = '/accounts/login' 
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'media/')

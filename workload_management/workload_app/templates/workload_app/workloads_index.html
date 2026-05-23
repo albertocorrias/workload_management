@@ -52,7 +52,7 @@
       <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageScenariosModal">
         Add/Remove Workloads...
       </button>
-      <a href="/workload_app/faculty_report" class="btn btn-secondary" role="button" style="border:none;">Report for whole faculty...</a>
+      <a href="/faculty_report" class="btn btn-secondary" role="button" style="border:none;">Report for whole faculty...</a>
     </div>
 
     <hr/>
@@ -75,7 +75,7 @@
   
               {% for entry in department_table %}
               <tr>
-                  <td><a href="/workload_app/department/{{ entry.dept_id }}">{{ entry.department_name }}</a></td>       
+                  <td><a href="/department/{{ entry.dept_id }}">{{ entry.department_name }}</a></td>       
                   <td>{{ entry.department_acronym }}</td>
                   <td>{{ entry.faculty }}</td>
                   <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_dept_name }}DetailsModal">
@@ -109,7 +109,7 @@
 
               {% for entry in faculty_table %}
               <tr>
-                  <td><a href="/workload_app/school_page/{{entry.faculty_id}}">{{ entry.faculty_name }}</a></td>       
+                  <td><a href="/school_page/{{entry.faculty_id}}">{{ entry.faculty_name }}</a></td>       
                   <td>{{ entry.faculty_acronym }}</td>
                   <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_fac_name }}DetailsModal">
                     <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>

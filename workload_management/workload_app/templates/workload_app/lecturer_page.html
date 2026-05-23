@@ -32,7 +32,7 @@
           {% for entry in summary_wl_table_individual %}
           <tr>
             {% if entry.1|length > 1 %}<!-- Checking module title. If empty, it means this is the row of totals...-->
-                <td><a href="/workload_app/module/{{ entry.0 }}">{{ entry.0 }}</a></td><!-- Mod code-->
+                <td><a href="/module/{{ entry.0 }}">{{ entry.0 }}</a></td><!-- Mod code-->
             {% else %}
                 <td>{{ entry.0 }}</td>
             {% endif %}

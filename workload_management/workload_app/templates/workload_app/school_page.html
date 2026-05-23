@@ -137,7 +137,7 @@
     
                 {% for entry in department_table %}
                 <tr>
-                    <td><a href="/workload_app/department/{{ entry.dept_id }}">{{ entry.department_name }}</a></td>       
+                    <td><a href="/department/{{ entry.dept_id }}">{{ entry.department_name }}</a></td>       
                     <td>{{ entry.department_acronym }}</td>
                     <td>{{ entry.faculty }}</td>
                     <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#{{ entry.no_space_dept_name }}DetailsModal">

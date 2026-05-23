@@ -85,7 +85,7 @@
                     </tbody>
                   </table>
                   <p style="text-align: left">
-                    List of SLO for <a href="/workload_app/accreditation/{{ table.programme_id }}">{{table.programme_name}}</a>
+                    List of SLO for <a href="/accreditation/{{ table.programme_id }}">{{table.programme_name}}</a>
                     <br>
                     {% for slo_item in table.slo_list %}
                     {{ slo_item.slo_letter }}) {{ slo_item.slo_description }}
@@ -129,8 +129,8 @@
                           <td>{{ survey.survey_end_date }}</td>
                           <td>{{ survey.n_respondents }}</td>
                           <td>{{ survey.average_response_rate|floatformat }}%</td>
-                          <td><a href="/workload_app/input_module_survey_results/{{ module_code }}/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">Input results</a></td>
-                          <td><a href="/workload_app/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">View results</a></td>
+                          <td><a href="/input_module_survey_results/{{ module_code }}/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">Input results</a></td>
+                          <td><a href="/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">View results</a></td>
                           <td>
                             {% if survey.original_file_url|length > 0 %}
                               Download  <a href="{{ survey.original_file_url }}" download> original file</a>

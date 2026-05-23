@@ -22,7 +22,7 @@
                 <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#Module{{ entry.module_id }}AddAssignmentForModuleModal">            
                         <img src="{% static 'workload_app/plus-square-green.svg' %}" alt="edit">
                 </td>
-                <td><a href="/workload_app/module/{{ entry.module_code }}">{{ entry.module_code }}</a></td><!-- Mod code-->
+                <td><a href="/module/{{ entry.module_code }}">{{ entry.module_code }}</a></td><!-- Mod code-->
                 <td title = "{{ entry.module_full_title }}">{{ entry.module_title }}</td><!-- Mod title-->
                 <td>{{ entry.module_lecturers }} <div class="not_counted_assignments">{{ entry.module_lecturers_not_counted }}</div><!--teaching assignments for this module--></td>
                 <td>{{ entry.module_assigned_hours|floatformat }}</td><!-- Total hours assigned-->

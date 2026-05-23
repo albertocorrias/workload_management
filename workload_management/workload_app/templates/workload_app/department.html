@@ -35,7 +35,7 @@
                       <td rowspan="{{ prog.n_subprogrammes_rowspan }}"><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#Edit{{ prog.programme_id }}DetailsModal">
                         <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"></td>
                       <td rowspan="{{ prog.n_subprogrammes_rowspan }}" style="text-align: left; vertical-align: middle;">{{ prog.programme_name }}
-                        <br><a href="/workload_app/accreditation/{{ prog.programme_id }}" class="btn btn-outline-success" role="button">
+                        <br><a href="/accreditation/{{ prog.programme_id }}" class="btn btn-outline-success" role="button">
                           <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View accreditation</a>  
                       </td>
                       {% if prog.n_subprogrammes > 0 %}
@@ -89,13 +89,13 @@
                       <td> {{ year.academic_year }}</td>
                       <td> 
                         {% for wl_id in year.official_wl_ids %}
-                        <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-success" role="button">
+                        <a href="/scenario_view/{{ wl_id }}" class="btn btn-outline-success" role="button">
                           <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View workload</a>  
                         {% endfor %}
                       </td>
                       <td> 
                         {% for wl_id in year.draft_wl_ids %}
-                        <a href="/workload_app/scenario_view/{{ wl_id }}" class="btn btn-outline-secondary" role="button">
+                        <a href="/scenario_view/{{ wl_id }}" class="btn btn-outline-secondary" role="button">
                           <img src="{% static 'bootstrap-icons-1.5.0/chevron-right.svg' %}" alt="edit">View draft</a>  
                         {% endfor %}
                       </td>
@@ -158,7 +158,7 @@
         <div class="overall-department-report-container">
           {{ no_show_message }}
           {% if workload_there %}
-              <h3>Academic year {{ acad_year }} (<a href="/workload_app/scenario_view/{{ workload_id }}">see workload</a>)</h3>
+              <h3>Academic year {{ acad_year }} (<a href="/scenario_view/{{ workload_id }}">see workload</a>)</h3>
                 {% for table in tables_for_year %}
                   <div style="background-color:{{ table.colour_scheme.darkest }};" class="programme-divider-title" >
                     {{ table.table_with_hours.programme_name }} - Main programme
@@ -193,7 +193,7 @@
                             <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditModule{{ row.regularized_mod_code_sem_1 }}Modal{{ workload_id }}">
                               <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
                           {% endif %}
-                          <td title="{{ row.mod_title_sem_1 }}"> <a href="/workload_app/module/{{ row.mod_code_sem_1 }}">{{ row.mod_code_sem_1 }}</a> </td>
+                          <td title="{{ row.mod_title_sem_1 }}"> <a href="/module/{{ row.mod_code_sem_1 }}">{{ row.mod_code_sem_1 }}</a> </td>
                           <td> {{ row.hours_mod_sem_1 }}</td>
                           {%if row.mod_code_sem_2|length == 0 %}
                             <td></td>
@@ -201,7 +201,7 @@
                             <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditModule{{ row.regularized_mod_code_sem_2 }}Modal{{ workload_id }}">
                             <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
                           {% endif %}
-                          <td title="{{ row.mod_title_sem_2 }}"> <a href="/workload_app/module/{{ row.mod_code_sem_2 }}">{{ row.mod_code_sem_2 }}</a></td>
+                          <td title="{{ row.mod_title_sem_2 }}"> <a href="/module/{{ row.mod_code_sem_2 }}">{{ row.mod_code_sem_2 }}</a></td>
                           <td> {{ row.hours_mod_sem_2 }}</td>
                         </tr>
                         {% endfor %}
@@ -324,7 +324,7 @@
                                 <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditModule{{ row.regularized_mod_code_sem_1 }}Modal{{ workload_id }}">
                                   <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
                               {% endif %}
-                              <td title="{{ row.mod_title_sem_1 }}"> <a href="/workload_app/module/{{ row.mod_code_sem_1 }}">{{ row.mod_code_sem_1 }}</a> </td>
+                              <td title="{{ row.mod_title_sem_1 }}"> <a href="/module/{{ row.mod_code_sem_1 }}">{{ row.mod_code_sem_1 }}</a> </td>
                               <td> {{ row.hours_mod_sem_1 }}</td>
                               {%if row.mod_code_sem_2|length == 0 %}
                                 <td></td>
@@ -332,7 +332,7 @@
                                 <td><button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#EditModule{{ row.regularized_mod_code_sem_2 }}Modal{{ workload_id }}">
                                 <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button></td>
                               {% endif %}
-                              <td title="{{ row.mod_title_sem_2 }}"> <a href="/workload_app/module/{{ row.mod_code_sem_2 }}">{{ row.mod_code_sem_2 }}</a></td>
+                              <td title="{{ row.mod_title_sem_2 }}"> <a href="/module/{{ row.mod_code_sem_2 }}">{{ row.mod_code_sem_2 }}</a></td>
                               <td> {{ row.hours_mod_sem_2 }}</td>
                             </tr>
                             {% endfor %}
