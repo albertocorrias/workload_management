@@ -39,5 +39,5 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlparse==0.5.5
 TimeConvert==3.0.13
 tzlocal==5.3.1
-urllib3==2.6.3
+urllib3==2.7.0
 xlwt==1.3.0
