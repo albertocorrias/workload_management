@@ -21,11 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
+ALLOWED_HOSTS = ['104.248.157.119','localhost', '.localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
 
 # Application definition
-INSTALLED_APPS = [
-    'eduload.apps.EduLoadConfig',
+SHARED_APPS = [
+    'django_tenants',
+    'landlord',
     'django.contrib.postgres',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,7 +38,18 @@ INSTALLED_APPS = [
     'django_crontab'
 ]
 
+TENANT_APPS = ['eduload',
+                   'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',]
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -55,7 +67,7 @@ ROOT_URLCONF = 'workload_management.urls'
 
 
 INTERNAL_IPS = [
-    # ...
+    'localhost',
     "127.0.0.1",
     # ...
 ]
@@ -112,24 +124,24 @@ if ('devel' in str(branch_name)):
     else: #NOT testing.  
         DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
+            'ENGINE': 'django_tenants.postgresql_backend',
             'OPTIONS': {
                 'service': 'workload_service',
-                'passfile': '.pgpass',
+                'passfile': '.pgpass'
             },
         }
         }
-        NEED_SILK_DEBUG=True
-        SILKY_PYTHON_PROFILER=True
+        #NEED_SILK_DEBUG=True
+        #SILKY_PYTHON_PROFILER=True
         #add the debug silk plugin, disabled for testing
-        INSTALLED_APPS = [
-            *INSTALLED_APPS,
-            'silk'
-        ]
-        MIDDLEWARE = [
-            'silk.middleware.SilkyMiddleware',
-            *MIDDLEWARE,
-        ]
+        #INSTALLED_APPS = [
+        #    *INSTALLED_APPS,
+        #    'silk'
+        #]
+        #MIDDLEWARE = [
+        #    'silk.middleware.SilkyMiddleware',
+        #    *MIDDLEWARE,
+        #]
         DISABLE_PANELS = {}
 
     print('**** We are using devel settings  *****')
@@ -187,6 +199,10 @@ else:
         ##############################
         print('**** We are using settings for local BME database *****')
 
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -235,3 +251,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login'
 
 MEDIA_ROOT = os.path.join(BASE_DIR,'media/')
 MEDIA_URL = 'media/'
+
+
+TENANT_MODEL = "landlord.School" # app.Model
+TENANT_DOMAIN_MODEL = "landlord.Domain"  # app.Model

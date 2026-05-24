@@ -10,6 +10,7 @@ django-dbbackup==5.0.0
 django-excel-response2==3.0.6
 django-silk==5.4.3
 django-six==1.0.5
+django-tenants==3.10.1
 docutils==0.22.4
 excel-base==1.0.4
 gprof2dot==2025.4.14
@@ -38,5 +39,5 @@ sphinxcontrib-serializinghtml==2.0.0
 sqlparse==0.5.5
 TimeConvert==3.0.13
 tzlocal==5.3.1
-urllib3==2.7.0
+urllib3==2.6.3
 xlwt==1.3.0

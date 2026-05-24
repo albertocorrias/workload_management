@@ -2,13 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 # Register your models here.
-from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, ModuleLearningOutcome, StudentLearningOutcome, Survey, SurveyQuestionResponse,Academicyear,\
+from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, TeachingAssignmentType, ModuleLearningOutcome, StudentLearningOutcome, Survey, SurveyQuestionResponse,Academicyear,\
 ProgrammeOffered,SubProgrammeOffered,Department,Faculty,MLOSLOMapping, ProgrammeEducationalObjective, PEOSLOMapping, MLOPerformanceMeasure, CorrectiveAction, UniversityStaff
 
 admin.site.register(Lecturer)
 admin.site.register(Module)
 admin.site.register(ModuleType)
 admin.site.register(TeachingAssignment)
+admin.site.register(TeachingAssignmentType)
 admin.site.register(WorkloadScenario)
 admin.site.register(ModuleLearningOutcome)
 admin.site.register(StudentLearningOutcome)
@@ -37,11 +38,11 @@ class EmployeeInline(admin.StackedInline):
     verbose_name_plural = "university_staff"
 
 
-# Define a new User admin
+# # Define a new User admin
 class UserAdmin(BaseUserAdmin):
     inlines = [EmployeeInline]
 
 
-# Re-register UserAdmin
+# # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
