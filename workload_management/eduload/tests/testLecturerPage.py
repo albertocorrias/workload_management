@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
@@ -9,10 +10,11 @@ from eduload.models import StudentLearningOutcome, ProgrammeOffered, Faculty, De
 
 from eduload.report_methods import GetLastNYears,CalculateProfessorIndividualWorkload,CalculateProfessorChartData
 from eduload.helper_methods_users import DetermineUserMenu
-class TestLecturerPage(TestCase):
+
+class TestLecturerPage(TenantTestCase):
     def setup_user(self):
         #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
-        self.client = Client(HTTP_REFERER = 'workload')
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
         self.user.is_superuser = True
         self.user.save()

@@ -1,5 +1,6 @@
 import os
-from django.test import TestCase
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
@@ -14,15 +15,10 @@ from eduload.helper_methods import RegularizeName,CalculateEmploymentTracksTable
                                          CalculateDepartmentTable, CalculateModuleTypesTableForProgramme, CalculateModuleHourlyTableForProgramme,\
                                          CalculateSingleModuleInformationTable, readInUploadedFile
 
-# Helper method for tests
-# def create_lecturer(lec_name, appt,adj):
-#     return Lecturer.objects.create(name=lec_name,fraction_appointment=appt);
-
-
-class testHelperMethods(TestCase):
+class testHelperMethods(TenantTestCase):
     def setup_user(self):
         #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
-        self.client = Client(HTTP_REFERER = 'workload')
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
         self.user.is_superuser = True
         self.user.save()
@@ -595,6 +591,9 @@ class testHelperMethods(TestCase):
         self.assertAlmostEqual(obtained_summary_data["total_module_hours_for_dept"],Decimal(8252))#
 
     def testCalculateModuleTableOverYears(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
         calc = CalculateSingleModuleInformationTable("BN301")
         self.assertEqual(len(calc),0)
 
@@ -725,6 +724,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(calc[1]["lecturers_involved"],"lecturer_1 (35), lecturer_3 (45), lecturer_2 (65)")#note lecturer 2 added
 
     def testCalculateDepartmentProgrammeTables(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
         #Create a Dept affiliated to a faculty
         dept_name = 'test_dept'
         first_fac = Faculty.objects.create(faculty_name = "first fac", faculty_acronym = "FRTE")
@@ -1022,6 +1024,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(table_mod_hourly_ug_subprg["total_hours_sem_2"], 25)
 
     def testCalculateEmploymentTracksTable(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
         self.assertEqual(EmploymentTrack.objects.all().count(), 0)
         tbl = CalculateEmploymentTracksTable()
         self.assertEqual(len(tbl),0)
@@ -1034,6 +1039,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(tbl[0]['track_adjustment'],2)
     
     def testCalculateServiceRolesTable(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+    
         new_fac = Faculty.objects.create(faculty_name ="test fac",faculty_acronym="TSFC")
         self.assertEqual(ServiceRole.objects.all().count(), 0)
         tbl = CalculateServiceRolesTable()
@@ -1046,6 +1054,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(tbl[0]['role_adjustment'],2)
 
     def testCalculateAllDepartmentsTable(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+
         self.assertEqual(Department.objects.all().count(), 0)
         tbl = CalculateDepartmentTable()
         self.assertEqual(len(tbl),0)
@@ -1059,6 +1070,9 @@ class testHelperMethods(TestCase):
         self.assertEqual(tbl[0]['faculty'],'FRTE')
 
     def test_assigned_hours_calculation_method(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(0,0,1,2),0)
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(0,0,0,2),0)
         self.assertEqual(CalculateNumHoursBasedOnWeeklyInfo(1,1,0,2),0)
@@ -1068,8 +1082,10 @@ class testHelperMethods(TestCase):
     
     #Note this one tests the actual reading itself.
     #The method that actually creates the DB objects from the information in the forms
-    # are are tested in tesstModule and testLecturer
+    # are are tested in testModule and testLecturer
     def testreadInUploadedFileForProfessors(self):
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
 
         with open(os.path.join(os.path.dirname(__file__), 'data/profs/regular_no_header.csv'), 'r') as file:
             file_content = file.read()
@@ -1319,7 +1335,10 @@ class testHelperMethods(TestCase):
         self.assertEqual(all_results["errors"],True)
 
     def testreadInUploadedFileForModules(self):
-         #Regular file. Two columns, no header
+        self.setup_user()
+        self.client.login(username='test_user', password='test_user_password')
+        
+        #Regular file. Two columns, no header
         with open(os.path.join(os.path.dirname(__file__), 'data/mods/regular_file_no_headers.csv'), 'r') as file:
             file_content = file.read()
         upload_file = SimpleUploadedFile("tes_upload_file.txt",bytes(file_content,"utf-8"),content_type="text/plain")

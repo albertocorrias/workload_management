@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User, Group
@@ -10,10 +11,10 @@ from eduload.models import Faculty, Department, Module, ModuleType, WorkloadScen
 from eduload.helper_methods_users import DetermineUserHomePage, CanUserAdminThisDepartment, CanUserAdminThisModule, CanUserAdminThisFaculty, CanUserAdminUniversity, DetermineUserMenu
 from eduload.helper_methods_survey import DetermineSurveyLabelsForProgramme
 
-class TestUserPermissions(TestCase):
+class TestUserPermissions(TenantTestCase):
 
     def testHelperMethodsForUser(self):
-        
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
         sup_user = User.objects.create_user('new_super_user', 'test@user.com', 'test_super_user_password')
         sup_user.is_superuser = True
         sup_user.save()
@@ -232,6 +233,8 @@ class TestUserPermissions(TestCase):
         self.assertEqual(lect_user_menu["modules"][0]["url"],"/module/"+str(mod_code))
 
     def testHomePage(self):
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
+
         response = self.client.get(reverse('eduload:home_page'))
         self.assertEqual(response.status_code, 302) #Re-direct to login (anonymous user)
         self.assertEqual(response.url,'/accounts/login')
@@ -252,6 +255,8 @@ class TestUserPermissions(TestCase):
         
 
     def testSuperUserPageAccess(self):
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
+
         #Create fauclty, dept, programmes and modules
         new_fac = Faculty.objects.create(faculty_name = 'test_fac', faculty_acronym = 'CDE')
         new_fac_2 = Faculty.objects.create(faculty_name = 'test_fac2', faculty_acronym = 'CDE2')

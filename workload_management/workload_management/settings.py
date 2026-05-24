@@ -113,7 +113,7 @@ if ('devel' in str(branch_name)):
         #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
         DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
+            'ENGINE': 'django_tenants.postgresql_backend',
             'NAME' : 'postgres',
             'USER': 'postgres',
             'PASSWORD' : 'postgres',#os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate

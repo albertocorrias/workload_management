@@ -1,14 +1,15 @@
-from django.test import TestCase
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
 from django.urls import reverse
 from django.test.client import Client
 from django.contrib.auth.models import User
 from decimal import *
 from eduload.models import Faculty, ProgrammeOffered, Department, Module, ModuleType, WorkloadScenario,SubProgrammeOffered,UniversityStaff, Academicyear,ServiceRole,EmploymentTrack 
 
-class TestProgramme(TestCase):
+class TestProgramme(TenantTestCase):
     def setup_user(self):
         #The test client. We pass workload as referer as the add_module method checks if the word "department" is there for the department summary page
-        self.client = Client(HTTP_REFERER = 'department')
+        self.client = TenantClient(self.tenant, HTTP_REFERER = 'department')
         self.user = User.objects.create_user('test_user', 'test@user.com', 'test_user_password')
         self.user.is_superuser = True
         self.user.save()
