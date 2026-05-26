@@ -26,7 +26,6 @@ ALLOWED_HOSTS = ['104.248.157.119','localhost', '.localhost', 'www.eabworkload.o
 # Application definition
 SHARED_APPS = [
     'django_tenants',
-    'landlord',
     'django.contrib.postgres',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -35,16 +34,11 @@ SHARED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dbbackup',  # django-dbbackup <- requires pip install django-dbbackup
-    'django_crontab'
+    'django_crontab',
+    'landlord',
 ]
 
-TENANT_APPS = ['eduload',
-                   'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',]
+TENANT_APPS = ['eduload']
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
@@ -252,6 +246,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media/')
 MEDIA_URL = 'media/'
 
+#AUTH_USER_MODEL = 'landlord.User'
 
 TENANT_MODEL = "landlord.School" # app.Model
 TENANT_DOMAIN_MODEL = "landlord.Domain"  # app.Model

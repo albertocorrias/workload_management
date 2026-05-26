@@ -35,6 +35,31 @@ def clear_database():
     PEOSLOMapping.objects.all().delete()
     TeachingAssignmentType.objects.all().delete()
 
+# def clean_json():
+#     clear_database()
+#     import json
+
+#     # Open the file and parse its contents
+#     with open('bme_backup.json', 'r') as file:
+#         data = json.load(file)
+#     ret = []
+#     for item in data:
+#         model = item['model']
+#         if model=='eduload.universitystaff' or model=='admin.logentry' or model=='auth.permission' or model == 'sessions.session':
+#             continue
+#         clean_item = {
+#             'model' : model,
+#             'pk' : item['pk'],
+#             'fields'  :item['fields']
+#         }
+#         ret.append(clean_item)
+#     with open("bme_backup_clean.json", "w") as f:
+#         json.dump(ret, f, indent=2)  
+
+
+
+
+
 #This helper method helps creating a databse for the demo
 def populate_database():
     clear_database()
