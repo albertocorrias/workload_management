@@ -21,7 +21,9 @@ class TestHelperMethodsDemo(TenantTestCase):
 
         self.setup_user()
         self.client.login(username='test_user', password='test_user_password')
-        x = populate_database()
+        #Default schema name of TenantClient is 'test' according to documentation
+        #https://django-tenants.readthedocs.io/en/latest/test.html?highlight=tenantclient
+        x = populate_database(schema='test') 
         self.assertEqual(Lecturer.objects.all().count(),6*(40+43+20))
 
 
