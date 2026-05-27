@@ -67,6 +67,7 @@ def post_login_landing(request):
         return HttpResponse(template.render(context, request))
     
     return HttpResponseRedirect('/'+menus["user_homepage"])
+    #return HttpResponseRedirect(reverse('eduload:scenario_view',  kwargs={'workloadscenario_id': workload_id}))
 
 ##This is the for the page of a single workload scenario
 #from silk.profiling.profiler import silk_profile

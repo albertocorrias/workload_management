@@ -19,7 +19,7 @@ class TestUserPermissions(TenantTestCase):
         sup_user.is_superuser = True
         sup_user.save()
         uni_super_user = UniversityStaff.objects.create(user = sup_user, department=None,faculty=None)
-        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), '/workloads_index')
+        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), 'workloads_index')
         self.assertEqual(CanUserAdminUniversity(uni_super_user, is_super_user = True), True)
 
         #Create fauclty, dept and module
@@ -31,7 +31,7 @@ class TestUserPermissions(TenantTestCase):
         uni_super_user.departemnt = new_dept
         uni_super_user.faculty = new_fac
         #Check even after assigning faculty...
-        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), '/workloads_index')
+        self.assertEqual(DetermineUserHomePage(uni_super_user, is_super_user = True), 'workloads_index')
         self.assertEqual(CanUserAdminUniversity(uni_super_user, is_super_user = True), True)
 
         #Create a module
@@ -86,7 +86,7 @@ class TestUserPermissions(TenantTestCase):
         uni_dept_admin.save()
         uni_dept_admin.department = new_dept
         uni_dept_admin.save()
-        self.assertEqual(DetermineUserHomePage(uni_dept_admin, error_text = custom_error_message), '/department/'+str(new_dept.id))
+        self.assertEqual(DetermineUserHomePage(uni_dept_admin, error_text = custom_error_message), 'department/'+str(new_dept.id))
         self.assertEqual(CanUserAdminThisDepartment(uni_dept_admin, new_dept.id), True)#Now assigned proper dept
 
         self.assertEqual(CanUserAdminThisModule(uni_dept_admin, mod_code,uni_dept_admin.department, uni_dept_admin.faculty ), True)
@@ -111,7 +111,7 @@ class TestUserPermissions(TenantTestCase):
         uni_lec_user.save()
         uni_lec_user.lecturer = lecturer_1
         uni_lec_user.save()
-        self.assertEqual(DetermineUserHomePage(uni_lec_user, error_text = custom_error_message), "/lecturer_page/"+str(lecturer_1.id))
+        self.assertEqual(DetermineUserHomePage(uni_lec_user, error_text = custom_error_message), "lecturer_page/"+str(lecturer_1.id))
         #Now we make a teaching assignment for lecturer_1 (associated with the user) to module 1
         assignment_type = TeachingAssignmentType.objects.create(description="hours", quantum_number_of_hours=1,faculty=new_fac)
         teach_ass_1 = TeachingAssignment.objects.create(assigned_module = module_1, assigned_lecturer = lecturer_1, assignment_type = assignment_type, number_of_hours=39, workload_scenario=scenario_1)

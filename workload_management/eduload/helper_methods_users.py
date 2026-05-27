@@ -8,7 +8,8 @@ def CalculateEmptyMenu():
         'departments' : [],
         'accreditations' : [],
         'lecturers' : [],
-        'modules' : []
+        'modules' : [],
+        'homepage' :''
     }
 
 
@@ -23,20 +24,13 @@ def CheckUserInput(request):
     user_menu = CalculateEmptyMenu()
     user_home_page = settings.LOGOUT_REDIRECT_URL
     error_message = ''
-    if (user_qs.count() == 1):
+    if (user_qs.count() == 1):#all good, user exists
         user_obj = user_qs.get()
         user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
         user_home_page = DetermineUserHomePage(user_obj,request.user.is_superuser)
         
     if request.user.is_authenticated == False or user_obj == None:
         error_message = 'Access forbidden. User has no access to this page'
-        #template = loader.get_template('eduload/errors_page.html')
-        #context = {
-        #        'error_message': "Access forbidden. User has no access to this page",
-        #        'user_menu' : user_menu,
-        #        'user_homepage' : user_home_page
-        #}
-        #return HttpResponse(template.render(context, request))
     
     #either empty or filled up
     return {
@@ -49,11 +43,11 @@ def CheckUserInput(request):
 def DetermineUserHomePage(user_obj,is_super_user = False, error_text = "ERROR"):
 
     if (is_super_user == True):
-        return '/workloads_index'
+        return 'workloads_index'
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):
         if (user_obj.department is None): return error_text
         dept_id = user_obj.department.id
-        return '/department/' + str(dept_id)
+        return 'department/' + str(dept_id)
     if user_obj.user.groups.filter(name__in = ['FacultyAdminStaff']):
         if (user_obj.faculty is None): return error_text
         fac_id = user_obj.faculty.id
@@ -61,7 +55,7 @@ def DetermineUserHomePage(user_obj,is_super_user = False, error_text = "ERROR"):
     if user_obj.user.groups.filter(name__in = ['LecturerStaff']):
         if (user_obj.lecturer is None): return error_text
         lec_id = user_obj.lecturer.id
-        return '/lecturer_page/' + str(lec_id)
+        return 'lecturer_page/' + str(lec_id)
     return error_text
 
 def CanUserAdminUniversity(user_obj,is_super_user = False):
@@ -171,7 +165,8 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
                     'id' : 1,#unused
                     'url' :'/module/' + mod_code
                 }
-            ret["modules"].append(mod_item)   
+            ret["modules"].append(mod_item)
+        ret['homepage'] = user_obj.homepage   
             
     else:#populate the menu -should happen rarely, e.g. at the start for a user or when modules or lecturers are added
         user_obj.departments_in_menu = []
@@ -236,7 +231,8 @@ def DetermineUserMenu(user_obj, is_super_user=False,force_population=False):
                     }
                     ret["modules"].append(mod_item)
                     user_obj.modules_in_menu.append(module_code)
-                    added_modules.append(mod.module_code)        
+                    added_modules.append(mod.module_code)
+        user_obj.homepage = DetermineUserHomePage(user_obj, is_super_user)        
         user_obj.is_menu_populated = True
         user_obj.save()
       

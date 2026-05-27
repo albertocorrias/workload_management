@@ -779,7 +779,7 @@ class UniversityStaff(models.Model):
     #The lecturer associated. Used only for users in group "lecturers"
     lecturer = models.ForeignKey(Lecturer, null=True, on_delete=models.SET_NULL, blank=True, related_name="user_lecturer")
     #homepage for this user, as a relative URL 
-    homepage = models.CharField(max_length=1000, default='')
+    homepage = models.CharField(max_length=1000, default='', blank=True)
     #Departments accessible to this user
     departments_in_menu = ArrayField(models.IntegerField(blank=True),blank=True, default = list)
     #modules accessible to this user
