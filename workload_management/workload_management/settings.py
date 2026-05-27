@@ -149,7 +149,7 @@ else:
         SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
         DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
+            'ENGINE': 'django_tenants.postgresql_backend',
             'OPTIONS': {
                 'service': 'workload_service',
                 'passfile': '.pgpass',
