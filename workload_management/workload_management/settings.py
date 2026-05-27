@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','localhost', '.localhost', 'www.eabworkload.org', 'eabworkload.org','127.0.0.1']
+ALLOWED_HOSTS = ['104.248.157.119','localhost', '.localhost', 'www.eabworkload.org', 'eabworkload.org','.eabworkload.org','127.0.0.1']
 
 # Application definition
 SHARED_APPS = [
@@ -57,7 +57,7 @@ MIDDLEWARE = [
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True
 #SECURE_SSL_REDIRECT = True
-CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'http://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'https://*.eabworkload.org','http://127.0.0.1:8000']
 ROOT_URLCONF = 'workload_management.urls'
 
 
