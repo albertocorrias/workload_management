@@ -26,12 +26,11 @@ admin.site.register(PEOSLOMapping)
 admin.site.register(MLOPerformanceMeasure)
 admin.site.register(CorrectiveAction)
 
-
 #Following lines follow official Django documentation
-#To add UniversityStaff to sjango admin
+#To add UniversityStaff to django admin
 
-# Define an inline admin descriptor for Employee model
-# which acts a bit like a singleton
+#Define an inline admin descriptor for Employee model
+#which acts a bit like a singleton
 class EmployeeInline(admin.StackedInline):
     model = UniversityStaff
     can_delete = False

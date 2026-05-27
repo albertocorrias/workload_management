@@ -380,7 +380,7 @@ def school_page(request,faculty_id):
         return HttpResponse(template.render(context, request))
 
 def workloads_index(request):
-    #populate_database(schema='demonus')
+    #populate_database(schema='nusdemo')
     menus = CheckUserInput(request) 
     if (CanUserAdminUniversity(menus['user_obj'], request.user.is_superuser) == False or len(menus['error_message']) > 0):
         template = loader.get_template('eduload/errors_page.html')

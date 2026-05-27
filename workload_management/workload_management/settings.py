@@ -38,7 +38,8 @@ SHARED_APPS = [
     'landlord',
 ]
 
-TENANT_APPS = ['eduload']
+TENANT_APPS = [    'django.contrib.admin',
+    'django.contrib.auth','eduload']
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
