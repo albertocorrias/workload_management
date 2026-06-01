@@ -65,6 +65,7 @@ def CanUserAdminUniversity(user_obj,is_super_user = False):
 
 def CanUserAdminThisFaculty(user_obj, fac_id, is_super_user=False):
     if (is_super_user == True): return True #No questions asked. Super user can
+    if user_obj is None: return False #No user for whatever reason, we return false.
     if user_obj.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
         if user_obj.faculty is None: return False
         faculty_id = user_obj.faculty.id
@@ -75,6 +76,7 @@ def CanUserAdminThisFaculty(user_obj, fac_id, is_super_user=False):
 def CanUserAdminThisDepartment(user_obj, dept_id, is_super_user = False):
 
     if (is_super_user == True): return True #No questions asked. Super user can
+    if user_obj is None: return False #No user for whatever reason, we return false.
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False
         user_dept_id = user_obj.department.id
@@ -91,6 +93,7 @@ def CanUserAdminThisDepartment(user_obj, dept_id, is_super_user = False):
 def CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user = False):
 
     if (is_super_user == True): return True #No questions asked. Super user can
+    if user_obj is None: return False #No user for whatever reason, we return false.
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False
         user_dept_id = user_obj.department.id
@@ -115,6 +118,8 @@ def CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user = Fal
 def CanUserAdminThisLecturer(user_obj, lect_name, dept, fac ,is_super_user = False):
 
     if (is_super_user == True): return True #No questions asked. Super user can
+    if user_obj is None: return False
+
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False
         user_dept_id = user_obj.department.id

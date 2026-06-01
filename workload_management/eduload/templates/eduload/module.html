@@ -133,7 +133,7 @@
                           <td><a href="/survey_results/{{ survey.survey_id }}" class="btn btn-primary btn-sm" role="button">View results</a></td>
                           <td>
                             {% if survey.original_file_url|length > 0 %}
-                              Download  <a href="{{ survey.original_file_url }}" download> original file</a>
+                              Download  <a href="{% url  'eduload:download_survey_file' survey.survey_id %}" download> original file</a>
                             {% else %}
                               N/A
                             {% endif %}

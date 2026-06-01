@@ -1,9 +1,10 @@
 import datetime
-from django.http import HttpResponse,HttpResponseRedirect
+from django.http import HttpResponse,HttpResponseRedirect, FileResponse
 from django.urls import reverse
 from django.template import loader
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from django.shortcuts import get_object_or_404
 
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
@@ -164,6 +165,40 @@ def scenario_view(request, workloadscenario_id):
         'user_homepage' : menus['user_homepage']
     }
     return HttpResponse(template.render(context, request))
+
+def download_survey_file(request, survey_id):
+    if (request.method == 'GET'):
+        menus = CheckUserInput(request) 
+        #Check if survey exists....
+        survey_qs  =Survey.objects.filter(id = survey_id)
+        if (survey_qs.count() != 1):
+            #This should really never happen, but just in case the user enters some random number...
+            template = loader.get_template('eduload/errors_page.html')
+            context = {
+                    'error_message': "No such survey exists in the database",
+                    'user_menu' : menus["user_menu"],
+                    'user_homepage' : menus["user_homepage"]
+            }
+            return HttpResponse(template.render(context, request))
+        
+        #if we are still here, survey exists and must have a parent programme
+        surv_obj = survey_qs.get()
+        if (CanUserAdminThisDepartment(menus['user_obj'], surv_obj.programme_associated.primary_dept.id,request.user.is_superuser) == False\
+            or len(menus['error_message'])>0 or bool(surv_obj.original_file) == False): #the last check checks if there is a file or not...
+            template = loader.get_template('eduload/errors_page.html')
+            context = {
+                    'error_message': "Access forbidden. User has no access to this page",
+                    'user_menu' : menus["user_menu"],
+                    'user_homepage' : menus["user_homepage"]
+            }
+            return HttpResponse(template.render(context, request))
+
+        # Open and serve the file safely
+        file_handle = surv_obj.original_file.open('rb')
+        response = FileResponse(file_handle, content_type='application/octet-stream')
+        # Force the browser to trigger a download rather than rendering inline
+        response['Content-Disposition'] = f'attachment; filename="{surv_obj.original_file.name}"'
+        return response
 
 def bulk_add_module(request,workload_id):
     if (request.method == 'POST'):

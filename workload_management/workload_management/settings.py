@@ -38,8 +38,10 @@ SHARED_APPS = [
     'landlord',
 ]
 
-TENANT_APPS = [    'django.contrib.admin',
-    'django.contrib.auth','eduload']
+TENANT_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'eduload']
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
@@ -64,7 +66,6 @@ ROOT_URLCONF = 'workload_management.urls'
 INTERNAL_IPS = [
     'localhost',
     "127.0.0.1",
-    # ...
 ]
 
 TEMPLATES = [
@@ -88,8 +89,6 @@ WSGI_APPLICATION = 'workload_management.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
 # Figure out the git branch we are in, and, based on that, the DB to use
 GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 head_file = GIT_ROOT_DIR / ".git" / "HEAD"
@@ -137,7 +136,7 @@ if ('devel' in str(branch_name)):
         #    'silk.middleware.SilkyMiddleware',
         #    *MIDDLEWARE,
         #]
-        DISABLE_PANELS = {}
+        #DISABLE_PANELS = {}
 
     print('**** We are using devel settings  *****')
 else:
@@ -217,37 +216,37 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/3.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
+#Key tenant settings
+TENANT_MODEL = "landlord.School" # app.Model
+TENANT_DOMAIN_MODEL = "landlord.Domain"  # app.Model
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Redirect to home URL after login (Default redirects to /accounts/profile/)
 LOGIN_REDIRECT_URL = '/post_login_landing'
 LOGOUT_REDIRECT_URL = '/accounts/login' 
 
+#Tenant-aware media settings for user-uploaed media
+STORAGES = {
+    'default': {
+        "BACKEND": "django_tenants.files.storage.TenantFileSystemStorage",
+    },
+    'staticfiles': {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+MULTITENANT_RELATIVE_MEDIA_ROOT = "%s"  # (default: create sub-directory for each tenant)
+
 MEDIA_ROOT = os.path.join(BASE_DIR,'media/')
-MEDIA_URL = 'media/'
-
-#AUTH_USER_MODEL = 'landlord.User'
-
-TENANT_MODEL = "landlord.School" # app.Model
-TENANT_DOMAIN_MODEL = "landlord.Domain"  # app.Model
+MEDIA_URL = '/media/'
