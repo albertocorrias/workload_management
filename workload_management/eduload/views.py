@@ -200,6 +200,43 @@ def download_survey_file(request, survey_id):
         response['Content-Disposition'] = f'attachment; filename="{surv_obj.original_file.name}"'
         return response
 
+def download_direct_measure_file(request, measure_id):
+    if (request.method == 'GET'):
+        menus = CheckUserInput(request) 
+        #Check if measure exists....
+        measure_qs  =MLOPerformanceMeasure.objects.filter(id = measure_id)
+        if (measure_qs.count() != 1):
+            #This should really never happen, but just in case the user enters some random number...
+            template = loader.get_template('eduload/errors_page.html')
+            context = {
+                    'error_message': "No such measure exists in the database",
+                    'user_menu' : menus["user_menu"],
+                    'user_homepage' : menus["user_homepage"]
+            }
+            return HttpResponse(template.render(context, request))
+        
+        #if we are still here, measure exists and must have a parent mlo
+        measure_obj = measure_qs.get()
+        mod_code = measure_obj.associated_mlo.module_code
+        mod_dept = Module.objects.filter(module_code = mod_code).first().scenario_ref.dept
+        mod_fac = mod_dept.faculty
+        if (CanUserAdminThisModule(menus['user_obj'], mod_code , mod_dept.id, mod_fac.id,request.user.is_superuser) == False\
+            or len(menus['error_message'])>0 or bool(measure_obj.original_file) == False): #the last check checks if there is a file or not...
+            template = loader.get_template('eduload/errors_page.html')
+            context = {
+                    'error_message': "Access forbidden. User has no access to this page",
+                    'user_menu' : menus["user_menu"],
+                    'user_homepage' : menus["user_homepage"]
+            }
+            return HttpResponse(template.render(context, request))
+
+        # Open and serve the file safely
+        file_handle = measure_obj.original_file.open('rb')
+        response = FileResponse(file_handle, content_type='application/octet-stream')
+        # Force the browser to trigger a download rather than rendering inline
+        response['Content-Disposition'] = f'attachment; filename="{measure_obj.original_file.name}"'
+        return response
+    
 def bulk_add_module(request,workload_id):
     if (request.method == 'POST'):
         form = BulkUploadModuleForm(request.POST,request.FILES)
@@ -978,6 +1015,7 @@ def module(request, module_code):
                 'year' : measure.academic_year,
                 'description' : measure.description,
                 'download_url' : '',
+                'measure_id' : measure.id,
                 'mlos_mapped' : measure.associated_mlo.mlo_short_description + ", ",#Will be culled at the end
                 'score' : measure.percentage_score
             }
