@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','localhost', '.localhost', 'www.eabworkload.org', 'eabworkload.org','.eabworkload.org','127.0.0.1']
+ALLOWED_HOSTS = ['104.248.157.119','.localhost','.eabworkload.org','127.0.0.1']
 
 # Application definition
 SHARED_APPS = [
@@ -59,7 +59,7 @@ MIDDLEWARE = [
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True
 #SECURE_SSL_REDIRECT = True
-CSRF_TRUSTED_ORIGINS = ['https://104.248.157.119','https://localhost', 'https://eabworkload.org', 'https://www.eabworkload.org', 'https://*.eabworkload.org','http://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['https://*.localhost', 'https://localhost', 'https://eabworkload.org', 'https://*.eabworkload.org','http://127.0.0.1:8000']
 ROOT_URLCONF = 'workload_management.urls'
 
 
@@ -100,6 +100,7 @@ for line in content:
 
 NEED_SILK_DEBUG = False #This will be picked up by URL, activate only in development, not testing
 if ('devel' in str(branch_name)):
+    #print('**** We are using devel settings  *****')
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
     TESTING = "test" in sys.argv
@@ -110,10 +111,10 @@ if ('devel' in str(branch_name)):
             'ENGINE': 'django_tenants.postgresql_backend',
             'NAME' : 'postgres',
             'USER': 'postgres',
-            'PASSWORD' : 'postgres',#os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
+            'PASSWORD' : 'postgres',
             'HOST' : '127.0.0.1',
             'PORT' : '5432'
-        }
+            }
         }
     else: #NOT testing.  
         DATABASES = {
@@ -138,8 +139,8 @@ if ('devel' in str(branch_name)):
         #]
         #DISABLE_PANELS = {}
 
-    print('**** We are using devel settings  *****')
 else:
+    #print('**** We are using production settings  *****')
     TESTING=False #We only test in devel branch
     if ('production' in str(branch_name)):#the online branch, used for demo
         DEBUG=False #DEBUG must be false in production
@@ -155,50 +156,36 @@ else:
             },
         }
         }
-        print('**** We are using production settings  *****')
-    if ('bme' in str(branch_name)):#the local BMe branch with the bMe database (locally installed only)
-        DEBUG=True #local deployment, run with runserver, turn on debug, need of silk debugging
-        SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME' : 'bme_db',
-                'USER': 'workload_user',
-                'PASSWORD' : os.environ["DEVEL_DB_PASSWORD"], #Appended export DEVEL_DB_PASSWORD="******" at the end of the virtual environment under bin/activate
-                'HOST' : 'localhost',
-                'PORT' : '5432'
-            }
-            }
-        #############################
-        # Backup-related settings (we only backup the BME database)
-        STORAGES = {
-            'dbbackup': {
-                'BACKEND': 'django.core.files.storage.FileSystemStorage',
-                'OPTIONS': {
-                    'location': os.environ["LOCAL_DB_BACKUP_DIR"],
-                },
-            },
-            'default': {
-                "BACKEND": "django.core.files.storage.FileSystemStorage",
-            },
-            'staticfiles': {
-                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-            },
-        }
 
-        CRONTAB_COMMAND_SUFFIX = '2>&1'
-        CRONJOBS = [
-            ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
-        ]
+        #############################
+        # Backup-related settings for production DB
+        # STORAGES = {
+        #     'dbbackup': {
+        #         'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        #         'OPTIONS': {
+        #             'location': os.environ["LOCAL_DB_BACKUP_DIR"],
+        #         },
+        #     },
+        #     'default': {
+        #         "BACKEND": "django.core.files.storage.FileSystemStorage",
+        #     },
+        #     'staticfiles': {
+        #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        #     },
+        # }
+
+        # CRONTAB_COMMAND_SUFFIX = '2>&1'
+        # CRONJOBS = [
+        #     ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
+        # ]
         ##############################
-        print('**** We are using settings for local BME database *****')
+
 
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
 )
 
 # Password validation
-# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
