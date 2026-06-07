@@ -147,7 +147,7 @@ elif ('production' in str(branch_name)):#the production branch on the server:
 
     TESTING=False #We only test in devel branch
     DEBUG=False #DEBUG must be false in production
-    ALLOWED_HOSTS = ['.eabowrkload.org','eabworkload.org']
+    ALLOWED_HOSTS = ['eabworkload.org','.eaboworkload.org']
     SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DATABASES = {
     'default': {
