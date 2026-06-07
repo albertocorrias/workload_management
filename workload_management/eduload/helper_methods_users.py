@@ -19,19 +19,21 @@ def CheckUserInput(request):
     If not, the returned dictionary key "error_message" will have an error message 
     User menu, user home page and user obj are returne, either empty (or None) or filled up
     '''
+
     user_qs = UniversityStaff.objects.select_related("department","faculty","lecturer","user").prefetch_related("user__groups").filter(user__id = request.user.id)
     user_obj = None
     user_menu = CalculateEmptyMenu()
     user_home_page = settings.LOGOUT_REDIRECT_URL
     error_message = ''
-    if (user_qs.count() == 1):#all good, user exists
-        user_obj = user_qs.get()
-        user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
-        user_home_page = DetermineUserHomePage(user_obj,request.user.is_superuser)
+    if request.tenant.schema_name != 'public': #Must be a tanent to do this
+        if (user_qs.count() == 1):#all good, user exists
+            user_obj = user_qs.get()
+            user_menu  = DetermineUserMenu(user_obj,request.user.is_superuser)
+            user_home_page = DetermineUserHomePage(user_obj,request.user.is_superuser)
+            
+        if request.user.is_authenticated == False or user_obj == None:
+            error_message = 'Access forbidden. User has no access to this page'
         
-    if request.user.is_authenticated == False or user_obj == None:
-        error_message = 'Access forbidden. User has no access to this page'
-    
     #either empty or filled up
     return {
         'user_menu' : user_menu,
@@ -59,13 +61,12 @@ def DetermineUserHomePage(user_obj,is_super_user = False, error_text = "ERROR"):
     return error_text
 
 def CanUserAdminUniversity(user_obj,is_super_user = False):
-    #usr = UniversityStaff.objects.filter(user__id = user_id).get()
-    if (is_super_user == True): return True #No questions asked. Super user can
+    if (is_super_user == True and user_obj is not None): return True #No questions asked. Super user can
     return False
 
 def CanUserAdminThisFaculty(user_obj, fac_id, is_super_user=False):
-    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj is None: return False #No user for whatever reason, we return false.
+    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj.user.groups.filter(name__in = ['FacultyAdminStaff']):#Admin of faculty of dept also can
         if user_obj.faculty is None: return False
         faculty_id = user_obj.faculty.id
@@ -75,8 +76,8 @@ def CanUserAdminThisFaculty(user_obj, fac_id, is_super_user=False):
 
 def CanUserAdminThisDepartment(user_obj, dept_id, is_super_user = False):
 
-    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj is None: return False #No user for whatever reason, we return false.
+    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False
         user_dept_id = user_obj.department.id
@@ -92,8 +93,8 @@ def CanUserAdminThisDepartment(user_obj, dept_id, is_super_user = False):
 
 def CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user = False):
 
-    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj is None: return False #No user for whatever reason, we return false.
+    if (is_super_user == True): return True #No questions asked. Super user can
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False
         user_dept_id = user_obj.department.id
@@ -117,8 +118,9 @@ def CanUserAdminThisModule(user_obj, module_code, dept, fac ,is_super_user = Fal
 
 def CanUserAdminThisLecturer(user_obj, lect_name, dept, fac ,is_super_user = False):
 
+    if user_obj is None: return False  #No user for whatever reason, we return false.
     if (is_super_user == True): return True #No questions asked. Super user can
-    if user_obj is None: return False
+    
 
     if user_obj.user.groups.filter(name__in = ['DepartmentAdminStaff']):#Admin of same dpeartment can
         if user_obj.department is None: return False

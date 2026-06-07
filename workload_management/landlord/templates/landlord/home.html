@@ -5,7 +5,9 @@
   <head>
     <meta charset="utf-8">
     <title>Workload Management App</title>
-    {% include './headers.html' %}   
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">  
+    <link rel="stylesheet" type="text/css" href="{% static 'landlord/splash_style.css' %}"> 
   </head>
   <body>
 
@@ -13,7 +15,7 @@
    {% include './app_name_banner.html' %}
 
   <div class="banner_container">
-    <img class ="banner_image" src="{% static 'eduload/splash-banner.png' %}" alt="my image"/>
+    <img class ="banner_image" src="{% static 'landlord/splash-banner.png' %}" alt="my image"/>
   </div>
 <div class="overall_container" id="overall_container">
 <div class="header_container">

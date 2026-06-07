@@ -17,7 +17,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path('', include('eduload.urls')),#root of the links
+    path('', include('eduload.urls')),#root of the links for the tenant
+    path('home/',include('landlord.urls')),
     path('admin/', admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
 ]

@@ -4,7 +4,6 @@ from django.urls import reverse
 from django.template import loader
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from django.shortcuts import get_object_or_404
 
 from .models import Lecturer, Module, TeachingAssignment, WorkloadScenario, ModuleType, Department, EmploymentTrack,\
                     ServiceRole, Faculty,Academicyear,ProgrammeOffered,SubProgrammeOffered, StudentLearningOutcome,\
@@ -39,17 +38,8 @@ from .helper_methods_users import  CanUserAdminThisDepartment, CanUserAdminThisM
       CanUserAdminUniversity, CanUserAdminThisLecturer, DetermineUserMenu,CheckUserInput
 from .helper_methods_demo import populate_database
 
-
-def home(request):
-
-    template = loader.get_template('eduload/home.html')
-    context = {
-                'error_message': "hello"
-    }
-    return HttpResponse(template.render(context, request))
-
 #This is intended as the user home page. If the user is logged in, it goes to his/her own home page
-def home_page(request):
+def user_home_page(request):
     if request.user.is_authenticated: #logged in user ->Figure out home page and send there
         return post_login_landing(request)
     else: #anonymous users -> send to login page

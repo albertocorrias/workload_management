@@ -235,7 +235,7 @@ class TestUserPermissions(TenantTestCase):
     def testHomePage(self):
         self.client = TenantClient(self.tenant, HTTP_REFERER = 'workload')
 
-        response = self.client.get(reverse('eduload:home_page'))
+        response = self.client.get(reverse('eduload:user_home_page'))
         self.assertEqual(response.status_code, 302) #Re-direct to login (anonymous user)
         self.assertEqual(response.url,'/accounts/login')
 
@@ -249,7 +249,7 @@ class TestUserPermissions(TenantTestCase):
         fac_admin.save()
         uni_fac_admin = UniversityStaff.objects.create(user = fac_admin, department=new_dept,faculty=new_fac)
         self.client.login(username='new_fac_admin', password='fac_super_user_password') #login the fauclty admin
-        response = self.client.get(reverse('eduload:home_page'))
+        response = self.client.get(reverse('eduload:user_home_page'))
         self.assertEqual(response.status_code, 302) #Re-direct to user's home page
         self.assertEqual(DetermineUserHomePage(uni_fac_admin, error_text = "hello") in response.url, True)
         

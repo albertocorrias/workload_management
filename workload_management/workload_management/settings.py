@@ -18,10 +18,10 @@ import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+print(BASE_DIR)
 load_dotenv()
 
-ALLOWED_HOSTS = ['104.248.157.119','.localhost','.eabworkload.org','127.0.0.1']
+
 
 # Application definition
 SHARED_APPS = [
@@ -56,10 +56,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = True
-#SECURE_SSL_REDIRECT = True
-CSRF_TRUSTED_ORIGINS = ['https://*.localhost', 'https://localhost', 'https://eabworkload.org', 'https://*.eabworkload.org','http://127.0.0.1:8000']
+
+
 ROOT_URLCONF = 'workload_management.urls'
 
 
@@ -88,8 +86,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'workload_management.wsgi.application'
 
 
-# Database
-# Figure out the git branch we are in, and, based on that, the DB to use
+#Some common settings
+NEED_SILK_DEBUG = False #This will be picked up by urls.py, activate only in development, not testing
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = True #Documentation advises this to be true
+
+# Figure out the git branch we are in, and, based on that, the DB and settings to use
 GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 head_file = GIT_ROOT_DIR / ".git" / "HEAD"
 branch_name = ''
@@ -98,14 +100,16 @@ for line in content:
     if line[0:4] == "ref:":
         branch_name = line.partition("refs/heads/")[2]
 
-NEED_SILK_DEBUG = False #This will be picked up by URL, activate only in development, not testing
+
 if ('devel' in str(branch_name)):
     #print('**** We are using devel settings  *****')
+    ALLOWED_HOSTS = ['.localhost', 'localhost','127.0.0.1']
+    CSRF_TRUSTED_ORIGINS = ['http://*.localhost', 'http://localhost','http://127.0.0.1:8000']
     SECRET_KEY = os.environ["DJANGO_DEVEL_KEY"] #Appended export DJANGO_DEVEL_KEY="*****" at the end of the virtual environment under bin/activate
     DEBUG = True# Development settings have debug=true
     TESTING = "test" in sys.argv
     if TESTING:
-        #The pg service does not work for testing (https://code.djangoproject.com/ticket/33685)
+        #The pg service seems not to work for testing (https://code.djangoproject.com/ticket/33685)
         DATABASES = {
         'default': {
             'ENGINE': 'django_tenants.postgresql_backend',
@@ -139,47 +143,47 @@ if ('devel' in str(branch_name)):
         #]
         #DISABLE_PANELS = {}
 
-else:
-    #print('**** We are using production settings  *****')
+elif ('production' in str(branch_name)):#the production branch on the server:
+
     TESTING=False #We only test in devel branch
-    if ('production' in str(branch_name)):#the online branch, used for demo
-        DEBUG=False #DEBUG must be false in production
-        #SESSION_COOKIE_DOMAIN = 'eabworkload.org'
-        SESSION_COOKIE_HTTPONLY = True
-        SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
-        DATABASES = {
-        'default': {
-            'ENGINE': 'django_tenants.postgresql_backend',
-            'OPTIONS': {
-                'service': 'workload_service',
-                'passfile': '.pgpass',
-            },
-        }
-        }
+    DEBUG=False #DEBUG must be false in production
+    ALLOWED_HOSTS = ['.eabowrkload.org','eabworkload.org']
+    SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'OPTIONS': {
+            'service': 'workload_service',
+            'passfile': '.pgpass',
+        },
+    }
+    }
 
-        #############################
-        # Backup-related settings for production DB
-        # STORAGES = {
-        #     'dbbackup': {
-        #         'BACKEND': 'django.core.files.storage.FileSystemStorage',
-        #         'OPTIONS': {
-        #             'location': os.environ["LOCAL_DB_BACKUP_DIR"],
-        #         },
-        #     },
-        #     'default': {
-        #         "BACKEND": "django.core.files.storage.FileSystemStorage",
-        #     },
-        #     'staticfiles': {
-        #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        #     },
-        # }
+    #############################
+    # Backup-related settings for production DB
+    # STORAGES = {
+    #     'dbbackup': {
+    #         'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    #         'OPTIONS': {
+    #             'location': os.environ["LOCAL_DB_BACKUP_DIR"],
+    #         },
+    #     },
+    #     'default': {
+    #         "BACKEND": "django.core.files.storage.FileSystemStorage",
+    #     },
+    #     'staticfiles': {
+    #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    #     },
+    # }
 
-        # CRONTAB_COMMAND_SUFFIX = '2>&1'
-        # CRONJOBS = [
-        #     ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
-        # ]
-        ##############################
-
+    # CRONTAB_COMMAND_SUFFIX = '2>&1'
+    # CRONJOBS = [
+    #     ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
+    # ]
+    ##############################
+else:
+    #should never be here
+    raise ValueError("You must be either in 'devel' or 'production' branch")
 
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
