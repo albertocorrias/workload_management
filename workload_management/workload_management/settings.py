@@ -59,7 +59,9 @@ MIDDLEWARE = [
 
 
 ROOT_URLCONF = 'workload_management.urls'
-
+PUBLIC_SCHEMA_URLCONF = 'workload_management.urls'
+TENANT_URLCONF = 'workload_management.urls'
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 INTERNAL_IPS = [
     'localhost',
@@ -90,7 +92,7 @@ WSGI_APPLICATION = 'workload_management.wsgi.application'
 NEED_SILK_DEBUG = False #This will be picked up by urls.py, activate only in development, not testing
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True #Documentation advises this to be true
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Figure out the git branch we are in, and, based on that, the DB and settings to use
 GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 head_file = GIT_ROOT_DIR / ".git" / "HEAD"
@@ -144,10 +146,11 @@ if ('devel' in str(branch_name)):
         #DISABLE_PANELS = {}
 
 elif ('production' in str(branch_name)):#the production branch on the server:
-
+    print('***************PRODUCTION****************')
     TESTING=False #We only test in devel branch
     DEBUG=False #DEBUG must be false in production
-    ALLOWED_HOSTS = ['eabworkload.org','.eaboworkload.org']
+    ALLOWED_HOSTS = ['eabworkload.org','.eabworkload.org']
+    CSRF_TRUSTED_ORIGINS = ['https://eabworkload.org', 'https://*.eabworkload.org']
     SECRET_KEY = os.environ["DJANGO_PRODUCTION_SECRET_KEY"]
     DATABASES = {
     'default': {
