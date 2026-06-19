@@ -1,24 +1,15 @@
 [![Django CI](https://github.com/albertocorrias/workload_management/actions/workflows/django.yml/badge.svg?branch=devel)](https://github.com/albertocorrias/workload_management/actions/workflows/django.yml)
 
-# Workload management and accreditation app
+# EduLoad, Free workload management and accreditation app
 
-## Overall structure
+This web app is intended to help with management of workload within a department of an academic institution. It also handles programme-level evaluation following the data collection procedures typical of engineering accreditation. The app is developed using Django.
 
-This Django app is intended to help with management of workload within a department of an academic institution. It also handles programme-level evaluation following the data collection procedures typical of engineering accreditation. The app is developed using Django.
+- The splahs info page of the website is available [here](https://eabworkload.org/home/). 
+- Full documentation will be available soon.
 
-## Development Setup
+For setting up on a new development machine, please see [here](https://github.com/albertocorrias/workload_management/wiki/Setup-on-a-new-devel-machine)
 
--  Clone the repository
--  Create a virtual environment `python3 -m venv .my_virtual_environment`
--  Activate it `source my_virtual_environment/bin/activate`
--  Make sure to have a system-wide installation of postgreSQL and follow step 1 and 2 of [this guide](https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu)
--  Install what's needed
-   `pip intsall -r requirements.txt`
-- Append, at the end of `my_virtual_environment/bin/activate` the definition of the follwoing variables
-    * export DEVEL_DB_PASSWORD='YOUR PASSWORD HERE'
-    * export DJANGO_DEVEL_KEY='LONG STRING HERE'
-    * export DJANGO_SECRET_KEY='LONG STRING HERE'
-    * export LOCAL_DB_BACKUP_DIR='SOME EXISTING DIR'
+
 
   
 
