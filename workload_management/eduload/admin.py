@@ -25,6 +25,7 @@ admin.site.register(ProgrammeEducationalObjective)
 admin.site.register(PEOSLOMapping)
 admin.site.register(MLOPerformanceMeasure)
 admin.site.register(CorrectiveAction)
+admin.site.register(UniversityStaff)
 
 #Following lines follow official Django documentation
 #To add UniversityStaff to django admin

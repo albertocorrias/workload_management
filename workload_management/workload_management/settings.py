@@ -26,6 +26,7 @@ load_dotenv()
 # Application definition
 SHARED_APPS = [
     'django_tenants',
+    'landlord',
     'django.contrib.postgres',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -34,13 +35,13 @@ SHARED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dbbackup',  # django-dbbackup <- requires pip install django-dbbackup
-    'django_crontab',
-    'landlord',
+    'django_crontab'
 ]
 
 TENANT_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.contenttypes',
     'eduload']
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
