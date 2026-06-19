@@ -94,6 +94,7 @@ NEED_SILK_DEBUG = False #This will be picked up by urls.py, activate only in dev
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = True #Documentation advises this to be true
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Figure out the git branch we are in, and, based on that, the DB and settings to use
 GIT_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 head_file = GIT_ROOT_DIR / ".git" / "HEAD"
@@ -123,7 +124,7 @@ if ('devel' in str(branch_name)):
             'PORT' : '5432'
             }
         }
-    else: #NOT testing.  
+    else: #NOT testing, use postgreSQL service same as in production  
         DATABASES = {
         'default': {
             'ENGINE': 'django_tenants.postgresql_backend',
@@ -147,7 +148,7 @@ if ('devel' in str(branch_name)):
         #DISABLE_PANELS = {}
 
 elif ('production' in str(branch_name)):#the production branch on the server:
-    print('***************PRODUCTION****************')
+    #print('***************PRODUCTION****************') if logic debug is needed....
     TESTING=False #We only test in devel branch
     DEBUG=False #DEBUG must be false in production
     ALLOWED_HOSTS = ['eabworkload.org','.eabworkload.org']
@@ -162,29 +163,6 @@ elif ('production' in str(branch_name)):#the production branch on the server:
         },
     }
     }
-
-    #############################
-    # Backup-related settings for production DB
-    # STORAGES = {
-    #     'dbbackup': {
-    #         'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    #         'OPTIONS': {
-    #             'location': os.environ["LOCAL_DB_BACKUP_DIR"],
-    #         },
-    #     },
-    #     'default': {
-    #         "BACKEND": "django.core.files.storage.FileSystemStorage",
-    #     },
-    #     'staticfiles': {
-    #         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    #     },
-    # }
-
-    # CRONTAB_COMMAND_SUFFIX = '2>&1'
-    # CRONJOBS = [
-    #     ('*/5 * * * *', 'cd ' + str(BASE_DIR) + ' && source virtual_env/bin/activate && python workload_management/manage.py dbbackup', '>> ' + os.path.join(BASE_DIR, 'backup/backup.log'))
-    # ]
-    ##############################
 else:
     #should never be here
     raise ValueError("You must be either in 'devel' or 'production' branch")
