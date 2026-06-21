@@ -77,9 +77,9 @@ def CalculateNumHoursBasedOnWeeklyInfo(weekly_lect_hrs, weekly_tut_hrs, weeks_as
 def DetermineColorBasedOnBalance(bal,ok_threshold=15):
     if (bal > -ok_threshold and bal < ok_threshold):
         return '#FFFFFF' #White as OK
-    if (bal > ok_threshold):
+    if (bal >= ok_threshold):
         return '#B5F5DC'
-    if (bal < -ok_threshold):
+    if (bal <= -ok_threshold):
         return '#FCCACA'
     
 #This method returns and HTML-ready rgb string to be used as background colour
