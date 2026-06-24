@@ -1280,7 +1280,7 @@ def populate_database(schema = 'public'):
                                                                                         percentage_score=perf_score)
                     #Create MLO surveys
                     class_size = random.choice(class_sizes)
-                    srv,created = Survey.objects.get_or_create(survey_title = "MLO survey for "+module_code+" ("+str(ac_year.start_year)+"/"+str(ac_year.start_year+1)+")",\
+                    srv,created = Survey.objects.get_or_create(survey_title = "CLO survey for "+module_code+" ("+str(ac_year.start_year)+"/"+str(ac_year.start_year+1)+")",\
                                                             opening_date = datetime.datetime(ac_year.start_year+1, 4, 10),\
                                                             closing_date = datetime.datetime(ac_year.start_year+1, 5, 12),\
                                                             cohort_targeted = ac_year,\
