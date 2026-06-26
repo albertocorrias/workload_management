@@ -22,7 +22,6 @@ database, looking at all relevant courses, surveys and measures (see below for m
 It only looks at courses that were actually offered in that particular year, 
 by figuring out whether any lecturer was assigned
 to teach that course for that year (see Workload section). 
-
 It also discriminates SLO and CLO by the years of their validity.
 
 The report has several sections. First is an overall overview of the mapping and their strength.
@@ -30,28 +29,36 @@ The report has several sections. First is an overall overview of the mapping and
 .. image:: ../images/accreditation_report_results-1.jpg
     :alt: Accreditation report top
     :width: 100%
-The popular half-moon/full-moon table. The table below shows 
-all the courses involved and, for each, 
-how they map to each SLO. 
+
+The popular half-moon/full-moon table is shown. The table below shows  all the courses involved and, for each, 
+how they map to each SLO.
+
+* Full moon: 3
+* Half moon: 1 or 2
+* Empty moon: 0 
+ 
 The mapping shown is the highest mapping of all the CLO of each course across the given period. 
 The total number of CLO is reported in the second last row and plotted in the bar chart. 
 The total overall strength (summation of the mapping strength of each CLO from 0 to 3) 
 is reported in the last row and plotted in the bar chart. 
 
-Next is an overall table of how much **attention** each SLO received.
+Next is an overall table of how much **"attention"** each SLO received. 
+Such table shows, for each SLO, how much "attention" they received over the years. "Attention" takes the form of 
 
-Such table shows, for each SLO, how much "attention" they received over the years. 
-Direct measures (see below) for each MLO are added up for each year. 
-If the mapping strength is 3 (maximum), then the attention score is increased by 1 
-- and scaled accoridngly for partial mapping. 
-Same for survey questions targeting a CLO (CLO survey measures). 
-Attention from SLO surveys is computed by adding up the number of questions every year. 
+* Survey questions targeting the SLO, named "SLO survey measures". Attention from SLO surveys is computed by adding up the number of questions every year.
+* Survey questiins that target a CLO that is mapped to the SLO, named "CLO survey measures".  If the mapping strength is 3 (maximum), then the attention score is increased by 1 - and scaled accoridngly for partial mapping. 
+* Direct measures of performance. These are assessment questions scores of a course targeted at a CLO that is mapped to the SLO. If the mapping strength is 3 (maximum), then the attention score is increased by 1 - and scaled accoridngly for partial mapping. 
 
 .. image:: ../images/accreditation_report_results-attention.jpg
     :alt: Accreditation report attention
     :width: 100%
 
-Finally, for each SLO, detailed information are reported
+Finally, for each SLO, detailed information are reported. The figure below shows an example for one SLO.
+
+* A table with all contributing courses, and their mapping (highest among the CLOs) for each year.
+* A summary of all the SLO survey measures, with details of the survey question and the average score.
+* A summary of all the CLO direct measures. 
+* A summary of all the CLO survey measures, provided the CLO was mapped to the SLO.
 
 .. image:: ../images/accreditation_report_results-slo.jpg
     :alt: Accreditation report SLO
@@ -87,11 +94,7 @@ The accreditation page includes
     :alt: PEO and SLO tables
     :width: 100%
 
-* Table with mapping between PEO and SLO. The mapping strength is indicated as follows
- 
-   * Full moon: 3
-   * Half moon: 1 or 2
-   * Empty moon: 0 
+* Table with mapping between PEO and SLO. The mapping strength is indicated.
 
 .. image:: ../images/peo_slo_mapping.jpg
     :alt: PEO and SLO mapping
