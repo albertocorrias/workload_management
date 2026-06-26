@@ -77,7 +77,7 @@
       </div><!--end of flex container for overall summary part-->
       <hr>
       <h4>How much attention each SLO received in the period</h4>
-      <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each MLO are added up for each year. If the mapping strength is 3 (maximum), then 
+      <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each CLO are added up for each year. If the mapping strength is 3 (maximum), then 
         the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (CLO survey measures). 
         Attention from SLO surveys is computed by adding up the number of questions every year.  
       </p>
@@ -145,7 +145,7 @@
                                 <table id="SLO_MLOMappings-{{slo_info.slo_id}}" class="workload_tables table table-striped">
                                   <thead class="table-dark">
                                   <tr>
-                                    <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">MLO mappings</th>
+                                    <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO mappings</th>
                                   </tr>
                                     <tr>
                                       <th>  </th> 
@@ -166,7 +166,7 @@
                                   </tbody>
                                 </table>
                           {% else %} <!-- no MLO direct mappings were found -->
-                                  <p> No mapped MLO were reported for this SLO </p>
+                                  <p> No mapped CLO were reported for this SLO </p>
                           {% endif %}
                 </div><!-- end of summaryitem-->
                 <div class="slo_summary_item">
