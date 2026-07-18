@@ -166,7 +166,7 @@ Overall summary results are displayed
     :alt: Survey summary results
     :width: 100%
 
-And results for each individual questions below
+And results for each individual questions as shown below
 
 .. image:: ../images/survey_question_results.jpg
     :alt: Survey quwestions results
