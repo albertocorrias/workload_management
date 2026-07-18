@@ -3,7 +3,7 @@ asgiref==3.9.1
 babel==2.18.0
 certifi==2026.4.22
 charset-normalizer==3.4.7
-Django==6.0.5
+Django==6.0.7
 django-admin==2.0.2
 django-crontab==0.7.1
 django-dbbackup==5.0.0
