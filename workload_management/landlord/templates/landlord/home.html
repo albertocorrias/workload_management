@@ -8,6 +8,8 @@
     <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">  
     <link rel="stylesheet" type="text/css" href="{% static 'landlord/splash_style.css' %}"> 
+
+    <script src="{% static 'landlord/slide_show_script.js' %}"></script>
   </head>
   <body>
 
@@ -15,38 +17,77 @@
    {% include './app_name_banner.html' %}
 
   <div class="banner_container">
-    <img class ="banner_image" src="{% static 'landlord/splash-banner.png' %}" alt="my image"/>
+    <img class ="banner_image" src="{% static 'landlord/splash-banner.png' %}" alt="splash image"/>
   </div>
-<div class="overall_container" id="overall_container">
-<div class="header_container">
-<h1>Key features    </h1>
+
+
+<div class="wrapper">
+  <div class="key_features_container">
+    
+    <div class="key_feature">
+      <img src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt="Icon 1">
+      <p> Manage common academic administration needs such as teaching workload balancing and programme-level accreditation 
+          <span class="highlight_text">from your browser</span>. No installation required. <span class="highlight_text">Free of charge</span>.</p>
+    </div>
+
+    <div class="key_feature">
+      <img src="{% static 'bootstrap-icons-1.5.0/bar-chart-fill-coloured.svg' %}" alt="Icon 2">
+      <p>Easily keep track of department-level <span class="highlight_text">teaching workload</span>, with unlimited number of lecturers and courses,
+        with <span class="highlight_text">customizable teaching assignment types</span>, and across many years. </p>
+    </div>
+
+    <div class="key_feature">
+      <img src="{% static 'bootstrap-icons-1.5.0/graph-up-coloured.svg' %}"  alt="Icon 3">
+      <p>Ease the <span class="highlight_text">accreditation process</span>. Define programme-level <span class="highlight_text">graduate attributes</span>, 
+        single course-level <span class="highlight_text">learning outcomes</span>,
+        and keep track of their performance measures over time, including <span class="highlight_text">surveys</span> and exam results.</p>
+    </div>
+  </div>
 </div>
-<div class="container text-center">
-    <div class="row align-items-start">
-       <div class="col">
-            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt = " "/>
-            <div class="feature_text">
-                Manage common academic administration needs such as teaching workload balancing and programme-level accreditation 
-                <span class="highlight_text">from your browser</span>. No installation required. <span class="highlight_text">Free of charge</span>.
+
+
+
+
+<div class="detail-feature-container ">
+    
+    <!-- Slideshow Section -->
+    <div class="slideshow-wrapper">
+        <div class="slideshow-container">
+            <div class="slide active">
+                <img src="{% static 'landlord/CLO-SLO-mapping.jpg' %}" alt="Slide 1">
             </div>
+            <div class="slide">
+                <img src="{% static 'landlord/accreditation_report_results-slo.jpg' %}" alt="Slide 2">
+            </div>
+            <div class="slide">
+                <img src="{% static 'landlord/survey_overall_results.jpg' %}" alt="Slide 3">
+            </div>
+            
+            <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
+            <button class="next" onclick="moveSlide(1)">&#10095;</button>
         </div>
-        <div class="col">
-            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/bar-chart-fill-coloured.svg' %}" alt = " "/>
-            <div class="feature_text">Easily keep track of department-level <span class="highlight_text">teaching workload</span>, with unlimited number of lecturers and courses,
-                with <span class="highlight_text">customizable teaching assignment types</span>, and across many years. 
-            </div>
-        </div>
-        <div class="col">
-            <img class="feature_image" src="{% static 'bootstrap-icons-1.5.0/graph-up-coloured.svg' %}" alt = " "/>
-            <div class="feature_text">Ease the <span class="highlight_text">accreditation process</span>. Define programme-level <span class="highlight_text">graduate attributes</span>, 
-                single course-level <span class="highlight_text">learning outcomes</span>,
-                and keep track of their performance measures over time, including <span class="highlight_text">surveys</span> and exam results.
-            </div>
+
+        <!-- New Dot Navigation Indicators -->
+        <div class="dots-container">
+            <span class="dot" onclick="currentSlide(0)"></span>
+            <span class="dot" onclick="currentSlide(1)"></span>
+            <span class="dot" onclick="currentSlide(2)"></span>
         </div>
     </div>
-</div>  
-</div><!--overall container-->
-  {% include './footer.html' %}
+
+    <!-- Text Section -->
+    <div class="detail-feature-text-container">
+        <h2>Dynamic Content Heading</h2>
+        <p>This text lives right next to the slideshow on desktop screens. On mobile devices, the layout automatically stacks them vertically so it is perfectly optimized for readability on any screen size.</p>
+    </div>
+
+</div>
+
+    
+
+
+
+{% include './footer.html' %}
   </body>
 </html>
 

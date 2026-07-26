@@ -22,27 +22,213 @@ img.banner_image{
     width: 100%;
 }
 
-div.header_container{
-    text-align:center;
+/* Reset margins and paddings */
+* {
+  box-sizing: border-box;
+}
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
-img.feature_image{
+/* Outer wrapper to center the main container */
+.wrapper {
+  display: flex;
+  justify-content: center; /* Centers container horizontally */
+  width: 100%;
+  padding: 40px 0;
+}
+
+/* Main container restricted to 60% width */
+.key_features_container {
+  display: flex;
+  flex-direction: row;
+  width: 60%; /* Takes exactly 60% of the screen width */
+  gap: 20px; /* Spacing between the columns */
+}
+
+/* Style for each of the 3 inner divs */
+.key_feature {
+  flex: 1; /* Distributes width equally */
+  display: flex;
+  flex-direction: column; /* Image on top, text below */
+  align-items: center;
+}
+
+/* Fluid responsive images */
+.key_feature img {
+  width: 60%;
+  height: auto;
+  object-fit: cover;
+}
+
+.key_feature p {
+  font-size: calc(0.9rem + 0.3vw); /* Adjusted scaling factor for narrower columns */
+  text-align: center;
+  margin-top: 15px;
+  line-height: 1.4;
+}
+
+/* Detailed features below here */
+
+div.detail-feature-container {
     width: 60%;
-    margin-bottom: 2em;
+    display: flex;
+    flex-direction: row;
+    background: #ffffff;
+    overflow: hidden;
+    margin:auto;
 }
 
-div.feature_text{
-    text-align:left;
-    color: black;
-    font-size: 1.5rem;
+
+
+/* Updated selector to wrap slides + dots into the 50% left area */
+.slideshow-wrapper, 
+.detail-feature-text-container {
+    flex: 0 0 50%;
+    width: 50%;
 }
+
+.slideshow-wrapper {
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    justify-content: center;
+}
+
+.slideshow-container {
+    position: relative;
+    width: 100%;
+    flex-grow: 1; 
+    min-height: 250px; /* Protects container height collapse */
+    aspect-ratio: 800 / 500;
+    overflow: hidden;
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0; /* Default invisible */
+    transition: opacity 0.8s ease-in-out; /* Smooth hardware-accelerated crossfade */
+    z-index: 1;
+}
+
+.slide img {
+    width: 100%;
+    display: block;
+    height: auto;
+}
+
+.slide.active {
+    opacity: 1;
+    z-index: 2; /* Keeps current slide on top */
+}
+
+.prev, .next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.3s;
+    z-index: 2;
+}
+
+.next { right: 0; }
+.prev { left: 0; }
+.prev:hover, .next:hover { background: rgba(0,0,0,0.8); }
+
+/* Dot styling rules */
+.dots-container {
+    text-align: center;
+    padding: 15px 0;
+    background: #111;
+}
+
+.dot {
+    cursor: pointer;
+    height: 12px;
+    width: 12px;
+    margin: 0 5px;
+    background-color: #717171;
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.6s ease;
+}
+
+.active, .dot:hover {
+    background-color: #ffffff;
+}
+
+.detail-feature-text-container {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.detail-feature-text-container h2 {
+    margin-bottom: 15px;
+}
+
+.fade {
+    animation: fadeEffect 0.5s;
+}
+
+@keyframes fadeEffect {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
+}
+
+
+
+
+
+
+
+/* Responsive breakpoint for mobile screens */
+@media (max-width: 768px) {
+  .key_features_container {
+    flex-direction: column; /* Stacks the divs vertically */
+    width: 90%; /* Expands width on mobile so content isn't too squished */
+    gap: 40px; /* Adds more vertical breathing room between stacked items */
+  }
+  .key_feature img {
+  width: 30%;
+  height: auto;
+  object-fit: cover;
+  }
+
+.detail-feature-container {
+        width: 90%;
+        flex-direction: column;
+}
+
+.slideshow-wrapper, 
+.detail-feature-text-container {
+        flex: 0 0 100%;
+        width: 100%;
+}
+
+}
+
+
+
 span.highlight_text{
     color:rgb(25, 174, 97);
 }
 
 div.footer{
     height:6vmin;
-    line-height: 6vmin;/*keep same as height to center vertically*/
+    line-height: 6vmin;
     background: #20a456;
     width:100%;
     margin-top: 6vmin;
@@ -51,3 +237,4 @@ div.footer{
     text-align: center;
     color:beige;
 }
+
