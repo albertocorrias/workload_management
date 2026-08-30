@@ -45,22 +45,28 @@
   </div>
 </div>
 
-
-
-
 <div class="detail-feature-container ">
     
     <!-- Slideshow Section -->
     <div class="slideshow-wrapper">
         <div class="slideshow-container">
             <div class="slide active">
-                <img src="{% static 'landlord/CLO-SLO-mapping.jpg' %}" alt="Slide 1">
+                <img src="{% static 'landlord/workload_summary.jpg' %}" alt="Slide 1">
             </div>
             <div class="slide">
-                <img src="{% static 'landlord/accreditation_report_results-slo.jpg' %}" alt="Slide 2">
+                <img src="{% static 'landlord/workload_table.png' %}" alt="Slide 2">
             </div>
             <div class="slide">
-                <img src="{% static 'landlord/survey_overall_results.jpg' %}" alt="Slide 3">
+                <img src="{% static 'landlord/workload_table_by_course.jpg' %}" alt="Slide 3">
+            </div>
+            <div class="slide">
+                <img src="{% static 'landlord/CLO-SLO-mapping.jpg' %}" alt="Slide 4">
+            </div>
+            <div class="slide">
+                <img src="{% static 'landlord/accreditation_report_results-slo.jpg' %}" alt="Slide 5">
+            </div>
+            <div class="slide">
+                <img src="{% static 'landlord/survey_overall_results.jpg' %}" alt="Slide 6">
             </div>
             
             <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
@@ -72,13 +78,25 @@
             <span class="dot" onclick="currentSlide(0)"></span>
             <span class="dot" onclick="currentSlide(1)"></span>
             <span class="dot" onclick="currentSlide(2)"></span>
+            <span class="dot" onclick="currentSlide(3)"></span>
+            <span class="dot" onclick="currentSlide(4)"></span>
+            <span class="dot" onclick="currentSlide(5)"></span>
         </div>
     </div>
 
     <!-- Text Section -->
-    <div class="detail-feature-text-container">
-        <h2>Dynamic Content Heading</h2>
-        <p>This text lives right next to the slideshow on desktop screens. On mobile devices, the layout automatically stacks them vertically so it is perfectly optimized for readability on any screen size.</p>
+    <div class="detail-feature-text-container-1">
+        <h2>Accreditation features</h2>
+        <p>Handles <span class=highlight_text>mapping between SO and CLO</span>, survey measures for both SLO
+           and CLo and direct preformance measures (e.g., exam questions) over the years.
+          <span class=highlight_text>Automatically generates SLO achievement report</span> for a given period.</p>
+    </div>
+    <div class="detail-feature-text-container-2">
+        <h2>Workload features</h2>
+        <p>Handles <span class=highlight_text>multiple workloads overt the years</span>, with summary for lecturers
+          and courses.
+          <span class=highlight_text>Customizable teaching assignment types (standard lectures, studios, supervision, etc)</span> 
+          applicable to all workloads in the department for a given period.</p>
     </div>
 
 </div>

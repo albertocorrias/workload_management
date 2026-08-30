@@ -74,27 +74,23 @@ body, html {
 
 div.detail-feature-container {
     width: 60%;
-    display: flex;
-    flex-direction: row;
     background: #ffffff;
-    overflow: hidden;
     margin:auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
 }
 
 
 
 /* Updated selector to wrap slides + dots into the 50% left area */
-.slideshow-wrapper, 
-.detail-feature-text-container {
-    flex: 0 0 50%;
-    width: 50%;
-}
-
 .slideshow-wrapper {
-    display: flex;
-    flex-direction: column;
+    width: 50%;
+    grid-column: 1 / -1;
     background: #000;
     justify-content: center;
+    margin:auto;
 }
 
 .slideshow-container {
@@ -102,7 +98,7 @@ div.detail-feature-container {
     width: 100%;
     flex-grow: 1; 
     min-height: 250px; /* Protects container height collapse */
-    aspect-ratio: 800 / 500;
+    aspect-ratio: 800 / 450;
     overflow: hidden;
 }
 
@@ -131,7 +127,7 @@ div.detail-feature-container {
 .prev, .next {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-90%);
     background: rgba(0,0,0,0.5);
     color: white;
     border: none;
@@ -168,15 +164,20 @@ div.detail-feature-container {
     background-color: #ffffff;
 }
 
-.detail-feature-text-container {
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+div.detail-feature-text-container-1,
+div.detail-feature-text-container-2{
+    width: 90%;
+    font-size: calc(0.9rem + 0.3vw);
 }
 
-.detail-feature-text-container h2 {
+h2.detail-feature-text-container-1,
+h2.detail-feature-text-container-2{
     margin-bottom: 15px;
+    text-align: center;
+}
+p.detail-feature-text-container-1,
+p.detail-feature-text-container-2{
+    width: 100%;
 }
 
 .fade {
@@ -188,39 +189,37 @@ div.detail-feature-container {
     to { opacity: 1; }
 }
 
-
-
-
-
-
-
 /* Responsive breakpoint for mobile screens */
 @media (max-width: 768px) {
-  .key_features_container {
+    .key_features_container {
     flex-direction: column; /* Stacks the divs vertically */
     width: 90%; /* Expands width on mobile so content isn't too squished */
     gap: 40px; /* Adds more vertical breathing room between stacked items */
-  }
-  .key_feature img {
-  width: 30%;
-  height: auto;
-  object-fit: cover;
-  }
+    }
+    .key_feature img {
+    width: 30%;
+    height: auto;
+    object-fit: cover;
+    }
 
-.detail-feature-container {
+    div.detail-feature-container {
         width: 90%;
-        flex-direction: column;
+        display:block;
+    }
+    
+    div.slideshow-wrapper,
+    div.detail-feature-text-container-1,
+    div.detail-feature-text-container-2
+    {
+        width: 90%;
+        justify-content: center;
+        margin:auto;
+        margin-top:10px;
+    }
+
+
+
 }
-
-.slideshow-wrapper, 
-.detail-feature-text-container {
-        flex: 0 0 100%;
-        width: 100%;
-}
-
-}
-
-
 
 span.highlight_text{
     color:rgb(25, 174, 97);
