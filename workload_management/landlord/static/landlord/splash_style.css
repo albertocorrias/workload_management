@@ -189,6 +189,25 @@ p.detail-feature-text-container-2{
     to { opacity: 1; }
 }
 
+div.button-container
+{
+    display: block;
+    align-items: center;
+    text-align: center;
+}
+.docs-button {
+  background-color: #20a456;
+  border: none;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 12px;
+}
 /* Responsive breakpoint for mobile screens */
 @media (max-width: 768px) {
     .key_features_container {
