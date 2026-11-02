@@ -7,12 +7,10 @@ Django==6.0.7
 django-admin==2.0.2
 django-crontab==0.7.1
 django-dbbackup==5.0.0
-django-excel-response2==3.0.6
 django-silk==5.4.3
 django-six==1.0.5
 django-tenants==3.10.1
 docutils==0.22.4
-excel-base==1.0.4
 gprof2dot==2025.4.14
 idna==3.16
 imagesize==2.0.0
@@ -26,7 +24,6 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 requests==2.33.1
 roman-numerals==4.1.0
-screen==1.0.1
 setuptools==84.2.1
 six==1.17.0
 snowballstemmer==3.0.1
