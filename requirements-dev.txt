@@ -24,6 +24,8 @@ django-tenants==4.0.1
     # via -r requirements.txt
 docutils==0.22.4
     # via sphinx
+gunicorn==26.2.0
+    # via -r requirements.txt
 idna==3.20
     # via requests
 imagesize==2.0.1
