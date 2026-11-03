@@ -33,9 +33,7 @@ SHARED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'dbbackup',  # django-dbbackup <- requires pip install django-dbbackup
-    'django_crontab'
+    'django.contrib.staticfiles'
 ]
 
 TENANT_APPS = [

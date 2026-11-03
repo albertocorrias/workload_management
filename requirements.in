@@ -1,0 +1,6 @@
+asgiref
+Django
+django-tenants
+psycopg2-binary
+python-dotenv
+sqlparse
