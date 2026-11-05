@@ -1,6 +1,6 @@
 {% load static %}
 
-<table id="TABLE_2" class="workload_tables table table-striped">
+<table class="display table table-striped eduload-table w-100">
         <thead class="table-dark" id="workload_module_table_id">
         <tr> 
             <th>&nbsp;</th>
@@ -25,9 +25,9 @@
                 <td><a href="/module/{{ entry.module_code }}">{{ entry.module_code }}</a></td><!-- Mod code-->
                 <td title = "{{ entry.module_full_title }}">{{ entry.module_title }}</td><!-- Mod title-->
                 <td>{{ entry.module_lecturers }} <div class="not_counted_assignments">{{ entry.module_lecturers_not_counted }}</div><!--teaching assignments for this module--></td>
-                <td>{{ entry.module_assigned_hours|floatformat }}</td><!-- Total hours assigned-->
-                <td>{{ entry.module_hours_needed|floatformat }}</td><!-- Hours needed as per module characteristics-->
-				<td style="background-color: {{ entry.module_hex_code }};">{{ entry.module_balance_hours|floatformat }}</td>
+                <td class="text-center"> {{ entry.module_assigned_hours|floatformat }}</td><!-- Total hours assigned-->
+                <td class="text-center">{{ entry.module_hours_needed|floatformat }}</td><!-- Hours needed as per module characteristics-->
+				<td class="text-center" style="background-color: {{ entry.module_hex_code }};">{{ entry.module_balance_hours|floatformat }}</td>
             </tr>
             {% endfor %}
         </tbody>

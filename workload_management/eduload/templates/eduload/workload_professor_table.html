@@ -1,7 +1,7 @@
 {% load static %}
 
 <p>
-    <table id="TABLE_1" class="workload_tables display table table-striped">
+    <table class="display table table-striped eduload-table w-100">
         <thead class="table-dark" id="workload_prof_table_id">
         <tr> 
             <th>&nbsp;</th>
@@ -25,9 +25,9 @@
             <td><a href="/lecturer_page/{{ entry.prof_id }}">{{ entry.prof_name }}</a></td><!-- Name of prof with link-->
             <td>{{ entry.prof_tfte|floatformat:2 }}</td><!-- Teaching FTE-->
             <td>{{ entry.assignments }} <div class="not_counted_assignments">{{ entry.not_counted_assignments }}</div></td><!--Assignments-->
-            <td>{{ entry.total_hours_for_prof|floatformat }}</td><!-- Total hours assigned-->
-            <td>{{ entry.prof_expected_hours|floatformat }}</td><!-- Expected hours-->
-            <td style="background-color: {{ entry.prof_hex_code }};">{{ entry.prof_balance|floatformat }}</td><!-- Balance -->
+            <td class="text-center">{{ entry.total_hours_for_prof|floatformat }}</td><!-- Total hours assigned-->
+            <td class="text-center">{{ entry.prof_expected_hours|floatformat }}</td><!-- Expected hours-->
+            <td class="text-center" style="background-color: {{ entry.prof_hex_code }};">{{ entry.prof_balance|floatformat }}</td><!-- Balance -->
 
         </tr>
         {% endfor %}

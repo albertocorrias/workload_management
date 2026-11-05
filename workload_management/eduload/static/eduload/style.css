@@ -2,18 +2,6 @@ body{
     background: #f4f3f1;
 }
 
-div.footer{
-    height:6vmin;
-    line-height: 6vmin;/*keep same as height to center vertically*/
-    background: #20a456;
-    width:100%;
-    margin-top: 6vmin;
-    vertical-align: middle;
-    padding:auto;
-    text-align: center;
-    color:beige;
-}
-
 div.login_bar{
     width: 90%;
     background:none;
@@ -22,12 +10,63 @@ div.login_bar{
     margin-bottom: 3vmin;
 }
 
+/*Applies to most pages, just below the login bar*/
 div.overall_container{
-    background: #f4f3f1;
+    background: #f4f3f1;/* for now, same as "body'*/
 	font-family: 'Montserrat', sans-serif;
-	margin: 5vmin;
+	margin: 4vmin;
     display: block;
 }
+
+
+/*Bottom of all pages*/
+div.footer{
+    height:6vmin;
+    line-height: 6vmin;/*keep same as height to center vertically*/
+    background: #198754;
+    width:100%;
+    margin-top: 6vmin;
+    vertical-align: middle;
+    padding:auto;
+    text-align: center;
+    color:beige;
+}
+
+/**tables with DataTables JS button and JS stuff*/
+table.table.dataTable.eduload-table thead th {
+    /* 1. Target the internal Bootstrap variable instead of background-color */
+    --bs-table-bg:#003D7C;
+    text-align: center;
+}
+.eduload-table tbody tr td {
+    text-align: center;
+    vertical-align:  middle;
+}
+/***********************************/
+
+/* Static tables for settings*/
+table.settings_table{
+    margin:auto;
+    width:100%
+}
+
+table.settings_tables > thead > tr > th {
+    background-color: rgb(46, 43, 43);
+    text-align: center;
+}
+
+.secondary-table-header th{
+    --bs-table-bg: rgb(108, 117, 125);
+    text-align: center;
+    color: white;
+}
+
+
+table.settings_tables > tbody> tr > td {
+    text-align: center;
+    vertical-align: middle;
+}
+/******************************/
 
 div.buttons_container {
   padding-left: 10px;
@@ -47,11 +86,6 @@ table.workload_tables > thead > tr > th.overall_header{
 
 table.workload_tables > thead > tr > th.secondary_header{
     background-color: darkgrey;
-}
-
-.background_buttons {
-    background-color: #003D7C;
-    border: none;
 }
 
 .table > thead > tr > th {

@@ -5,8 +5,7 @@
   <head>
     <meta charset="utf-8">
     <title>Workload Management App</title>
-    {% include './headers.html' %}  
-    <link rel="stylesheet" type="text/css" href="{% static 'eduload/workloads_index_style.css' %}">        
+    {% include './headers.html' %}   
   </head>
   <body>
     {% include './top_bar.html' %}
@@ -14,10 +13,7 @@
     <div class="overall_container">
         <h1 style="text-align:center;">{{ school_name }}</h1>
         <hr>
-        <h2 style="text-align:center;">Workloads</h2>
-        <!-- Respective modals are at the bottom-->
-        <div class ="workload_index_table">
-            <table id="TABLE_WORKLOAD_INDEX" class="workload_tables table table-striped ">
+            <table class="workload_tables table table-striped eduload-table w-100">
                 <thead class="table-dark">
                 <tr> 
                     <th>Workload name</th>
@@ -36,38 +32,35 @@
                         <td>{{ entry.dept_acronym }}</td>
                         <td>{{ entry.acad_year }}</td>
                         <td>{{ entry.status }}</td>
-                        <td>{{ entry.total_hours_delivered|floatformat }}</td>
-                        <td>{{ entry.total_fte|floatformat }}</td>
-                        <td>{{ entry.expected_hrs|floatformat }}</td>
+                        <td class="text-center">{{ entry.total_hours_delivered|floatformat }}</td>
+                        <td class="text-center">{{ entry.total_fte|floatformat }}</td>
+                        <td class="text-center">{{ entry.expected_hrs|floatformat }}</td>
                     </tr> 
                     {% endfor %}
                 </tbody>
             </table>   
-        </div>
-        
-        <div class="add_workload_button_container">
-        <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageScenariosModal">
+        <hr>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#ManageScenariosModal">
             Add/Remove Workloads...
         </button>
-        </div>
+
 
         <hr/>
         <h2 style="text-align:center;">Settings</h2>
-        <div class = "settings_table_container">
-        <div class = "settings_table_item">
+
             <!--Tracks list table-->
-            <table class="settings_tables table table-striped table-sm">
+            <table class="table table-striped table-sm settings_tables">
                 <thead class="table-dark table-sm">
                 <tr> 
                     <th colspan=3>Employment tracks 
                     </th>
                 </tr>
-                <tr>
+                </thead>
+                <tr class="secondary-table-header">
                     <th>Name</th>
                     <th>Adjustment</th>
                     <th>Edit</th>
                 </tr>
-                </thead>
                 <tbody>
 
                 {% for entry in tracks_table %}
@@ -79,26 +72,25 @@
                 </tr>
                 {% endfor %}
                 <tr> 
-                    <td colspan=3> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#AddRemoveTracksModal">
+                    <td colspan=3> <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#AddRemoveTracksModal">
                     Add/Remove employment tracks...</button>
                     </td>
                 </tr>
                 </tbody>
             </table>
-        </div>
-        <div class = "settings_table_item">
+
             <!--Roles list table-->
-            <table class="settings_tables table table-striped table-sm">
+            <table class="table table-striped table-sm settings_tables">
                 <thead class="table-dark table-sm">
                 <tr> 
                     <th colspan=3>Service roles</th>
                 </tr>
-                <tr>
+                </thead>
+                <tr class="secondary-table-header">
                     <th>Name</th>
                     <th>Adjustment</th>
                     <th>Edit</th>
                 </tr>
-                </thead>
                 <tbody>
     
                 {% for entry in roles_table %}
@@ -110,29 +102,26 @@
                 </tr>
                 {% endfor %}
                 <tr> 
-                    <td colspan=3> <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#AddRemoveServiceRoleModal">
+                    <td colspan=3> <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#AddRemoveServiceRoleModal">
                     Add/Remove service roles...</button>
                     </td>
                 </tr>
                 </tbody>
             </table>
-        </div>
-        </div>
-        <div class = "settings_table_container">
-        <div class = "settings_table_item">
+
                 <!--Departments table-->
                 <table class="settings_tables table table-striped table-sm">
                 <thead class="table-dark table-sm">
                 <tr> 
                     <th colspan=4>Departments</th>
                 </tr>
-                <tr>
+                </thead>
+                <tr class="secondary-table-header">
                     <th>Name</th>
                     <th>Acronym</th>
                     <th>Faculty</th>
                     <th>Edit</th>
                 </tr>
-                </thead>
                 <tbody>
     
                 {% for entry in department_table %}
@@ -145,7 +134,7 @@
                 </tr>
                 {% endfor %}
                 <tr> 
-                    <td colspan=4>  <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageDepartmentModal">
+                    <td colspan=4>  <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#ManageDepartmentModal">
                     Add/Remove Departments...
                     </button>
                     </td>
@@ -153,22 +142,19 @@
                 </tbody>
                 </table>
             
-          </div>
-
-          <div class = "settings_table_item">
             <!-- teaching assignment types table-->
-            <table class="settings_tables table table-striped table-sm">
+            <table class="table table-striped table-sm settings_tables">
             <thead class="table-dark table-sm">
             <tr> 
                 <th colspan=4>Teaching assignment types</th>
             </tr>
-            <tr>
+            </thead>
+            <tr class="secondary-table-header">
                 <th>Description</th>
                 <th>Hours per item</th>
                 <th>Validity</th>
                 <th>Edit</th>
             </tr>
-            </thead>
             <tbody>
 
             {% for entry in assignment_types_table %}
@@ -181,7 +167,7 @@
             </tr>
             {% endfor %}
             <tr> 
-                <td colspan=4>  <button type="button" class="btn btn-primary background_buttons" data-bs-toggle="modal" data-bs-target="#ManageTeachingAssignmentTypeModal">
+                <td colspan=4>  <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#ManageTeachingAssignmentTypeModal">
                 Add/Remove Teaching Assignment Types...
                 </button>
                 </td>
@@ -189,10 +175,9 @@
             </tbody>
             </table>
         
-      </div>
 
 
-        </div>  
+ 
     </div>
            <!-- Manage scenario modal -->
         <div class="modal fade" id="ManageScenariosModal" tabindex="-1" role="dialog" aria-labelledby="ManageScenariosModalLabel" aria-hidden="true">

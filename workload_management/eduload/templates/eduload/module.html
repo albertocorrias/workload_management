@@ -11,13 +11,13 @@
   <body>
     {% include './top_bar.html' %}
 
-    <div class="overall_container" id="overall_container_dept_page">
+    <div class="overall_container" id="overall_container_module">
         {% if error_message|length > 0 %}
             <div>{{ error_message }}</div>
         {% else %}
             <h1>Analysis of {{ module_code }} - {{ module_title }}</h1>
-            <div>
-              <table id="MODULE_YEARLY_TABLE" class="workload_tables table table-striped">
+            <hr/>
+            <table id="MODULE_YEARLY_TABLE" class="table table-striped settings_tables">
                 <thead class="table-dark">
                 <tr>
                     <th> Year delivered</th>
@@ -40,20 +40,16 @@
                       </tr>
                   {% endfor %}
                 </tbody>
-              </table>
-            </div>
+            </table>
             <hr>
             <h2>Accreditation information</h2>
-            <div class="buttons_container">
               <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOModal">
                 Add/Remove CLOs..
               </button>
-            </div><!-- end of buttons container-->
 
-            <div class="overall_container">
+
             {% for table in all_mlo_slo_tables %}
-                <div>
-                  <table id="OVERALL_MLO_TABLE" class="workload_tables table table-striped">
+                  <table id="OVERALL_MLO_TABLE" class="table table-striped settings_tables">
                     <thead class="table-dark">
                     <tr>
                       <th style="background-color:#f4f3f1;"> </th>
@@ -92,24 +88,13 @@
                     <br>
                     {% endfor %}
                   </p>
-                </div>
             {% endfor %} <!--loop over tables -->
-            </div> <!-- Flex container-->
+
             <div>
               <hr>
               <h2>CLO measures</h2>
               <h3>Surveys</h3>
-              <div class="buttons_container">
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOSurveyModal">
-                  Add a new CLO survey
-                </button>
-                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOSurveyModal">
-                  Remove existing CLO survey
-                </button>
-              </div>
-              {% if mlo_survey_table|length > 0 %}
-                <div>
-                  <table id="MLO_SURVEYS_TABLE" class="workload_tables table table-striped">
+                  <table id="MLO_SURVEYS_TABLE" class="table table-striped settings_tables">
                       <thead class="table-dark">
                           <tr>
                             <th> Survey </th>
@@ -140,23 +125,22 @@
                           </td>
                         </tr>
                         {% endfor %}
+                        <tr>
+                          <td colspan="8">
+                          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOSurveyModal">
+                            Add a new CLO survey
+                          </button>
+                          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOSurveyModal">
+                            Remove existing CLO survey
+                          </button>
+                          </td>
+                        </tr>
                       </tbody>
                   </table>
-                </div>
-                {% else %}
-                  No surveys were collected for the CLO if this course
-                {% endif %}
+                <hr/>
                 <h3>Direct CLO performance measures</h3>
-                <div class="buttons_container">
-                  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOPerformanceMeasure">
-                    Add new performance masure for CLOs
-                  </button>
-                  <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOPerformanceMeasure">
-                   Remove existing CLO performance measure
-                  </button>
-                </div>
-                <div>
-                    <table id="MLO_PERFOMANCES_TABLE" class="workload_tables table table-striped">
+
+                    <table id="MLO_PERFOMANCES_TABLE" class="table table-striped settings_tables">
                         <thead class="table-dark">
                             <tr>
                               <th>Acad year</th>
@@ -178,23 +162,23 @@
                             <td>{{ table_row.score }}</td>
                           </tr>
                           {% endfor %}
+                          <tr>
+                            <td  colspan="4">
+                              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewMLOPerformanceMeasure">
+                                Add new performance masure for CLOs
+                              </button>
+                              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveMLOPerformanceMeasure">
+                               Remove existing CLO performance measure
+                              </button>
+                            </td>
+                          </tr>
                         </tbody>
                     </table>
-                </div>
 
-                <div>
+
                   <hr>
                   <h2>Reflections and improvements</h2>
-                  <div class="buttons_container">
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewCorrectiveAction">
-                      Add new reflection for improvement
-                    </button>
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveCorrectiveAction">
-                      Remove existing reflection for improvement
-                    </button>
-                  </div>
-                  <div>
-                    <table id="REFLECTIONS_ACTIONS_TABLE" class="workload_tables table table-striped">
+                    <table id="REFLECTIONS_ACTIONS_TABLE" class="table table-striped settings_tables">
                         <thead class="table-dark">
                             <tr>
                               <th>Reflection</th>
@@ -213,10 +197,20 @@
                               <img src="{% static 'bootstrap-icons-1.5.0/pencil-square.svg' %}" alt="edit"> </button>  </td>
                           </tr>
                           {% endfor %}
+                          <tr>
+                            <td colspan="4">
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#NewCorrectiveAction">
+                              Add new reflection for improvement
+                            </button>
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#RemoveCorrectiveAction">
+                              Remove existing reflection for improvement
+                            </button>
+                            </td>
+                          </tr>
                         </tbody>
                     </table>
-                </div>
-                </div>
+
+
         {% endif %} <!-- of the check for error messages-->
 
                 <!--Modal for new mLOs-->
