@@ -68,6 +68,18 @@ table.settings_tables > tbody> tr > td {
 }
 /******************************/
 
+/*This one is for the department report, it divides the programmes*/
+div.programme-divider-title{
+    display: block;
+    width: 100%; 
+    color: white; 
+    padding: 0.5vmin;
+    font-family:'Montserrat', sans-serif;
+    font-size: large;
+    margin-bottom: 0.5vmin;
+}
+/*********************************/
+
 div.buttons_container {
   padding-left: 10px;
   padding-top: 10px;
