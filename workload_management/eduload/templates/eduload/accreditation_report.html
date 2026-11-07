@@ -19,269 +19,282 @@
             The total number of CLO is reported in the second last row and plotted in the bar chart. The total overall strength (summation of the mapping strength of each CLO from 0 to 3) 
             is reported in the last row and plotted in the bar chart. 
       </p>
-      <div class="accr_report_overall_summary">
-
-
-        <div class="accr_report_overall_summary_item"> <!--Table container-->
-        
-          <table id="OverallMLOSLOMAPPINGS" class="workload_tables table table-striped">
-            <thead class="table-dark">
-            <tr>
-              <th colspan= "{{ number_of_slo_plus_one }}" class="overall_header">Overall Courses-SLO mappings for period</th>
-            </tr>
-            <tr>
-              <th class="secondary_header"> </th>
-              <th colspan= "{{ number_of_slo }}" class="secondary_header">SLO</th>
-            </tr>
-            <tr>
-              <th class="secondary_header"> Courses </th>
-              {% for item in big_mlo_slo_table.0.slo_identifiers %}
-              <th> {{ item }}</th>
-              {% endfor %}
-            </tr>
-            </thead>
-            <tbody>
-              {% for row in big_mlo_slo_table %}
-              <tr>
-              <td> {{ row.module_code }} </td>
-                {% for icon in row.icons %}
-                <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ icon }}" alt="edit"/> </td>
-                {% endfor %}
-              </tr>
-              {% endfor %}
-            </tbody>
-            <thead class="table-dark">
-              <tr>
-                <th class="secondary_header"> Total # CLO mapped </th>
-                {% for item in big_mlo_slo_table_totals_n_mlo %}
-                <th class="secondary_header"> {{ item }}</th>
-                {% endfor %}
-              </tr>
-              <tr>
-                <th class="secondary_header"> Total strength </th>
-                {% for item in big_mlo_slo_table_totals_strengths %}
-                <th class="secondary_header"> {{ item }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-          </table>
-        
-          </div><!--end of table container-->
-          <div class="accr_report_overall_summary_item">
+      <!--Overall summary. One table and one chart - 50-50 fluid layout-->
+      <div class="container-fluid"><!-- for overall summary table and chart, it will be 50-50-->
+        <div class="row g-4"> <!-- g for gutters-->
+          <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->
+            <div class="table-responsive">
+              <table id="OverallMLOSLOMAPPINGS" class="table table-striped settings_tables">
+                <thead class="table-dark">
+                <tr class="accent-color-for-tables">
+                  <th colspan= "{{ number_of_slo_plus_one }}">Overall Courses-SLO mappings for period</th>
+                </tr>
+                <tr class = "secondary-table-header">
+                  <th> </th>
+                  <th colspan= "{{ number_of_slo }}">SLO</th>
+                </tr>
+                <tr>
+                  <th style="background-color: transparent; color:black"> Courses </th>
+                  {% for item in big_mlo_slo_table.0.slo_identifiers %}
+                  <th> {{ item }}</th>
+                  {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                  {% for row in big_mlo_slo_table %}
+                  <tr>
+                  <td> {{ row.module_code }} </td>
+                    {% for icon in row.icons %}
+                    <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ icon }}" alt="edit"/> </td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <thead class="table-dark">
+                  <tr class="secondary-table-header">
+                    <th> Total # CLO mapped </th>
+                    {% for item in big_mlo_slo_table_totals_n_mlo %}
+                    <th> {{ item }}</th>
+                    {% endfor %}
+                  </tr>
+                  <tr>
+                    <th> Total strength </th>
+                    {% for item in big_mlo_slo_table_totals_strengths %}
+                    <th> {{ item }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+              </table>
+            </div><!--table responsive-->
+          </div><!--column-->
+          <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->
             <canvas id="mlo_slo_summary_charts" style="min-width:600px;"></canvas>
             {{ big_mlo_slo_table_totals_strengths|json_script:"big_mlo_slo_table_totals_strengths" }}
             {{ big_mlo_slo_table_totals_n_mlo|json_script:"big_mlo_slo_table_totals_n_mlo" }}
             {{ slo_identifiers|json_script:"slo_identifiers" }}
             <script src="{% static   'eduload/mlo_slo_mapping_summary.js' %}"></script>
           </div>
-      </div><!--end of flex container for overall summary part-->
-      <hr>
+        </div><!-- end of row-->
+      </div><!--end of fluid container for overall summary part-->
+      <hr/>
       <h4>How much attention each SLO received in the period</h4>
       <p>The table below shows, for each SLO, how much "attention" they received over the years. Direct measures for each CLO are added up for each year. If the mapping strength is 3 (maximum), then 
         the attention score is increased by 1 - and scaled accoridngly for partial mapping. Same for survey questions targeting an MLO (CLO survey measures). 
         Attention from SLO surveys is computed by adding up the number of questions every year.  
       </p>
-      <div class="accr_report_overall_summary_item"><!-- Container of attention table-->
-        <table id="AttentionScores" class="workload_tables table">
-          <thead class="table-dark">
-          <tr>
-            <th colspan= "{{ overall_colpsan }}" class="overall_header">Attention scores for the period</th>
-          </tr>
-          <tr>
-            <th class="secondary_header" colspan="2"> </th>
-            <th colspan= "{{ num_years_colspan }}" class="secondary_header">Matriculation year</th>
-          </tr>
-          <tr>
-            <th class="secondary_header" > SLO </th>
-            <th class="secondary_header" >  </th>
-            {% for item in years_to_display %}
-            <th> {{ item }}</th>
-            {% endfor %}
-          </tr>
-          </thead>
-          <tbody>
-            {% for slo_item in slo_measures %}
-            <tr style="border-bottom-color: black;">
-            <td rowspan="4">
-              {{ slo_item.slo_letter }}) {{ slo_item.slo_desc }}
-            </td>
-            </tr>
-            
-            <tr>
-              <td>Direct measures</td>
-              {% for direct_att_score, direct_color in slo_item.zipped_attn_scores_direct %}
-              <td style="background-color: {{ direct_color }};">
-                {{ direct_att_score|floatformat }}
-              </td>
-              {% endfor %}
-            </tr>
-            <tr>
-              <td>CLO survey measures</td>
-              {% for mlo_att_score,mlo_att_color in slo_item.zipped_attn_scores_mlo_survey %}
-              <td style="background-color: {{ mlo_att_color }};">
-                {{ mlo_att_score|floatformat }}
-              </td>
-              {% endfor %}
-            </tr>
-            <tr style="border-bottom-color: black;">
-              <td>SLO survey meausres</td>
-              {% for slo_att_score,slo_att_colour in slo_item.zipped_attn_scores_slo_surveys %}
-              <td style="background-color: {{ slo_att_colour }};">
-                {{ slo_att_score|floatformat }}
-              </td>
-              {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-          </table>
-      </div>
-      <hr>
+      <div class="container-fluid"> <!-- Container of attention table. Only one column witha  table-->
+        <div class="row g-4"> <!-- g for gutters-->
+          <div class="col-lg-12"> <!-- 12 is calculated as 12 by 1 table = 12-->
+            <div class="table-responsive">
+              <table id="AttentionScores" class="table settings_tables">
+                <thead class="table-dark">
+                <tr class="accent-color-for-tables">
+                  <th colspan= "{{ overall_colpsan }}">Attention scores for the period</th>
+                </tr>
+                <tr  class="secondary-table-header">
+                  <th  colspan="2"> </th>
+                  <th colspan= "{{ num_years_colspan }}" class="secondary-table-header">Matriculation year</th>
+                </tr>
+                <tr  class="secondary-table-header">
+                  <th> SLO </th>
+                  <th>  </th>
+                  {% for item in years_to_display %}
+                  <th> {{ item }}</th>
+                  {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                  {% for slo_item in slo_measures %}
+                  <tr style="border-bottom-color: black;">
+                  <td rowspan="4">
+                    {{ slo_item.slo_letter }}) {{ slo_item.slo_desc }}
+                  </td>
+                  </tr>
+                  
+                  <tr>
+                    <td>Direct measures</td>
+                    {% for direct_att_score, direct_color in slo_item.zipped_attn_scores_direct %}
+                    <td style="background-color: {{ direct_color }};">
+                      {{ direct_att_score|floatformat }}
+                    </td>
+                    {% endfor %}
+                  </tr>
+                  <tr>
+                    <td>CLO survey measures</td>
+                    {% for mlo_att_score,mlo_att_color in slo_item.zipped_attn_scores_mlo_survey %}
+                    <td style="background-color: {{ mlo_att_color }};">
+                      {{ mlo_att_score|floatformat }}
+                    </td>
+                    {% endfor %}
+                  </tr>
+                  <tr style="border-bottom-color: black;">
+                    <td>SLO survey meausres</td>
+                    {% for slo_att_score,slo_att_colour in slo_item.zipped_attn_scores_slo_surveys %}
+                    <td style="background-color: {{ slo_att_colour }};">
+                      {{ slo_att_score|floatformat }}
+                    </td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div><!-- table responsive-->
+            </div><!--column-->
+          </div><!--row-->
+      </div><!--Fluid container-->
+      <hr/>
       {% for slo_info in slo_measures %}
-      <h2>SLO {{slo_info.slo_letter}}. {{ slo_info.slo_full_description }} </h2>
-        <div class="slo_information">
-              <div class="slo_summary">
-                <div class="slo_summary_item">
-                        {% if slo_info.mlo_mappings|length > 0 %}
-                                <table id="SLO_MLOMappings-{{slo_info.slo_id}}" class="workload_tables table table-striped">
-                                  <thead class="table-dark">
-                                  <tr>
-                                    <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO mappings</th>
-                                  </tr>
-                                    <tr>
-                                      <th>  </th> 
-                                      {% for year in slo_info.years_for_tables %}
-                                        <th> {{ year }} </th>
-                                      {% endfor %}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {% for row in slo_info.mlo_mappings %}
-                                      <tr>
-                                        <td> {{ row.module_code }} </td>
-                                        {% for item in row.icons %}
-                                              <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ item }}" alt="edit"/> </td>
-                                        {% endfor %}
-                                      </tr>
-                                    {% endfor %}
-                                  </tbody>
-                                </table>
-                          {% else %} <!-- no MLO direct mappings were found -->
-                                  <p> No mapped CLO were reported for this SLO </p>
+      <h3>SLO {{slo_info.slo_letter}}. {{ slo_info.slo_full_description }} </h3>
+      <div class="container-fluid"><!-- for summary of SLO, it will be 50-50-->
+        <div class="row g-4"> <!-- g for gutters-->
+          <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->   
+            {% if slo_info.mlo_mappings|length > 0 %}
+            <div class="'table-responsive">
+              <table id="SLO_MLOMappings-{{slo_info.slo_id}}" class="table table-striped settings_tables">
+                <thead class="table-dark">
+                <tr class="secondary-table-header">
+                  <th colspan="{{ slo_info.colspan_param }}">CLO mappings</th>
+                </tr>
+                  <tr>
+                    <th>  </th> 
+                    {% for year in slo_info.years_for_tables %}
+                      <th> {{ year }} </th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in slo_info.mlo_mappings %}
+                    <tr>
+                      <td> {{ row.module_code }} </td>
+                      {% for item in row.icons %}
+                            <td> <img src="{% static 'bootstrap-icons-1.5.0/' %}{{ item }}" alt="edit"/> </td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              </div><!--Table resposive-->
+              {% else %} <!-- no MLO direct mappings were found -->
+                <p> No mapped CLO were reported for this SLO </p>
+              {% endif %}
+          </div><!--column-->
+          <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->  
+            <canvas id="slo_measures_chart-{{slo_info.slo_id}}"></canvas>
+          </div><!--column-->
+        </div><!--row-->
+      </div><!-- fluid container for summary-->
+      <div class="container-fluid"><!-- for detaile sof measures, it will be 1/3,1/3,1/3-->
+        <div class="row g-4"> <!-- g for gutters-->
+          <div class="col-lg-4"> <!-- 1/3,1/3,1/3 division of the 12 cols layout.-->   
+            {% if slo_info.slo_surveys|length > 0 %}
+            <div class="'table-responsive">
+              <table id="SLO_Survey-{{slo_info.slo_id}}" class="table table-striped settings_tables">
+                <thead class="table-dark">
+                <tr class="secondary-table-header">
+                  <th colspan="4">SLO survey measures</th>
+                </tr>
+                <tr>
+                    <th> Date </th> 
+                    <th> Survey</th>
+                    <th> Question </th>
+                    <th> Achievement score (%) </th>
+                </tr>
+                </thead>
+                <tbody>
+                  {% for survey in slo_info.slo_surveys %}
+                      <tr>
+                          <td>{{ survey.date }}</td>
+                          <td>{{ survey.survey }}</td>
+                          <td>{{ survey.question }}</td>
+                          <td>{{ survey.percent_positive|floatformat }}%</td>
+                      </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div><!--table-resposive-->
+            {% else %} <!-- no SLO survey was found -->
+                <p> No SLO survey were reported for this SLO </p>
+            {% endif %}
+          </div><!--column-->
+          <div class="col-lg-4">
+            {% if slo_info.mlo_direct_measures|length > 0 %}
+            <div class="table-responsive">
+              <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="table table-striped settings_tables">
+                <thead class="table-dark">
+                <tr class="secondary-table-header">
+                  <th colspan="{{ slo_info.colspan_param }}">CLO direct measures</th>
+                </tr>
+                  <tr>
+                    <th>  </th> 
+                    {% for year in slo_info.years_for_tables %}
+                      <th> {{ year }} </th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in slo_info.mlo_direct_measures %}
+                    <tr>
+                      {% for item in row %}
+                        {% if forloop.counter0 == 0 %}
+                          <td> {{ item }} </td>
+                        {% else %}
+                          {% if item > 0 %}
+                            <td> {{ item|floatformat }}% </td>
+                            {% else %}
+                            <td>  </td>
                           {% endif %}
-                </div><!-- end of summaryitem-->
-                <div class="slo_summary_item">
-                  <canvas id="slo_measures_chart-{{slo_info.slo_id}}"></canvas>
-                </div>
-              </div><!-- End of slo summary div-->
-              <div class="slo_measures_container">
-                        <div class = "slo_measures_item">
-                            {% if slo_info.slo_surveys|length > 0 %}
-                            <table id="SLO_Survey-{{slo_info.slo_id}}" class="workload_tables table table-striped">
-                              <thead class="table-dark">
-                              <tr>
-                                <th colspan="4" style="background-color: darkgrey;">SLO survey measures</th>
-                              </tr>
-                              <tr>
-                                  <th> Date </th> 
-                                  <th> Survey</th>
-                                  <th> Question </th>
-                                  <th> Achievement score (%) </th>
-                              </tr>
-                              </thead>
-                              <tbody>
-                                {% for survey in slo_info.slo_surveys %}
-                                    <tr>
-                                        <td>{{ survey.date }}</td>
-                                        <td>{{ survey.survey }}</td>
-                                        <td>{{ survey.question }}</td>
-                                        <td>{{ survey.percent_positive|floatformat }}%</td>
-                                    </tr>
-                                {% endfor %}
-                              </tbody>
-                            </table>
-                          {% else %} <!-- no SLO survey was found -->
-                              <p> No SLO survey were reported for this SLO </p>
-                          {% endif %}
-                        </div>
-
-                        <div class="slo_measures_item">
-                            {% if slo_info.mlo_direct_measures|length > 0 %}
-
-                          <table id="SLO_MLOMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
-                            <thead class="table-dark">
-                            <tr>
-                              <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO direct measures</th>
-                            </tr>
-                              <tr>
-                                <th>  </th> 
-                                {% for year in slo_info.years_for_tables %}
-                                  <th> {{ year }} </th>
-                                {% endfor %}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {% for row in slo_info.mlo_direct_measures %}
-                                <tr>
-                                  {% for item in row %}
-                                    {% if forloop.counter0 == 0 %}
-                                      <td> {{ item }} </td>
-                                    {% else %}
-                                      {% if item > 0 %}
-                                        <td> {{ item|floatformat }}% </td>
-                                        {% else %}
-                                        <td>  </td>
-                                      {% endif %}
-                                    {% endif %}
-                                  {% endfor %}
-                                </tr>
-                              {% endfor %}
-                            </tbody>
-                          </table>
-                          {% else %} <!-- no MLO direct measures were found -->
-                              <p> No direct measures of mapped CLO were reported for this SLO </p>
-                    
-                          {% endif %}
-                        </div><!--end of slo measures item-->
-                        <div class="slo_measures_item">
-                          {% if slo_info.mlo_slo_survey_table_rows|length > 0 %}
-                            <table id="SLO_MLOSurveyMeasures-{{slo_info.slo_id}}" class="workload_tables table table-striped">
-                                <thead class="table-dark">
-                                <tr>
-                                  <th colspan="{{ slo_info.colspan_param }}" style="background-color: darkgrey;">CLO survey measures</th>
-                                </tr>
-                                <tr>
-                                    <th>  </th> 
-                                    {% for year in slo_info.years_for_tables %}
-                                      <th> {{ year }} </th>
-                                    {% endfor %}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                  {% for row in slo_info.mlo_slo_survey_table_rows %}
-                                    <tr>
-                                      {% for item in row %}
-                                        {% if forloop.counter0 == 0 %}
-                                          <td> {{ item }} </td>
-                                        {% else %}
-                                          {% if item > 0 %}
-                                            <td> {{ item|floatformat }}% </td>
-                                            {% else %}
-                                            <td>  </td>
-                                          {% endif %}
-                                        {% endif %}
-                                      {% endfor %}
-                                    </tr>
-                                  {% endfor %}
-                                </tbody>
-                              </table>
-        
+                        {% endif %}
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div><!--table ressponsive-->
+            {% else %} <!-- no MLO direct measures were found -->
+                <p> No direct measures of mapped CLO were reported for this SLO </p>
+            {% endif %}
+          </div><!--second of 3 columns-->
+          <div class="col-lg-4">
+          {% if slo_info.mlo_slo_survey_table_rows|length > 0 %}
+            <div class="table-responsive">
+              <table id="SLO_MLOSurveyMeasures-{{slo_info.slo_id}}" class="table table-striped settings_tables">
+                  <thead class="table-dark">
+                  <tr class="secondary-table-header">
+                    <th colspan="{{ slo_info.colspan_param }}"">CLO survey measures</th>
+                  </tr>
+                  <tr>
+                      <th>  </th> 
+                      {% for year in slo_info.years_for_tables %}
+                        <th> {{ year }} </th>
+                      {% endfor %}
+                  </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in slo_info.mlo_slo_survey_table_rows %}
+                      <tr>
+                        {% for item in row %}
+                          {% if forloop.counter0 == 0 %}
+                            <td> {{ item }} </td>
                           {% else %}
-                            <p> No CLO survey measures for a mapped CLO were reported for this SLO </p>
+                            {% if item > 0 %}
+                              <td> {{ item|floatformat }}% </td>
+                              {% else %}
+                              <td>  </td>
+                            {% endif %}
                           {% endif %}
-                        </div><!-- end of slo emausre item-->
-              </div><!--End of slo emasures container-->
-        </div><!-- End of SLO information overall container-->
-        <hr>
+                        {% endfor %}
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          {% else %}
+            <p> No CLO survey measures for a mapped CLO were reported for this SLO </p>
+          {% endif %}
+          </div><!--third of 3 columns-->
+        </div><!--row-->
+      </div><!--fluid container-->
+      <hr/>
       {% endfor %}
       {{ all_slo_data_for_plot|json_script:"all_slo_data_for_plot" }} 
       {{ all_slo_ids|json_script:"all_slo_ids" }}
