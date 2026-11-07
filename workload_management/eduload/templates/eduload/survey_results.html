@@ -14,11 +14,13 @@
 
     <div class="overall_container" id="overall_container_survey_results">
         <h1>Survey results - {{ survey_details.title }} </h1>
-        <h3>Overall summary data</h3>
-        <div class="overall_container">
-            <div class = "survey_results_container">
-                <div class="survey_table_results_container"><!-- table container -->
-                    <table id="SummarySurveyTable" class="table table-striped workload_tables">
+        <hr/>
+        <h2>Overall summary data</h2>
+        <div class="container-fluid"><!-- summary of results-->
+          <div class="row g-4"> <!-- g for gutters-->
+            <div class="col-lg-4"> <!-- 4/8 division of the 12 cols layout. Larger for the chart-->
+                <div class="table-responsive"><!-- table container -->
+                    <table id="SummarySurveyTable" class="table table-striped settings_tables">
                         <tr>
                             <th> Dates </th>
                             <td> {{ survey_details.start_date }} - {{survey_details.end_date }}</td>
@@ -54,87 +56,89 @@
                                 </td>
                         </tr>
                     </table>
-                </div>
-                <div class=" chart_results_container"><!-- Summary chart container-->
+                </div><!-- table responsive-->
+            </div><!-- the column-->
+            <div class="col-lg-8"> <!-- 4/8 division of the 12 cols layout. Larger for the chart-->
                     <canvas id="survey_summary_results_chart"></canvas>
-                </div>
             </div>
-            <hr>
-            
-            <h3>Data for each question</h3>
-            {% for entry in bar_chart_data %}
-            <div class="survey_results_container">
-                <div class="survey_table_results_container">
-                    <table id="SurveyTable{{ forloop.counter0 }}" class="workload_tables table table-striped">
-                        <thead class="table-dark">
-                            <tr>
-                                <th colspan="4" style="background-color: cornflowerblue;"> {{ question_texts|list_index:forloop.counter0 }} </th>
-                            </tr>
-                            <tr>
-                              <th> Response </th>
-                              <th> # of respondents</th>
-                              <th> % of total</th>
-                              <th> Cumulative %</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for dataset in entry %}
+            </div><!-- the row-->
+        </div><!-- The flex container-->
+        <hr/>
+        <h2>Data for each question</h2>
+        {% for entry in bar_chart_data %}
+        <div class="container-fluid"><!-- for questiojnresults, it will be 50-50-->
+            <div class="row g-4"> <!-- g for gutters-->
+                <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->
+                    <div class="'table-responsive">
+                        <table id="SurveyTable{{ forloop.counter0 }}" class="table table-striped settings_tables">
+                            <thead class="table-dark">
                                 <tr>
-                                    <td> {{ labels|list_index:forloop.counter0 }}  </td>
-                                    <td> {{ dataset }}  </td>
-                                   <td> {{ percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
-                                   <td>{{ cumulative_percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
+                                    <th colspan="4" style="background-color: cornflowerblue;"> {{ question_texts|list_index:forloop.counter0 }} </th>
                                 </tr>
-                            {% endfor %}
-                            <tr style="background-color: darkgrey;">
-                                <td>Total</td>
-                                <td>{{ total_responses_per_question|list_index:forloop.counter0 }}</td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                        <thead class="table-dark">
-                            <tr>
-                                <th colspan="4"> Other metrics </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td> Percenteage positive</td>
-                                <td colspan = "3"> {{ questions_perc_positive|list_index:forloop.counter0|floatformat }}%</td>
-                            </tr>
-                            <tr>
-                                <td> Percenteage non-negative</td>
-                                <td colspan = "3"> {{ questions_perc_non_negative|list_index:forloop.counter0|floatformat }}%</td>
-                            </tr>
-                            <tr>
-                                <td> Net Promoter Score (NPS)* </td>
-                                <td colspan = "3"> {{ questions_nps|list_index:forloop.counter0|floatformat }}%</td>
-                            </tr>
-                            <tr>
-                                <td colspan = "4" style="font-size:7pt; text-align:left;"> *{{ questions_nps_messages|list_index:forloop.counter0 }}</td>
-                            </tr>
-                        </tbody>
-                        
-                    </table>
-                </div>
-                <div class="chart_results_container">
-                    <canvas id="survey_results_chart{{ forloop.counter0 }}"></canvas>
-                </div>
-            </div>
-            <hr>
-            {% endfor %}
-            {{ bar_chart_data|json_script:"bar_chart_data" }}
-            {{ labels|json_script:"chart_labels" }}
-            {{ question_texts|json_script:"question_texts" }}
-            <script src="{% static   'eduload/survey_results_chart.js' %}"></script>
-            {{ shorter_question_texts|json_script:"shorter_question_texts" }}
-            {{ overall_plot_data|json_script:"overall_plot_data" }}
-            <script src="{% static   'eduload/overall_survey_results_chart.js' %}"></script>
-        </div>
-        <hr>
- 
+                                <tr>
+                                <th> Response </th>
+                                <th> # of respondents</th>
+                                <th> % of total</th>
+                                <th> Cumulative %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dataset in entry %}
+                                    <tr>
+                                        <td> {{ labels|list_index:forloop.counter0 }}  </td>
+                                        <td> {{ dataset }}  </td>
+                                    <td> {{ percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
+                                    <td>{{ cumulative_percentages|list_index:forloop.parentloop.counter0|list_index:forloop.counter0|floatformat  }}</td>
+                                    </tr>
+                                {% endfor %}
+                                <tr style="background-color: darkgrey;">
+                                    <td>Total</td>
+                                    <td>{{ total_responses_per_question|list_index:forloop.counter0 }}</td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                            <thead class="table-dark">
+                                <tr>
+                                    <th colspan="4"> Other metrics </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td> Percenteage positive</td>
+                                    <td colspan = "3"> {{ questions_perc_positive|list_index:forloop.counter0|floatformat }}%</td>
+                                </tr>
+                                <tr>
+                                    <td> Percenteage non-negative</td>
+                                    <td colspan = "3"> {{ questions_perc_non_negative|list_index:forloop.counter0|floatformat }}%</td>
+                                </tr>
+                                <tr>
+                                    <td> Net Promoter Score (NPS)* </td>
+                                    <td colspan = "3"> {{ questions_nps|list_index:forloop.counter0|floatformat }}%</td>
+                                </tr>
+                                <tr>
+                                    <td colspan = "4" style="font-size:7pt; text-align:left;"> *{{ questions_nps_messages|list_index:forloop.counter0 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div><!-- tablke responsive-->
+                </div><!--column-->
+                <div class="col-lg-6"> <!-- 6-6 division of the 12 cols layout.-->
+                        <canvas id="survey_results_chart{{ forloop.counter0 }}"></canvas>
+                </div><!-- column-->
+            </div><!-- row-->
+        </div><!-- fluid container-->
+        <hr/>
+        {% endfor %}
+        {{ bar_chart_data|json_script:"bar_chart_data" }}
+        {{ labels|json_script:"chart_labels" }}
+        {{ question_texts|json_script:"question_texts" }}
+        <script src="{% static   'eduload/survey_results_chart.js' %}"></script>
+        {{ shorter_question_texts|json_script:"shorter_question_texts" }}
+        {{ overall_plot_data|json_script:"overall_plot_data" }}
+        <script src="{% static   'eduload/overall_survey_results_chart.js' %}"></script>
+
     </div><!--overall container-->
-{% include './footer.html' %}
+    {% include './footer.html' %}
 </body>
 </html>
