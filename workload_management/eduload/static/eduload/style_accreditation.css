@@ -15,16 +15,6 @@
     width: 70px;
 }
 
-p.individual_mlo_item{
-    display:inline;
-
-}
-div.individual_mlo_item{
-    display: inline;
-}
-div.individual_mlo_item > input[type=number]{
-    width: 10vmin;
-}
 
 div.survey_results_container{
     width: 100%;
@@ -36,10 +26,6 @@ div.survey_table_results_container{
 }
 div.chart_results_container{
     width: 48%;
-}
-
-div.slo_tables_container{
-    min-width: 0;
 }
 
 div.accr_report_overall_summary{

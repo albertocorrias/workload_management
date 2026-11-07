@@ -80,12 +80,6 @@ div.programme-divider-title{
 }
 /*********************************/
 
-div.buttons_container {
-  padding-left: 10px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
 table.workload_tables > tbody > tr > td, 
 table.workload_tables > thead > tr > th {
     text-align: center;
