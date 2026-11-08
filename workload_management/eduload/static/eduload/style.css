@@ -55,16 +55,19 @@ table.settings_tables > thead > tr > th {
     text-align: center;
 }
 
-.secondary-table-header th{
+.secondary-table-header th,
+.secondary-table-header td{
     --bs-table-bg: rgb(108, 117, 125);
     --bs-table-accent-bg: rgb(108, 117, 125);
     text-align: center;
     color: white;
 }
 
-.accent-color-for-tables th{
+.accent-color-for-tables th,
+.accent-color-for-tables td {
     --bs-table-bg: rgb(16, 102, 178);
     --bs-table-accent-bg: rgb(16, 102, 178);
+    color: white;
 }
 
 table.settings_tables > tbody> tr > td {
