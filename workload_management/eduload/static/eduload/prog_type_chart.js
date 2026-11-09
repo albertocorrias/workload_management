@@ -31,6 +31,9 @@ const config_prog = {
       title: {
         display: true,
         text: 'Hours by programme',
+          font: {
+            size: 28 // Font size in pixels (do not append 'px')
+          },
         position: 'top'
     }
   }

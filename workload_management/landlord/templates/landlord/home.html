@@ -6,27 +6,30 @@
     <meta charset="utf-8">
     <title>Workload Management App</title>
     <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'data_tables/dataTables.bootstrap5.min.css' %}">  
-    <link rel="stylesheet" type="text/css" href="{% static 'landlord/splash_style.css' %}"> 
+    <!--<link rel="stylesheet" type="text/css" href="{% static 'landlord/splash_style.css' %}">--> 
 
-    <script src="{% static 'landlord/slide_show_script.js' %}"></script>
+    <!--<script src="{% static 'landlord/slide_show_script.js' %}"></script> -->
+    <script src="{% static   'bootstrap-5.1.1-dist/js/bootstrap.min.js' %}"></script>
+  <style>
+    .slide-img {
+      height: 300px;
+      object-fit: fit;
+    }
+  </style>
   </head>
   <body>
 
   <!--The eduload logo, needed for tenants as well-->
   {% include './app_name_banner.html' %}
   <!--The big image banner-->
-   <section>
-    <img
-      src="{% static 'landlord/splash-banner.png' %}" alt="Banner" class="img-fluid w-100">
+  <section style="margin-bottom: 1vw;">
+    <img src="{% static 'landlord/splash-banner.png' %}" alt="Banner" class="img-fluid w-100">
   </section>
-
-
-  <div class="container-fluid"><!-- for the 3 key features items, it will be 1/3,1/3,1/3-->
-    <div class="row g-4"> <!-- g for gutters-->
+  <div class="container"><!-- for the 3 key features items, it will be 1/3,1/3,1/3-->
+    <div class="row justify-content-center"> 
       <div class="col-12 col-lg-4"> <!-- 1/3,1/3,1/3 division of the 12 cols layout.-->
         <div class="card h-100 border-0">
-          <img src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt="Icon 1" class="card-img-top w-50 mx-auto d-block">
+          <img src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt="Icon 1" class="card-img-top img-fluid w-50 mx-auto d-block">
           <div class="card-body">
             <p class="card-text fs-4"> Manage common academic administration needs such as teaching workload balancing and programme-level accreditation 
               <span class="highlight_text">from your browser</span>. No installation required. <span class="highlight_text">Free of charge</span>.
@@ -36,7 +39,7 @@
       </div><!--column-->
       <div class="col-12 col-lg-4"> <!-- 1/3,1/3,1/3 division of the 12 cols layout.-->
         <div class="card h-100 border-0">
-          <img src="{% static 'bootstrap-icons-1.5.0/bar-chart-fill-coloured.svg' %}" alt="Icon 2" class="card-img-top w-50 mx-auto d-block">
+          <img src="{% static 'bootstrap-icons-1.5.0/bar-chart-fill-coloured.svg' %}" alt="Icon 2" class="card-img-top img-fluid w-50 mx-auto d-block">
           <div class="card-body">
             <p class="card-text fs-4"> Easily keep track of department-level <span class="highlight_text">teaching workload</span>, with unlimited number of lecturers and courses,
               with <span class="highlight_text">customizable teaching assignment types</span>, and across many years.
@@ -46,7 +49,7 @@
       </div><!--column-->
       <div class="col-12 col-lg-4"> <!-- 1/3,1/3,1/3 division of the 12 cols layout.-->
         <div class="card h-100 border-0">
-          <img src="{% static 'bootstrap-icons-1.5.0/wifi-coloured.svg' %}" alt="Icon 1" class="card-img-top w-50 mx-auto d-block">
+          <img src="{% static 'bootstrap-icons-1.5.0/graph-up-coloured.svg' %}" alt="Icon 1" class="card-img-top img-fluid w-50 mx-auto d-block">
           <div class="card-body">
             <p class="card-text fs-4"> Ease the <span class="highlight_text">accreditation process</span>. Define programme-level <span class="highlight_text">graduate attributes</span>, 
             single course-level <span class="highlight_text">learning outcomes</span>,
@@ -57,61 +60,83 @@
       </div><!--column-->        
     </div><!--row-->
   </div><!--container fluid-->
+  
+  <div class="container py-5"><!--Accreditation slideshow-->
+    <div class="row align-items-center g-4">
+      <!-- Image slideshow column -->
+      <div class="col-12 col-md-6">
+        <div id="mySlideshow" class="carousel slide shadow-sm rounded overflow-hidden"
+             data-bs-ride="carousel">
 
-<div class="detail-feature-container ">
-    
-    <!-- Slideshow Section -->
-    <div class="slideshow-wrapper">
-        <div class="slideshow-container">
-            <div class="slide active">
-                <img src="{% static 'landlord/workload_summary.jpg' %}" alt="Slide 1">
+          <!-- Indicator dots -->
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#mySlideshow"
+                    data-bs-slide-to="0" class="active" aria-current="true"
+                    aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#mySlideshow"
+                    data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#mySlideshow"
+                    data-bs-slide-to="2" aria-label="Slide 3"></button>
+            <button type="button" data-bs-target="#mySlideshow"
+                    data-bs-slide-to="3" aria-label="Slide 4"></button>
+            <button type="button" data-bs-target="#mySlideshow"
+                    data-bs-slide-to="4" aria-label="Slide 5"></button>
+          </div>
+
+          <!-- Slides: exactly ONE must have the "active" class -->
+          <div class="carousel-inner">
+            <div class="carousel-item active">
+              <img src="{% static 'landlord/workload_summary.png' %}"
+                   class="d-block w-100 slide-img" alt="First slide">
             </div>
-            <div class="slide">
-                <img src="{% static 'landlord/workload_table.png' %}" alt="Slide 2">
+            <div class="carousel-item">
+              <img src="{% static 'landlord/workload_table.png' %}"
+                   class="d-block w-100 slide-img" alt="Second slide">
             </div>
-            <div class="slide">
-                <img src="{% static 'landlord/workload_table_by_course.jpg' %}" alt="Slide 3">
+            <div class="carousel-item">
+              <img src="{% static 'landlord/teaching_assignment.png' %}"
+                   class="d-block w-100 slide-img" alt="Third slide">
             </div>
-            <div class="slide">
-                <img src="{% static 'landlord/CLO-SLO-mapping.jpg' %}" alt="Slide 4">
+            <div class="carousel-item">
+              <img src="{% static 'landlord/workload_lecturer.png' %}"
+                   class="d-block w-100 slide-img" alt="Fourth slide">
             </div>
-            <div class="slide">
-                <img src="{% static 'landlord/accreditation_report_results-slo.jpg' %}" alt="Slide 5">
+            <div class="carousel-item">
+              <img src="{% static 'landlord/department_page.png' %}"
+                   class="d-block w-100 slide-img" alt="Fifth slide">
             </div>
-            <div class="slide">
-                <img src="{% static 'landlord/survey_overall_results.jpg' %}" alt="Slide 6">
-            </div>
-            
-            <button class="prev" onclick="moveSlide(-1)">&#10094;</button>
-            <button class="next" onclick="moveSlide(1)">&#10095;</button>
+          </div>
+
+          <!-- Prev / Next controls -->
+          <button class="carousel-control-prev" type="button"
+                  data-bs-target="#mySlideshow" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button"
+                  data-bs-target="#mySlideshow" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
         </div>
+      </div><!--column-->
+      <!-- Text column -->
+      <div class="col-12 col-md-6">
+        <h1 class="mb-3">Welcome to Our Gallery</h1>
+        <p class="lead text-muted">
+          This is a responsive layout built with Bootstrap 5.
+        </p>
+        <p>
+          On wider screens the text sits neatly beside the slideshow. When the
+          window becomes small, the image expands to the full width and this
+          text drops below it automatically — no extra media queries needed.
+        </p>
+        <a href="#" class="btn btn-primary mt-2">Learn More</a>
+      </div> <!--column-->
+    </div><!--row-->
+  </div><!--container of accreditation bit-->
 
-        <!-- New Dot Navigation Indicators -->
-        <div class="dots-container">
-            <span class="dot" onclick="currentSlide(0)"></span>
-            <span class="dot" onclick="currentSlide(1)"></span>
-            <span class="dot" onclick="currentSlide(2)"></span>
-            <span class="dot" onclick="currentSlide(3)"></span>
-            <span class="dot" onclick="currentSlide(4)"></span>
-            <span class="dot" onclick="currentSlide(5)"></span>
-        </div>
-    </div>
 
-    <!-- Text Section -->
-    <div class="detail-feature-text-container-1">
-        <h2>Accreditation features</h2>
-        <p>Handles <span class=highlight_text>mapping between SO and CLO</span>, survey measures for both SLO
-           and CLo and direct preformance measures (e.g., exam questions) over the years.
-          <span class=highlight_text>Automatically generates SLO achievement report</span> for a given period.</p>
-    </div>
-    <div class="detail-feature-text-container-2">
-        <h2>Workload features</h2>
-        <p>Handles <span class=highlight_text>multiple workloads overt the years</span>, with summary for lecturers
-          and courses.
-          <span class=highlight_text>Customizable teaching assignment types (standard lectures, studios, supervision, etc)</span> 
-          applicable to all workloads in the department for a given period.</p>
-    </div>
-</div>
 
 <div class="button-container">
 <a href="https://eabworkload.org/docs/index.html" class="docs-button">Read full documentation</a>
@@ -122,6 +147,23 @@
 
 
 {% include './footer.html' %}
+  <!-- Bootstrap 5.1.1 JS bundle (includes Popper + all component logic).
+       Must load AFTER the markup above. -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js">
+  </script>
+
+  <!-- Optional: initialize with custom options -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.getElementById('mySlideshow');
+      new bootstrap.Carousel(el, {
+        interval: 3000,   // 3 seconds per slide
+        wrap: true,       // loop back to start
+        pause: 'hover'
+      });
+    });
+  </script>
   </body>
 </html>
 
